@@ -5,5 +5,8 @@
 # Ignore any level of python compiled file
 **/*.pyc
 
-# We ignore all the build directories inside the OGSPlugins
+# We ignore all the build directories inside OGSPlugins
 OGSPlugins/*/build
+
+# We also ignore all the Testing directories inside OGSPlugins
+OGSPlugins/*/Testing
