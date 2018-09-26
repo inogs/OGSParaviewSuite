@@ -1,0 +1,175 @@
+#!/usr/bin/env python
+#
+# Deploy script for OGS ParaView plugins
+#
+# Arnau Miro, OGS (2018)
+
+#-------------------------------------------------------------------------------
+# Import of modules
+#-------------------------------------------------------------------------------
+
+import os, sys, glob, argparse
+
+#-------------------------------------------------------------------------------
+# Functions
+#-------------------------------------------------------------------------------
+
+def checkParaView(pvpath):
+	'''
+	Detect if there is an installation of ParaView in the path provided
+	'''
+	if os.path.exists(os.path.join(pvpath,"lib","paraview-config")):
+		sys.stdout.write("ParaView installation... OK\n\n")
+	else:
+		sys.stdout.write("Could not find a paraview installation... Aborting!\n\n")
+		exit(0)
+
+def checkOS():
+	'''
+	Detect in which Operating system the user is working and check if 
+	we can operate on it.
+	'''
+	platform = sys.platform
+	if platform == "linux" or platform == "linux2":
+		sys.stdout.write("We are operating on linux... ")
+		sys.stdout.write("OK\n\n")
+	if platform == "darwin":
+		sys.stdout.write("We are operating on MAC OSX... ")
+		sys.stdout.write("Aborting! Feature not implemented yet.\n\n")
+		exit(0)
+	if platform == "win32":
+		sys.stdout.write("We are operating on Windows... ")
+		sys.stdout.write("Fatal error!\n\n")
+		sys.stdout.write("Why are you even trying?!\n\n")
+		exit(0)
+
+def scanPluginsFolder():
+	'''
+	Scans OGSPlugins folder and returns the name of the folders,
+	which should be the plugins name.
+	'''
+	plugins_path = os.path.split(sys.argv[0])[0]
+	bin_name     = os.path.split(sys.argv[0])[1]
+	for l in os.listdir(plugins_path):
+		if l == bin_name: continue
+		yield os.path.join(plugins_path,l)
+
+def compilePlugin(pluginpath):
+	'''
+	Detects if a plugin must be compiled and performs the compilation.
+	Returns True if the plugin has been compiled, else returns False.
+	'''
+	if os.path.exists(os.path.join(pluginpath,"CMakeLists.txt")):
+		os.system(\
+			"""
+cd %s
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+cd -
+			""" % pluginpath)
+		return True
+	else:
+		return False
+
+def installPlugin(pvpath,plugin_dir,plugin_name):
+	'''
+	Installs a plugin into ParaView
+	'''
+	# Create a folder in the installation directory
+	install_dir = os.path.join(pvpath,"lib","plugins")
+
+	try: 
+		os.makedirs(install_dir)
+	except:
+		pass
+	# Generate plugin directory
+	plugin = os.path.join(plugin_dir,plugin_name)
+	# Copy
+	os.system("cp %s %s" % (plugin,install_dir))
+
+def installOGSMesh(pvpath,plugin_dir):
+	'''
+	Installs the OGSMesh python class into ParaView
+	'''
+	# Compile the shared library
+	os.system(\
+		"""
+cd %s
+g++ -shared -Wl,-soname,libOGSmesh -o libOGSmesh.so -fPIC OGSmesh.cpp
+cd -
+		""" % plugin_dir)
+	# Create a folder in the installation directory
+	install_dir = os.path.join(os.getenv("HOME"),".local","lib")
+	# Copy
+	os.system("cp %s/libOGSmesh.so %s" % (plugin_dir,install_dir))
+	os.system("cp %s/OGSmesh.py %s" % (plugin_dir,os.path.join(install_dir,"python2.7","site-packages")))
+	os.system("cp %s/OGS2Paraview %s" % (plugin_dir,os.path.join(pvpath,"bin")))
+
+#-------------------------------------------------------------------------------
+# Main
+#-------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+
+	argpar = argparse.ArgumentParser(prog="OGS plugin install",description="Install OGS plugins to ParaView.")
+	argpar.add_argument('-pv','--paraview',type=str,help='Full path to ParaView directory',required=True,dest='pvpath')
+
+	# Parse input arguments
+	# ---------------------
+	args=argpar.parse_args()
+
+	# Welcoming message
+	# -----------------
+	sys.stdout.write(\
+"""
+        Installation of OGS ParaView Plugins
+        ____________________________________
+
+The process will take several minutes.
+You can go grab a coffee meanwhile.
+
+""")
+
+	# Check operating system
+	# ----------------------
+	checkOS()
+
+	# Check ParaView
+	# --------------
+	checkParaView(args.pvpath)
+
+	# Compilation and installation of plugins
+	# ---------------------------------------
+	sys.stdout.write("All tests are OK, proceding with the installation.\n\n")
+	for plugin in scanPluginsFolder():
+		# Recover plugin name
+		pl_name = os.path.basename(plugin)
+		if pl_name[0] == "_": continue
+		# Standard installation procedures
+		sys.stdout.write("  PLUGIN %s:\n" % pl_name)
+		if compilePlugin(plugin):
+			plugin_name = "lib%s.so" % pl_name
+			installPlugin(args.pvpath,plugin,os.path.join("build",plugin_name))
+		else:
+			plugin_name = "%s.xml" % pl_name
+			installPlugin(args.pvpath,plugin,plugin_name)
+		
+		# Specific installation prodcedures
+		if os.path.basename(plugin) == "OGSReader":
+			# Compilation of the OGSmesh library and python class
+			installOGSMesh(args.pvpath,plugin)
+
+		sys.stdout.write("  done!\n\n")
+
+	# Goodbye message
+	# ---------------
+	sys.stdout.write(\
+"""
+Thanks for waiting! OGS ParaView plugins have been 
+successfully installed.
+
+Have a nice day!
+
+""")
