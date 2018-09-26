@@ -1,0 +1,86 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="OGSSelectCoast" 
+                 class="vtkPythonProgrammableFilter" 
+                 label="OGS Select Coast">
+      <Documentation
+        long_help="This filter lets the user select coasts from the coasts mask."
+        short_help="Lets the user select coasts from the coasts mask.">
+      </Documentation>
+
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+
+          <DataTypeDomain name="input_type">
+            <DataType value="vtkRectilinearGrid"/>
+          </DataTypeDomain>
+      </InputProperty>
+
+
+      <IntVectorProperty
+        name="coast"
+        label="Coast"
+        initial_string="coast"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Visualize the coast region of the Mediterranean sea
+        </Documentation>
+      </IntVectorProperty>
+
+
+      <IntVectorProperty
+        name="open_sea"
+        label="Open Sea"
+        initial_string="open_sea"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Visualize the open sea region of the Mediterranean sea 
+        </Documentation>
+      </IntVectorProperty>
+
+
+
+
+      <!-- Output data type: "vtkUnstructuredGrid" -->
+      <IntVectorProperty command="SetOutputDataSetType"
+                         default_values="4"
+                         name="OutputDataSetType"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <Documentation>The value of this property determines the dataset type
+        for the output of the programmable filter.</Documentation>
+      </IntVectorProperty>
+
+
+      <StringVectorProperty
+        name="Script"
+        command="SetScript"
+        number_of_elements="1"
+        default_values="import vtk&#xA;import numpy as np&#xA;from vtk.util import numpy_support as npvtk&#xA;&#xA;# Get input data&#xA;pdin = self.GetInput();&#xA;&#xA;# Threshold construct&#xA;thresh1 = vtk.vtkThreshold();&#xA;thresh1.SetInputData(pdin);&#xA;&#xA;# Apply a threshold filter according to the CoastMask&#xA;if coast and open_sea:     thresh1.ThresholdBetween(1,2);&#xA;if coast and not open_sea: thresh1.ThresholdBetween(1,1.5);&#xA;if not coast and open_sea: thresh1.ThresholdBetween(1.5,2);&#xA;if not coast and not open_sea: thresh1.ThresholdBetween(0,0.5); # Just the ground&#xA;&#xA;# Apply threshold on CoastMask&#xA;thresh1.SetInputArrayToProcess(0, 0, 0, vtk.vtkDataObject.FIELD_ASSOCIATION_CELLS, &quot;coast mask&quot;);&#xA;# Update filter&#xA;thresh1.Update();&#xA;&#xA;# Grab the vtkField from threshold filter&#xA;field = thresh1.GetOutput();&#xA;field.GetCellData().RemoveArray(&quot;coast mask&quot;); # Remove the coast mask (no longer needed)&#xA;&#xA;# Update the output port&#xA;pdout = self.GetOutput().ShallowCopy(field);&#xA;"
+        panel_visibility="never">
+        <Hints>
+         <Widget type="multi_line"/>
+       </Hints>
+      <Documentation>This property contains the text of a python program that
+      the programmable source runs.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <ShowInMenu category="OGS" />
+      </Hints>
+    </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>

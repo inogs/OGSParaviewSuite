@@ -1,0 +1,277 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="OGSSelectBasin" 
+                 class="vtkPythonProgrammableFilter" 
+                 label="OGS Select Basin">
+      <Documentation
+        long_help="This filter lets the user select basins from the basins mask."
+        short_help="Lets the user select basins from the basins mask.">
+      </Documentation>
+
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+
+          <DataTypeDomain name="input_type">
+            <DataType value="vtkUnstructuredGrid"/>
+          </DataTypeDomain>
+      </InputProperty>
+
+      <!-- Alboran Sea basin -->
+      <IntVectorProperty
+        name="Alboran_Sea"
+        label="Alboran Sea"
+        initial_string="Alboran_Sea"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Alboran sea basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- South Western Mediterranean basin -->
+      <IntVectorProperty
+        name="South_Western_Mediterranean_west"
+        label="South Western Mediterranean (west)"
+        initial_string="South_Western_Mediterranean_west"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the South Western Mediterranean basin, west part
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="South_Western_Mediterranean_east"
+        label="South Western Mediterranean (east)"
+        initial_string="South_Western_Mediterranean_east"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the South Western Mediterranean basin, east part
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- North Western Mediterranean -->
+      <IntVectorProperty
+        name="North_Western_Mediterranean"
+        label="North Western Mediterranean"
+        initial_string="North_Western_Mediterranean"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the North Western Mediterranean basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Tyrrhenian -->
+      <IntVectorProperty
+        name="Northern_Tyrrhenian"
+        label="Northern Tyrrhenian"
+        initial_string="Northern_Tyrrhenian"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Northern Tyrrhenian basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Southern_Tyrrhenian"
+        label="Southern Tyrrhenian"
+        initial_string="Southern_Tyrrhenian"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Southern Tyrrhenian basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Ionian -->
+      <IntVectorProperty
+        name="Western_Ionian"
+        label="Western Ionian"
+        initial_string="Western_Ionian"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Western Ionian basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Eastern_Ionian"
+        label="Eastern Ionian"
+        initial_string="Eastern_Ionian"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Eastern Ionian basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Northern_Ionian"
+        label="Northern Ionian"
+        initial_string="Northern_Ionian"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Northern Ionian basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Adriatic -->
+      <IntVectorProperty
+        name="Northern_Adriatic"
+        label="Northern Adriatic"
+        initial_string="Northern_Adriatic"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Northern Adriatic basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Southern_Adriatic"
+        label="Southern Adriatic"
+        initial_string="Southern_Adriatic"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Southern Adriatic basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Levantine -->
+      <IntVectorProperty
+        name="Western_Levantine"
+        label="Western Levantine"
+        initial_string="Western_Levantine"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Western Levantine basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Northern_Levantine"
+        label="Northern Levantine"
+        initial_string="Northern_Levantine"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Northern Levantine basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Southern_Levantine"
+        label="Southern Levantine"
+        initial_string="Southern_Levantine"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Southern Levantine basin
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="Eastern_Levantine"
+        label="Eastern Levantine"
+        initial_string="Eastern_Levantine"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Eastern Levantine basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Aegean -->
+      <IntVectorProperty
+        name="Aegean_Sea"
+        label="Aegean Sea"
+        initial_string="Aegean_Sea"
+        command="SetParameter"
+        animateable="1"
+        default_values="1"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          View the Aegean sea basin
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Output data type: "vtkUnstructuredGrid" -->
+      <IntVectorProperty command="SetOutputDataSetType"
+                         default_values="4"
+                         name="OutputDataSetType"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <Documentation>The value of this property determines the dataset type
+        for the output of the programmable filter.</Documentation>
+      </IntVectorProperty>
+
+
+      <StringVectorProperty
+        name="Script"
+        command="SetScript"
+        number_of_elements="1"
+        default_values="import vtk&#xA;import numpy as np&#xA;from vtk.util import numpy_support as npvtk&#xA;&#xA;# Get input data&#xA;pdin = self.GetInput();&#xA;&#xA;# Recover the numpy array BasinMask from input&#xA;BasinMask = npvtk.vtk_to_numpy( pdin.GetCellData().GetArray(&quot;basins mask&quot;) );&#xA;&#xA;# Create CutMask array full of zeros&#xA;CutMask = np.zeros( np.shape(BasinMask) );&#xA;&#xA;# Fill with ones according to user input&#xA;if (Alboran_Sea): CutMask[BasinMask == 1] = 1;&#xA;if (South_Western_Mediterranean_west): CutMask[BasinMask == 2] = 1;&#xA;if (South_Western_Mediterranean_east): CutMask[BasinMask == 3] = 1;&#xA;if (North_Western_Mediterranean): CutMask[BasinMask == 4] = 1;&#xA;if (Northern_Tyrrhenian): CutMask[BasinMask == 5] = 1;&#xA;if (Southern_Tyrrhenian): CutMask[BasinMask == 6] = 1;&#xA;if (Western_Ionian): CutMask[BasinMask == 10] = 1;&#xA;if (Eastern_Ionian): CutMask[BasinMask == 11] = 1;&#xA;if (Northern_Ionian): CutMask[BasinMask == 12] = 1;&#xA;if (Northern_Adriatic): CutMask[BasinMask == 7] = 1;&#xA;if (Southern_Adriatic): CutMask[BasinMask == 8] = 1;&#xA;if (Western_Levantine): CutMask[BasinMask == 13] = 1;&#xA;if (Northern_Levantine): CutMask[BasinMask == 14] = 1;&#xA;if (Southern_Levantine): CutMask[BasinMask == 15] = 1;&#xA;if (Eastern_Levantine): CutMask[BasinMask == 16] = 1;&#xA;if (Aegean_Sea): CutMask[BasinMask == 9] = 1;&#xA;&#xA;# Add array to input&#xA;vtkCutMask = npvtk.numpy_to_vtk(CutMask.ravel(),True,vtk.VTK_FLOAT);&#xA;vtkCutMask.SetName(&quot;CutMask&quot;);&#xA;pdin.GetCellData().AddArray(vtkCutMask);&#xA;&#xA;# Threshold construct&#xA;thresh1 = vtk.vtkThreshold();&#xA;thresh1.SetInputData(pdin);&#xA;thresh1.ThresholdByUpper(1); # Erase whatever has 0&#xA;thresh1.SetInputArrayToProcess(0, 0, 0, vtk.vtkDataObject.FIELD_ASSOCIATION_CELLS, &quot;CutMask&quot;);&#xA;thresh1.Update();&#xA;&#xA;# Grab the field and generate output&#xA;field = thresh1.GetOutput();&#xA;field.GetCellData().RemoveArray(&quot;CutMask&quot;); # Remove the CutMask&#xA;&#xA;# Update the output port&#xA;pdout = self.GetOutput().ShallowCopy(field);&#xA;"
+        panel_visibility="never">
+        <Hints>
+         <Widget type="multi_line"/>
+       </Hints>
+      <Documentation>This property contains the text of a python program that
+      the programmable source runs.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <ShowInMenu category="OGS" />
+      </Hints>
+    </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>

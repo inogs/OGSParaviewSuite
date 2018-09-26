@@ -1,0 +1,291 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+
+    <SourceProxy class="vtkOGSSelectCoast"
+                 name="OGSSelectCoast"
+                 label="OGS Select Coast">
+    <Documentation
+        long_help="This filter lets the user select coasts from the coasts mask."
+        short_help="Lets the user select coasts from the coasts mask.">
+    </Documentation>
+
+    <InputProperty command="SetInputConnection"
+                   name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+                          number_of_components="1">
+        </InputArrayDomain>
+        <Documentation>This property specifies the input to the Threshold
+        filter.</Documentation>
+      </InputProperty>
+
+     <!-- Name of basins mask array -->
+     <StringVectorProperty name="mask_field"
+                           label="Coast mask: "
+                           command="Setmask_field"
+                           animateable="1"
+                           default_values="coast mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the coast mask field
+         </Documentation>
+     </StringVectorProperty>
+
+     <!-- Basins array info-->
+     <StringVectorProperty name="CoastsInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Coasts" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="CoastsStatus"
+                            command="SetCoastsArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="CoastsInfo"
+                            label="Mediterranean Sea">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="CoastsInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the coasts of the Mediterranean Sea.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- OLD THRESHOLD PARAMETERS HAVE NOW BEEN SHADOWED -->
+     
+     <!-- Array to process -->
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Scalars"
+                            name="SelectInputScalars"
+                            number_of_elements="5"
+                            panel_visibility="never">
+        <ArrayListDomain attribute_type="Scalars"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>The value of this property contains the name of the
+        scalar array from which to perform thresholding.</Documentation>
+      </StringVectorProperty>
+
+      <!-- Threshold between (just 0.5 and 1) -->
+      <DoubleVectorProperty command="ThresholdBetween"
+                            default_values="0.5 1"
+                            label="Threshold Range"
+                            name="ThresholdBetween"
+                            number_of_elements="2"
+                            panel_visibility="never">
+        <Documentation>The values of this property specify the upper and lower
+        bounds of the thresholding operation (defaulted to 0.5 and 1).</Documentation>
+      </DoubleVectorProperty>
+
+      <!-- All scalars -->
+      <IntVectorProperty command="SetAllScalars"
+                         default_values="1"
+                         name="AllScalars"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>If the value of this property is 1, then a cell is only
+        included in the output if the value of the selected array for all its
+        points is within the threshold. This is only relevant when thresholding
+        by a point-centered array.</Documentation>
+      </IntVectorProperty>
+
+      <!-- Use Continuous Cell Range -->
+      <IntVectorProperty command="SetUseContinuousCellRange"
+                         default_values="0"
+                         name="UseContinuousCellRange"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If off, the vertex scalars are treated as a discrete set. If on, they
+          are treated as a continuous interval over the minimum and maximum. One
+          important "on" use case: When setting lower and upper threshold
+          equal to some value and turning AllScalars off, the results are
+          cells containing the isosurface for that value.  WARNING: Whether on
+          or off, for higher order input, the filter will not give accurate
+          results.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Visibility replace_input="2" />
+        <ShowInMenu category="OGS" />
+      </Hints>
+      <!-- End Threshold -->
+    </SourceProxy>
+
+    <SourceProxy class="vtkOGSSelectBasin"
+                 name="OGSSelectBasin"
+                 label="OGS Select Basin">
+    <Documentation
+      long_help="This filter lets the user select basins from the basins mask."
+      short_help="Lets the user select basins from the basins mask.">
+    </Documentation>
+
+    <InputProperty command="SetInputConnection"
+                   name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+                          number_of_components="1">
+        </InputArrayDomain>
+        <Documentation>This property specifies the input to the Threshold
+        filter.</Documentation>
+      </InputProperty>
+
+     <!-- Name of basins mask array -->
+     <StringVectorProperty name="mask_field"
+                           label="Basins mask: "
+                           command="Setmask_field"
+                           animateable="1"
+                           default_values="basins mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the basins mask field
+         </Documentation>
+     </StringVectorProperty>
+
+     <!-- Basins array info-->
+     <StringVectorProperty name="BasinsInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Basins" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="BasinsStatus"
+                            command="SetBasinsArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="BasinsInfo"
+                            label="Mediterranean Sea">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="BasinsInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the sub-basins of the Mediterranean Sea.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- OLD THRESHOLD PARAMETERS HAVE NOW BEEN SHADOWED -->
+     
+     <!-- Array to process -->
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Scalars"
+                            name="SelectInputScalars"
+                            number_of_elements="5"
+                            panel_visibility="never">
+        <ArrayListDomain attribute_type="Scalars"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>The value of this property contains the name of the
+        scalar array from which to perform thresholding.</Documentation>
+      </StringVectorProperty>
+
+      <!-- Threshold between (just 0.5 and 1) -->
+      <DoubleVectorProperty command="ThresholdBetween"
+                            default_values="0.5 1"
+                            label="Threshold Range"
+                            name="ThresholdBetween"
+                            number_of_elements="2"
+                            panel_visibility="never">
+        <Documentation>The values of this property specify the upper and lower
+        bounds of the thresholding operation (defaulted to 0.5 and 1).</Documentation>
+      </DoubleVectorProperty>
+
+      <!-- All scalars -->
+      <IntVectorProperty command="SetAllScalars"
+                         default_values="1"
+                         name="AllScalars"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>If the value of this property is 1, then a cell is only
+        included in the output if the value of the selected array for all its
+        points is within the threshold. This is only relevant when thresholding
+        by a point-centered array.</Documentation>
+      </IntVectorProperty>
+
+      <!-- Use Continuous Cell Range -->
+      <IntVectorProperty command="SetUseContinuousCellRange"
+                         default_values="0"
+                         name="UseContinuousCellRange"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If off, the vertex scalars are treated as a discrete set. If on, they
+          are treated as a continuous interval over the minimum and maximum. One
+          important "on" use case: When setting lower and upper threshold
+          equal to some value and turning AllScalars off, the results are
+          cells containing the isosurface for that value.  WARNING: Whether on
+          or off, for higher order input, the filter will not give accurate
+          results.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Visibility replace_input="2" />
+        <ShowInMenu category="OGS" />
+      </Hints>
+      <!-- End Threshold -->
+    </SourceProxy>
+    
+ </ProxyGroup>
+</ServerManagerConfiguration>
