@@ -2,5 +2,8 @@
 #
 # Arnau Miro, OGS (2018)
 
+# Ignore any level of python compiled file
+**/*.pyc
+
 # We ignore all the build directories inside the OGSPlugins
 OGSPlugins/*/build
