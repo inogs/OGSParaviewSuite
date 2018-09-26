@@ -1,0 +1,390 @@
+<ServerManagerConfiguration>
+    <!-- declare a view -->
+    <ProxyGroup name="views">
+        <PythonViewProxy name="PythonView" 
+                         class="vtkOGSVerticalProfilePlot"
+                         label="OGS Vertical Profile Plot"
+                         processes="client|dataserver|renderserver"
+                         base_proxygroup="internal_views"
+                         base_proxyname="ViewBase"
+                         representation_name="PythonRepresentation">
+
+               <!-- EXPOSED PROPERTIES TO MODIFY THE PLOT -->
+
+               <!-- Variables Properties -->
+
+
+               <!-- Title Properties-->
+               <StringVectorProperty name="plot_title"
+                                     initial_string="plot_title"
+                                     label="Title "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Set the title for the plot.
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="plot_title_font"
+                                  initial_string="plot_title_font"
+                                  command="SetParameter"
+                                  default_values="14"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the title font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="plot_title_bold"
+                                  initial_string="plot_title_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the title font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="plot_title_ital"
+                                  initial_string="plot_title_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the title font to italics.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="plot_title_alig"
+                                  initial_string="plot_title_alig"
+                                  command="SetParameter"
+                                  default_values="1"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                   <Entry text="Left"   value="0" />
+                   <Entry text="Center" value="1" />
+                   <Entry text="Right"  value="2" />
+                 </EnumerationDomain>
+               </IntVectorProperty>
+
+               <PropertyGroup label="Title">
+                 <Property name="plot_title"/>
+               </PropertyGroup>
+               <PropertyGroup label="Title Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="plot_title_font" function="Size"/>
+                 <Property name="plot_title_bold" function="Bold"/>
+                 <Property name="plot_title_ital" function="Italics"/>
+                 <Property name="plot_title_alig" function="Justification"/>
+               </PropertyGroup>
+
+               <!-- Legend Properties -->
+               <IntVectorProperty name="show_legend"
+                                  label="Show Legend"
+                                  initial_string="show_legend"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                   Activate/Deactivate the legend.
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="legend_location"
+                                  label="Legend Location"
+                                  initial_string="legend_location"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                  <Entry text="Best"        value="0"  />
+                  <Entry text="UpperRight"  value="1"  />
+                  <Entry text="UpperLeft"   value="2"  />
+                  <Entry text="LowerLeft"   value="3"  />
+                  <Entry text="LowerRight"  value="4"  />
+                  <Entry text="Right"       value="5"  />
+                  <Entry text="CenterLeft"  value="6"  />
+                  <Entry text="CenterRight" value="7"  />
+                  <Entry text="LowerCenter" value="8"  />
+                  <Entry text="UpperCenter" value="9"  />
+                  <Entry text="Center"      value="10" />
+                </EnumerationDomain>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="legend_font"
+                                  initial_string="legend_font"
+                                  command="SetParameter"
+                                  default_values="12"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the legend font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="legend_bold"
+                                  initial_string="legend_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the legend font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="legend_ital"
+                                  initial_string="legend_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the legend font to italics.
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <PropertyGroup label="Annotation">
+                 <Property name="show_legend"/>
+                 <Property name="legend_location"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="Legend Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="legend_font" function="Size"/>
+                 <Property name="legend_bold" function="Bold"/>
+                 <Property name="legend_ital" function="Italics"/>
+               </PropertyGroup>
+
+               <!-- Axes Properties -->
+               <IntVectorProperty name="show_grid"
+                                  label="Show Grid"
+                                  initial_string="show_grid"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                   Activate/Deactivate the plot grid.
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="minorticks"
+                                  label="Show Minor Ticks"
+                                  initial_string="minorticks"
+                                  command="SetParameter"
+                                  default_values="1"
+                                  number_of_elements="1">
+                 <Documentation>
+                   Activate/Deactivate the minor ticks.
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <PropertyGroup label="Axes">
+                 <Property name="show_grid"/>
+                 <Property name="minorticks"/>
+               </PropertyGroup>
+
+               <!-- X Axis Properties -->
+               <StringVectorProperty name="x_label"
+                                     initial_string="x_label"
+                                     label="Label "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Set the X axis label for the plot
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="x_font"
+                                  initial_string="x_font"
+                                  command="SetParameter"
+                                  default_values="12"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="x_bold"
+                                  initial_string="x_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="x_ital"
+                                  initial_string="x_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis font to italics.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="x_logscale"
+                                  initial_string="x_logscale"
+                                  label="Logarithmic Scale"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis to use a logarithmic scale.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="x_customrange"
+                                  initial_string="x_customrange"
+                                  label="Custom Range"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set a custom range for the X axis.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <DoubleVectorProperty name="x_min"
+                                     initial_string="x_min"
+                                     label="Minimum Range"
+                                     command="SetParameter"
+                                     default_values="0"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range minimum for the X axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="x_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <DoubleVectorProperty name="x_max"
+                                     initial_string="x_max"
+                                     label="Maximum Range"
+                                     command="SetParameter"
+                                     default_values="1"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range maximum for the X axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="x_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <PropertyGroup label="X Axis">
+                 <Property name="x_label"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="X Axis Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="x_font" function="Size"/>
+                 <Property name="x_bold" function="Bold"/>
+                 <Property name="x_ital" function="Italics"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="X Axis Range">
+                 <Property name="x_logscale"/>
+                 <Property name="x_customrange"/>
+                 <Property name="x_min"/>
+                 <Property name="x_max"/>
+               </PropertyGroup>
+
+               <!-- Y axis label -->
+               <StringVectorProperty
+                 name="y_label"
+                 initial_string="y_label"
+                 label="Y axis label: "
+                 command="SetParameter"
+                 animateable="1"
+                 default_values=""
+                 number_of_elements="1">
+                 <Documentation>
+                   Set the Y axis label for the plot
+                 </Documentation>
+               </StringVectorProperty>
+
+
+
+
+
+
+
+
+
+               <!-- PLOT PYTHON CODE -->
+
+               <StringVectorProperty command="SetScript"
+                                     name="Script"
+                                     default_values="def setup_data(view):&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view, width, height):&#xA;&#x9;from paraview import python_view&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#x9;import vtk&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if plot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if plot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(plot_title,&#xA;&#x9;&#x9;fontsize=plot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if plot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if plot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# Axes properties&#xA;&#x9;ax.set_xlabel(x_label,&#xA;&#x9;&#x9;fontsize=x_font,&#xA;&#x9;&#x9;fontweight='bold'    if x_bold else None,&#xA;&#x9;&#x9;style='italic'  if x_ital else None,&#xA;&#x9;&#x9;usetex=True)&#xA;&#x9;ax.set_ylabel(y_label)&#xA;&#xA;&#x9;if minorticks: ax.minorticks_on()&#xA;&#x9;if show_grid: ax.grid()&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;for objId in xrange(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;# Recover the depth&#xA;&#x9;&#x9;z   = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]&#xA;&#x9;&#x9;# For each variable, decide if the plot is needed&#xA;&#x9;&#x9;for varId in xrange(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         &#xA;&#x9;&#x9;&#x9;varname = view.GetAttributeArrayName(objId,vtk.vtkDataObject.POINT,varId)&#xA;&#x9;&#x9;&#x9;# Filter some variables (Do not plot them)&#xA;&#x9;&#x9;&#x9;if varname == 'basins mask':       continue&#xA;&#x9;&#x9;&#x9;if varname == 'coast mask':        continue&#xA;&#x9;&#x9;&#x9;if varname == 'vtkValidPointMask': continue&#xA;&#xA;&#x9;&#x9;&#x9;var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))&#xA;&#x9;&#x9;&#x9;# Filter zeros inside &#xA;&#x9;&#x9;&#x9;var[var == 0.] = None&#xA;&#x9;&#x9;&#x9;ax.plot(var,-z,label=varname)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if show_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=legend_font)&#xA;&#x9;&#x9;if legend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if legend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;ax.legend(loc=legend_location,prop=legend_prop)&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     number_of_elements="1"
+                                     panel_visibility="advanced">
+                 <Hints>
+                   <Widget type="multi_line" syntax="python"/>
+                 </Hints>
+                 <Documentation>This property contains the text of a Python program used
+                 to generate a plot. Use the TAB key to end editing and generate the
+                 plot.</Documentation>
+               </StringVectorProperty>
+
+               <!-- OTHER EXPOSED PROPERTIES -->
+
+               <IntVectorProperty command="GetNumberOfVisibleDataObjects"
+                                  name="NumberOfVisibleDataObjects"
+                                  number_of_elements="1"
+                                  default_values="1"
+                                  information_only="1"
+                                  panel_visibility="never">
+           <SimpleIntInformationHelper/>
+               </IntVectorProperty>
+              <IntVectorProperty command="SetForceUseCache"
+                                 default_values="0"
+                                 is_internal="1"
+                                 name="ForceUseCache"
+                                 number_of_elements="1">
+                <BooleanDomain name="bool" />
+                <Documentation>Typically UseCache and CacheKey are updated by the View
+                and representations cache based on what the view tells it. However in
+                some cases we may want to force a representation to cache irrespective
+                of the view (e.g. comparative views). In which case these ivars can up
+                set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+                Instead, ForcedCacheKey is used.</Documentation>
+              </IntVectorProperty>
+              <DoubleVectorProperty command="SetForcedCacheKey"
+                                    default_values="none"
+                                    is_internal="1"
+                                    name="ForcedCacheKey"
+                                    number_of_elements="1">
+                <DoubleRangeDomain name="range" />
+                <Documentation>Typically UseCache and CacheKey are updated by the View
+                and representations cache based on what the view tells it. However in
+                some cases we may want to force a representation to cache irrespective
+                of the view (e.g. comparative views). In which case these ivars can up
+                set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+                Instead, ForcedCacheKey is used.</Documentation>
+              </DoubleVectorProperty>
+
+        </PythonViewProxy>
+    </ProxyGroup>
+    <!-- here is your other stuff -->
+</ServerManagerConfiguration>
