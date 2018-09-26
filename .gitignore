@@ -1,0 +1,6 @@
+# Ignore file for OGS ParaView Suite
+#
+# Arnau Miro, OGS (2018)
+
+# We ignore all the build directories inside the OGSPlugins
+OGSPlugins/*/build
