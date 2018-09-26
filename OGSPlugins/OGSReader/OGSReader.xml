@@ -1,0 +1,127 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+   <SourceProxy name="OGSReader" 
+                class="vtkOGSReader"
+                label="OGS reader">
+     <Documentation
+       short_help="Read an OGS file."
+       long_help="Read an OGS file into a rectilinear grid.">
+     </Documentation>
+
+     <!-- File Name Property -->
+     <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1"
+        panel_visibility="never">
+        <FileListDomain name="files"/>
+        <Documentation>
+          This property specifies the file name for the OGS reader.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Selection of sub basins mask -->
+     <IntVectorProperty name="SubBasinsMask"
+                         label="Include sub-basins mask"
+                         command="SetSubBasinsMask"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 0, the sub-basins mask will not be read.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Selection of coasts mask -->
+     <IntVectorProperty name="CoastsMask"
+                         label="Include coasts mask"
+                         command="SetCoastsMask"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 0, the coasts mask will not be read.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Ave Freq array info-->
+     <StringVectorProperty name="AveFreqInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="AveFreq" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="AveFreqStatus"
+                            command="SetAveFreqArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="AveFreqInfo"
+                            label="Biogeochemical variables (AVE FREQ)">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="AveFreqInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the physical variables to read.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Ave Phys array info-->
+     <StringVectorProperty name="AvePhysInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="AvePhys" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="AvePhysStatus"
+                            command="SetAvePhysArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="AvePhysInfo"
+                            label="Physical variables (AVE PHYS)">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="AvePhysInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the physical variables to read.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Selection of depth scale factor -->
+     <DoubleVectorProperty name="DepthScale"
+                        label="Scale factor for depth:"
+                        command="SetDepthScale"
+                        number_of_elements="1"
+                        default_values="1000."
+                        panel_visibility="advanced">
+        <Documentation>
+          Selection of the scale factor for depth.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                            repeatable="1"
+                            information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <Hints>
+      <ReaderFactory extensions="ogs" file_description="OGS files" />
+     </Hints>
+   <!-- End OGSReader -->
+   </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
+

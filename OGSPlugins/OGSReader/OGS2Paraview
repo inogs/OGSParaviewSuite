@@ -1,0 +1,226 @@
+#!/usr/bin/env python
+#
+# Generation of the OGS master file (.ogs) and the
+# required mesh files to open simulation in ParaView.
+#
+# Usage: 
+#	OGS2ParaView [-h] -n NAME -p PATH [--ave_freq_1 AVE_FREQ_1]
+#                    [--gen-mesh] [-m MAP] [-l LIB]
+#
+# Arguments:
+#		-n NAME, --name NAME    	Name of the simulation
+#		-p PATH, --path PATH    	Path to the simulation files
+#		--ave_freq_1 AVE_FREQ_1 	Read AVE_FREQ_1 instead of AVE_FREQ_2
+#		--gen-mesh              	Force generation of the mesh file
+#		-m MAP, --map MAP       	Projection type (default: merc)
+#		-l LIB, --lib LIB       	Path to the libOGSmesh.so library
+#
+# Arnau Miro, OGS (2018)
+
+import os, sys, argparse, datetime
+import numpy as np, glob as gl
+
+from OGSmesh import OGSmesh
+
+'''
+DICTIONARIES
+
+The following dictionaries contain data on the AVE_PHYS and AVE_FREQ
+variables and their NetCDF name.
+
+'''
+ave_phys = (("None"    , "Velocity"),
+            ("votemper", "Temperature"),
+            ("vosaline", "Salinity"),
+            ("votkeavt", "Vertical eddy diffusivity"),
+            ("e3t"     , "Vertical scale factor"),
+            ("sowindsp", "Wind speed"),
+            ("soshfldo", "Short wave radiation"),
+            ("sowaflcd", "Water flux")
+		   )
+
+ave_phys_file = "AVE_PHYS/ave.%s.phys.nc"
+
+ave_freq1_file = "AVE_FREQ_1/ave.%s.%s.nc"
+
+ave_freq2_file = "AVE_FREQ_2/ave.%s.%s.nc"
+
+'''
+FUNCTIONS
+
+Functions to scan the time instants are defined here.
+
+'''
+def listTimeInstants(path,searchstr):
+	'''
+	Lists all the items in a path given a search string with
+	a wildcard using glob.
+
+	Looks for the time instants.
+
+	Inputs:
+		> path:      path to search.
+		> searchstr: string to search.
+	'''
+	time_list = []
+	for file in gl.iglob(os.path.join(path,searchstr)):
+		time_list.append( os.path.basename(file).split('.')[1] )
+
+	return time_list
+
+def listVariables(path,searchstr):
+	'''
+	Lists all the items in a path given a search string with
+	a wildcard using glob.
+
+	Looks for the variable names.
+
+	Inputs:
+		> path:      path to search.
+		> searchstr: string to search.
+	'''
+	var_list = []
+	for file in gl.iglob(os.path.join(path,searchstr)):
+		var_list.append( os.path.basename(file).split('.')[2] )
+
+	return sorted(var_list)
+
+def checkExist(path,searchstr):
+	'''
+	TODO
+	'''
+	file = gl.glob(os.path.join(path,searchstr))
+	if len(file) == 0:
+		return None
+	return os.path.basename(file[0])
+
+'''
+MAIN
+
+The program runs here.
+
+'''
+if __name__ == "__main__":
+	argpar = argparse.ArgumentParser(prog="OGS2ParaView",description="Generation of OGS master file.")
+	argpar.add_argument('-n','--name',type=str,help='Name of the simulation',required=True,dest='name')
+	argpar.add_argument('-p','--path',type=str,help='Path to the simulation files',required=True,dest='path')
+	argpar.add_argument('--ave_freq_1',type=str,help='Read AVE_FREQ_1 instead of AVE_FREQ_2',dest='ave_freq_1')
+	argpar.add_argument('--gen-mesh',action='store_true',help='Force generation of the mesh file',dest='gen_mesh')
+	argpar.add_argument('-m','--map',type=str,help='Projection type (default: merc)',dest='map')
+	argpar.add_argument('-l','--lib',type=str,help='Path to the libOGSmesh.so library',dest='lib')
+
+	# parse input arguments
+	args=argpar.parse_args()
+	if not args.map: args.map = 'merc'
+	if not args.lib: args.lib = os.path.join(os.getenv("HOME"),".local","lib","libOGSmesh.so")
+
+	# Obtain the time instants
+	if args.ave_freq_1:
+		# AVE_FREQ_1 mode: the user has provided a variable inside AVE_FREQ_1
+		time_instants = listTimeInstants(args.path,ave_freq1_file % ("*",args.ave_freq_1))
+	else:
+		# Normal mode: parse the instants using ave_phys
+		time_instants = listTimeInstants(args.path,ave_phys_file % "*")
+
+	# Open a file for writing
+	fid = open(os.path.join(args.path,"%s.ogs" % args.name),"w")
+
+	'''
+	HEADER
+
+	Header lets us know for which simulation and at which date the file has
+	been created.
+
+	'''
+	fid.write("# File for %s created at %s\n" % (args.name,datetime.datetime.now().strftime("%Y-%m-%d %H:%M")) )
+	fid.write("# Generated using %s\n\n" % os.path.basename(sys.argv[0]))
+
+	'''
+	WORKING DIRECTORY
+
+	Working directory sets the absolute path to where the simulation is
+	stored. All subsequent paths are given as relative to the working
+	directory path.
+
+	'''
+	fid.write("WRKDIR\n")
+	fid.write("%s\n\n" % (os.path.abspath(args.path)))
+
+	'''
+	MESH
+
+	Mesh sets the path to the .ogsmsh file, a binary file containing all the 
+	mesh information and the basins and coasts mask. The .ogsmsh file is generated 
+	at this point using the OGSmesh class.
+
+	'''
+	# Check if a previous mesh file exists
+	meshfile = checkExist(args.path,"*.ogsmsh")
+	# Generate mesh file if it doesn't exist
+	if meshfile == None or args.gen_mesh:
+		# Reading meshmask and generating mesh file
+		mesh = OGSmesh(args.path,args.map,args.lib) # Define instance of mesh class
+		mesh.createOGSMesh("%s.ogsmsh" % args.name) # Create NAME.ogsmsh
+		meshfile = "%s.ogsmsh" % args.name
+	# Write in file
+	fid.write("MESH\n")
+	fid.write("%s\n\n" % meshfile)
+
+	'''
+	AVE_PHYS
+
+	Physical variables are written here. They are stored in the *.phys.* file and
+	listed in a dictionary (ave_phys) at the beginning of this file.
+
+	'''
+	fid.write("AVE_PHYS\n")
+	# Number of variables
+	if time_instants == [] or args.ave_freq_1:
+		# If there are no instants or we are in ave_freq_1 mode
+		# do not write ave_phys
+		fid.write("0\n")		
+	else:
+		fid.write("%d\n" % len(ave_phys))
+	# Write the variables if the file exists
+	if time_instants != [] and not args.ave_freq_1:
+		for var in ave_phys:
+			filename = ave_phys_file % ("*")
+			fid.write("%s : %s : %s\n" % (var[1],var[0],filename))
+	fid.write("\n")
+
+	'''
+	AVE_FREQ
+
+	Biogeochemical variables are written here. They are stored in the *.VAR.* file
+	and listed in a dictionary (ave_freq) at the beginning of this file.
+
+	'''
+	fid.write("AVE_FREQ\n")
+	# Mode of operation
+	if args.ave_freq_1:
+		ave_freq_file = ave_freq1_file
+	else:
+		ave_freq_file = ave_freq2_file
+	# Number of variables
+	varlist = listVariables(args.path,ave_freq_file % (time_instants[0],"*"))
+	fid.write("%d\n" % len(varlist))
+	# Write variables
+	for var in varlist:
+		filename = ave_freq_file % ("*",var)
+		fid.write("%s : %s : %s\n" % (var,var,filename))
+	fid.write("\n")
+
+	'''
+	TIME
+
+	Time instants are scanned and written here in the file.
+
+	'''
+	fid.write("TIME\n")
+	fid.write("%d\n" % len(time_instants))
+	for tstep in time_instants:
+		fid.write("%s\n" % tstep)
+	fid.write("\n")
+
+	# Close file
+	fid.close()

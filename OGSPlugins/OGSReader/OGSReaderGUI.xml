@@ -1,0 +1,5 @@
+<ParaViewReaders>
+	<Reader name="OGSReader" extensions="ogs"
+        file_description="OGS NetCDF reader">
+	</Reader>
+</ParaViewReaders>
