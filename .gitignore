@@ -5,6 +5,11 @@
 # Ignore any level of python compiled file
 **/*.pyc
 
+# Ignore any level of precompiled libraries
+**/*.so
+**/*.dylib
+**/*.dll
+
 # We ignore all the build directories inside OGSPlugins
 OGSPlugins/*/build
 
