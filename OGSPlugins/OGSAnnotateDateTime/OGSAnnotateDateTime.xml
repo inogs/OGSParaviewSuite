@@ -1,0 +1,61 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy class="vtkPythonAnnotationFilter"
+                 label="OGS Annotate Date and Time"
+                 name="OGSAnnotateDateTime">
+      <Documentation long_help="This filter writes the date and time for an OGS reader"
+                     short_help="Writes the date and time for an OGS reader">
+                     This filter uses Python to write the date and time for an OGS reader.
+                   </Documentation>
+      <InputProperty clean_command="RemoveAllInputs"
+                     command="AddInputConnection"
+                     multiple_input="1"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataObject" />
+        </DataTypeDomain>
+        <Documentation>Set the input of the filter.</Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetArrayAssociation"
+                         default_values="2"
+                         name="ArrayAssociation"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <Documentation>Select the attribute to use to popular array names from.</Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Point Data" value="0" />
+          <Entry text="Cell Data" value="1" />
+          <Entry text="Field Data" value="2" />
+          <Entry text="Row Data" value="6" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetExpression"
+                            name="Expression"
+                            panel_visibility="advanced"
+                            default_values="'Date: %s' % ( Date.GetValue(0) )"
+                            number_of_elements="1">
+        <Documentation>The Python expression evaluated during execution.
+        FieldData arrays are direclty available through their name. Set of
+        provided variables [input, t_value, t_steps, t_range, t_index,
+        FieldData, PointData, CellData] (i.e.: "Momentum: (%f, %f, %f)" %
+        (XMOM[t_index,0], YMOM[t_index,0], ZMOM[t_index,0]) )</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty command="GetComputedAnnotationValue"
+                            information_only="1"
+                            name="AnnotationValue">
+        <Documentation>Text that is used as annotation</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Visibility replace_input="0" />
+        <OutputPort index="0"
+                    name="Output-0"
+                    type="text" />
+        <ShowInMenu category="OGS" />
+      </Hints>
+    </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
