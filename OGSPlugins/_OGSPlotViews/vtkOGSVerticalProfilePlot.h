@@ -11,6 +11,8 @@
 #include "vtkDataSet.h"
 #include "vtkPythonView.h"
 
+#include <map>
+
 class vtkOGSVerticalProfilePlot : public vtkPythonView
 {
 public:
@@ -22,6 +24,12 @@ public:
   */
   vtkSetStringMacro(Script);
   vtkGetStringMacro(Script);
+
+  /*
+    Get/Set the variables.
+  */
+  vtkSetStringMacro(Variables);
+  vtkGetStringMacro(Variables);
 
   /*
   	Set a name-value parameter that will be available to the script
@@ -48,8 +56,8 @@ private:
   vtkOGSVerticalProfilePlot(const vtkOGSVerticalProfilePlot&) =delete;
   void operator=(const vtkOGSVerticalProfilePlot&) =delete;
 
-  char *Script;
-  char Params[512];
+  char *Script, *Variables;
+  std::map<std::string, std::string> mapParam;
 };
 
 #endif
