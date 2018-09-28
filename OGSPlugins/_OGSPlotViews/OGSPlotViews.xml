@@ -1,7 +1,7 @@
 <ServerManagerConfiguration>
     <!-- declare a view -->
     <ProxyGroup name="views">
-        <PythonViewProxy name="PythonView" 
+        <PythonViewProxy name="OGSVerticalProfilePlot" 
                          class="vtkOGSVerticalProfilePlot"
                          label="OGS Vertical Profile Plot"
                          processes="client|dataserver|renderserver"
