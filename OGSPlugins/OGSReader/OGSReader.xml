@@ -119,6 +119,8 @@
 
      <Hints>
       <ReaderFactory extensions="ogs" file_description="OGS files" />
+      <RepresentationType view="RenderView" type="Surface" />
+      <ReloadFiles property="Refresh" />
      </Hints>
    <!-- End OGSReader -->
    </SourceProxy>
