@@ -119,6 +119,7 @@
 
      <Hints>
       <ReaderFactory extensions="ogs" file_description="OGS files" />
+      <RepresentationType view="RenderView" type="Surface" />
      </Hints>
    <!-- End OGSReader -->
    </SourceProxy>
