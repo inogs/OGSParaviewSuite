@@ -4,8 +4,13 @@
                 class="vtkOGSDepthProfile" 
                 label="OGS Depth Profile">
      <Documentation
-        long_help=""
-        short_help="">
+        long_help="This filter nterpolates a line on a point or cell mesh."
+        short_help="Interpolates a line on a point or cell mesh.">
+        This filter works in a similar way to the plot over line filter. 
+        It interpolates a line on a point or cell mesh and returns the 
+        interpolated variables.
+
+        Produces an output using the OGS Vertical Profile Plot.
      </Documentation>
 
      <InputProperty command="SetSourceConnection"
@@ -40,9 +45,7 @@
       
       <Hints>
         <ShowInMenu category="OGS" />
-        <!-- View can be used to specify the preferred view for the proxy -->
         <View type="OGSVerticalProfilePlot" also_show_in_current_view="1" />
-        <!-- TODO: change view for OGSProfilePlot TBD -->
         <Plotable />
       </Hints>
    </SourceProxy>
