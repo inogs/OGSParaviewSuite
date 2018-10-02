@@ -18,11 +18,17 @@
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAlgorithm.h"
 
+#include <map>
+
 class VTK_EXPORT vtkOGSVariableAggregator : public vtkDataSetAlgorithm
 {
 public:
   static vtkOGSVariableAggregator* New();
   vtkTypeMacro(vtkOGSVariableAggregator, vtkDataSetAlgorithm);
+
+  // Description:
+  // Get the name of the XML file to read
+  vtkSetStringMacro(FileName);
 
   // Description:
   // If false, the aggregated variables will not be deleted
@@ -47,15 +53,19 @@ protected:
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
   vtkDataArraySelection* VarDataArraySelection; // Stores name of the aggregated variable
-  vtkDataArraySelection* AgrDataArraySelection; // Stores the variables to aggregate separated by ";"
+  std::map<std::string, std::string> AggrVar;   // Stores the variables to aggregate separated by ";"
 
 private:
   vtkOGSVariableAggregator(const vtkOGSVariableAggregator&) = delete;
   void operator=(const vtkOGSVariableAggregator&) = delete;
 
+  void ParseXML();
+
   class vtkVectorOfArrays;
 
   int deleteVars;
+
+  char *FileName;
 };
 
 #endif

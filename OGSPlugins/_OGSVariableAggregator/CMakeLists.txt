@@ -22,6 +22,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSVariableAggregator "1.0"
   SERVER_MANAGER_XML OGSVariableAggregator.xml
-  SERVER_MANAGER_SOURCES vtkOGSVariableAggregator.cxx
+  SERVER_MANAGER_SOURCES pugixml.cpp vtkOGSVariableAggregator.cxx
   REQUIRED_ON_SERVER
   )

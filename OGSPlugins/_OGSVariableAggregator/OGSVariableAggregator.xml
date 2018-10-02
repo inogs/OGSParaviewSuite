@@ -22,6 +22,22 @@
 
      <!-- BEGIN EXPOSED PROPERTIES -->
 
+     <!-- File to load -->
+     <StringVectorProperty animateable="0"
+                           command="SetFileName"
+                           name="FileName"
+                           label="XML File"
+                           number_of_elements="1">
+         <FileListDomain name="files" />
+         <Documentation>
+            This property points to the XML file that defines the
+            aggregated variables.
+         </Documentation>
+         <Hints>
+            <FileChooser extensions="xml" file_description="XML files" />
+         </Hints>
+     </StringVectorProperty>
+
      <!-- Aggregated variables -->
      <StringVectorProperty name="VarInfo"
                             information_only="1">

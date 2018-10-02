@@ -23,8 +23,12 @@
 #include "vtkObjectFactory.h"
 
 #include <string>
+#include <sstream>
 #include <algorithm>
 #include <vector>
+
+#include "pugixml.hpp"
+namespace xml = pugi;
 
 vtkStandardNewMacro(vtkOGSVariableAggregator);
 
@@ -34,37 +38,37 @@ class vtkOGSVariableAggregator::vtkVectorOfArrays :
 };
 
 //----------------------------------------------------------------------------
-void addVar(vtkDataArraySelection *AggrVar, vtkDataArraySelection *Var2Aggr) {
+void addVar(vtkDataArraySelection *AggrVar, std::map<std::string, std::string> *Var2Aggr) {
 	// P_c
 	AggrVar->AddArray("P_c");
-	Var2Aggr->AddArray("P1c;P2c;P3c;P4c");
+	Var2Aggr->insert(std::make_pair("P_c","P1c;P2c;P3c;P4c;"));
 	// P_l
 	AggrVar->AddArray("P_l");
-	Var2Aggr->AddArray("P1l;P2l;P3l;P4l");
+	Var2Aggr->insert(std::make_pair("P_l","P1l;P2l;P3l;P4l;"));
 	// T_c
 	AggrVar->AddArray("T_c");
-	Var2Aggr->AddArray("B1c;P1c;P2c;P3c;P4c;Z3c;Z4c;Z5c;Z6c");
+	Var2Aggr->insert(std::make_pair("T_c","B1c;P1c;P2c;P3c;P4c;Z3c;Z4c;Z5c;Z6c;"));
 	// RTc
 	AggrVar->AddArray("RTc");
-	Var2Aggr->AddArray("resMEZ1c;resMEZ2c;resMIZ1c;resMIZ2c;resPBAc;resPPY1c;resPPY2c;resPPY3c;resPPY4c");
+	Var2Aggr->insert(std::make_pair("RTc","resMEZ1c;resMEZ2c;resMIZ1c;resMIZ2c;resPBAc;resPPY1c;resPPY2c;resPPY3c;resPPY4c;"));
 }
 
 //----------------------------------------------------------------------------
 vtkOGSVariableAggregator::vtkOGSVariableAggregator() {
 	// Define data arrays
 	this->VarDataArraySelection = vtkDataArraySelection::New();
-	this->AgrDataArraySelection = vtkDataArraySelection::New();
 	// Preallocate some most used variables
-	addVar(this->VarDataArraySelection,this->AgrDataArraySelection);
+	addVar(this->VarDataArraySelection,&this->AggrVar);
 
 	this->deleteVars = 0;
+	this->FileName   = NULL; 
 }
 
 //----------------------------------------------------------------------------
 vtkOGSVariableAggregator::~vtkOGSVariableAggregator() {
 	this->VarDataArraySelection->Delete();
-	this->AgrDataArraySelection->Delete();
 
+	this->SetFileName(0);
 }
 
 //----------------------------------------------------------------------------
@@ -81,9 +85,11 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkDataSet *output = vtkDataSet::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-	output->CopyStructure(input);
+	output->ShallowCopy(input);
 
-// TODO: parse XML and TextBox
+	// Parse XML and TextBox
+	this->ParseXML();
+// TODO: TextBox
 
 	/*
 		For each variable in VarDataArraySelection, parse the composite variables
@@ -92,12 +98,15 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		arrays.
 	*/
 	for(int varId=0; varId<this->GetNumberOfVarArrays(); varId++) {
+		// Check if the variable has been enabled
+		if ( !this->GetVarArrayStatus(this->GetVarArrayName(varId)) ) continue;
 		// Create a new vtkFloatArray to store the new variable
 		vtkFloatArray *vtkArray = vtkFloatArray::New();
 		vtkArray->SetName(this->GetVarArrayName(varId));
 		vtkArray->SetNumberOfComponents(1); // Scalar field
 		// Obtain the variables to aggregate
-		std::string vararray = std::string(this->AgrDataArraySelection->GetArrayName(varId));
+		std::string vararray = this->AggrVar[this->GetVarArrayName(varId)];
+		std::cout << vararray << endl;
 		int celldata = 1;
 		int current,previous=0;
 		vtkVectorOfArrays *AgrVarArray;
@@ -106,6 +115,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 			// Find an occurence of the delimiter and split the string
 			current = vararray.find(';',previous);
 			std::string varname = vararray.substr(previous, current-previous);
+			if (varname == "") continue;
 			// Now varname contains the name of the variable to load
 			// Try to load the array as cell data
 			vtkDataArray *array;
@@ -153,7 +163,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 	if (this->deleteVars) {
 		for(int varId=0; varId<this->GetNumberOfVarArrays(); varId++) {
 			// Obtain the variables to aggregate
-			std::string vararray = std::string(this->AgrDataArraySelection->GetArrayName(varId));
+			std::string vararray = this->AggrVar[this->GetVarArrayName(varId)];
 			int current,previous=0;
 			do {
 				// Find an occurence of the delimiter and split the string
@@ -178,6 +188,34 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 
 // TODO: RequestInformation
 // TODO: Read an XML and also a field where the user can input custom aggregations
+
+//----------------------------------------------------------------------------
+void vtkOGSVariableAggregator::ParseXML() {
+	// Define an XML doc
+	xml::xml_document doc;
+	// If reading has been done correctly
+	if ( doc.load_file(this->FileName) ) {
+		// Define our main node
+		xml::xml_node aggregate = doc.child("root").child("vars_for_All_Statistics").child("aggregate");
+		// Loop the node
+		for(xml::xml_node_iterator iter = aggregate.begin(); iter != aggregate.end(); iter++) {
+			// Loop the subnode and create the aggregated array
+			std::ostringstream buf;
+			for(xml::xml_node_iterator iter2 = iter->begin(); iter2 != iter->end(); iter2++)
+				buf << iter2->attribute("name").value() << ";";
+			// Define the variable
+			const char *varname = iter->attribute("name").value();
+			// Check whether the variable exists or not
+			if (this->GetVarArrayIndex(varname) < 0) { // Variable doesn't exist
+				// Add array
+				this->VarDataArraySelection->AddArray(varname);
+				this->VarDataArraySelection->EnableArray(varname);
+			}
+			// Insert or overwrite aggregated variables
+			this->AggrVar[varname] = buf.str();
+		}
+	}
+}
 
 //----------------------------------------------------------------------------
 void vtkOGSVariableAggregator::DisableAllVarArrays()
