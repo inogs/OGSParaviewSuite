@@ -218,6 +218,7 @@
       <Hints>
         <Visibility replace_input="2" />
         <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
       </Hints>
       <!-- End Threshold -->
     </SourceProxy>

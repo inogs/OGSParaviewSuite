@@ -1,0 +1,104 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSVariableAggregator"
+                class="vtkOGSVariableAggregator" 
+                label="OGS Variable Aggregator">
+     <Documentation
+        long_help=""
+        short_help="">
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- File to load -->
+     <StringVectorProperty animateable="0"
+                           command="SetFileName"
+                           name="FileName"
+                           label="XML File"
+                           number_of_elements="1">
+         <FileListDomain name="files" />
+         <Documentation>
+            This property points to the XML file that defines the
+            aggregated variables.
+         </Documentation>
+         <Hints>
+            <FileChooser extensions="xml" file_description="XML files" />
+         </Hints>
+     </StringVectorProperty>
+
+     <!-- Aggregated variables -->
+     <StringVectorProperty name="VarInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Var" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="VarStatus"
+                            command="SetVarArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="VarInfo"
+                            label="Aggregated Variables">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="VarInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of all the aggregated variables.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Delete Aggregated Variables -->
+     <IntVectorProperty name="deleteVars"
+                        label="Delete Aggregated Variables"
+                        command="SetdeleteVars"
+                        number_of_elements="1"
+                        default_values="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 0, the aggregated variables will not be deleted.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Variables Properties -->
+     <StringVectorProperty name="aggrVars"
+                           label="Aggregated Variables"
+                           command="SetXMLText"
+                           default_values=""
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+       <Documentation>
+        "
+         Instead of giving an XML file to load, the aggregated variables can be
+         instead written in this text box using XML syntax.
+
+         Just the aggregate node and the subseguent aggrVar and var are needed.
+       </Documentation>
+       <Hints>
+         <Widget type="multi_line" syntax="XML"/>
+       </Hints>
+     </StringVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+     </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
