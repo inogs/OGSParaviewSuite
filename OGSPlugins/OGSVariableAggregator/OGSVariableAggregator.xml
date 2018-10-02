@@ -4,8 +4,12 @@
                 class="vtkOGSVariableAggregator" 
                 label="OGS Variable Aggregator">
      <Documentation
-        long_help=""
-        short_help="">
+        long_help="This plugin enables to compute aggregated variables."
+        short_help="Enables to compute aggregated variables.">
+        This plugin enables the user to compute aggregated variables.
+        Some aggregated variables are already predefined. The user can
+        input new aggregated variables by setting an XML file as input
+        or using a text box and writing the aggregation in XML syntax.
      </Documentation>
 
      <InputProperty
