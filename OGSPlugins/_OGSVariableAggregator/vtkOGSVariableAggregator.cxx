@@ -89,12 +89,6 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 
 	output->ShallowCopy(input);
 
-	// Parse XML and TextBox
-	this->ParseXML();
-	this->SetAggrVarsText();
-	//return 1;
-// TODO: TextBox
-
 	/*
 		For each variable in VarDataArraySelection, parse the composite variables
 		in ArgDataArraySelection and try to load the variables from the input. Then loop
@@ -181,16 +175,20 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		}
 	}
 
-	// Copy the input grid
+	// Update progress and leave
 	this->UpdateProgress(1.);
-
 	return 1;
 }
 
 //----------------------------------------------------------------------------
+int vtkOGSVariableAggregator::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+	// Parse XML and TextBox
+	this->ParseXML();
+	this->SetAggrVarsText();
 
-// TODO: RequestInformation
-// TODO: Read an XML and also a field where the user can input custom aggregations
+	return 1;
+}
 
 //----------------------------------------------------------------------------
 void vtkOGSVariableAggregator::ParseXML() {
