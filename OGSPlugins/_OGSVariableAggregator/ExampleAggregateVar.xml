@@ -1,0 +1,49 @@
+<!-- 
+	This XML file is just an example of how variables can be added
+	to the OGS Variable Aggregator filter.
+-->
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+<vars_for_All_Statistics description="point profiles, subbasin statistic profiles, volume integrals">
+
+<native>
+<!-- This part is not used by the filter -->
+</native>
+
+<aggregate>
+<!-- 
+	Variables must be defined inside aggregate
+	using the OGS standard notation.
+
+	Variables P_c, P_l, T_c and RTc are already
+	defined but they can be redefined here.
+
+	As an example, let's define a new variable
+	PP_c which will be the sum of P1c and P2c
+-->
+<aggvar name="PP_c">
+<var name="P1c"></var> 
+<var name="P2c"></var>
+</aggvar>
+</aggregate>
+</vars_for_All_Statistics>
+
+
+<var_for_Some_Statistics description="subbasin statistic profiles without percentiles, volume integrals based on vertical profiles">
+<!-- This part is not used by the filter -->
+</var_for_Some_Statistics>
+
+
+<toArchive description="list to to archive, deprecated for high resolution">
+<!-- This part is not used by the filter -->
+</toArchive>
+
+<var2D>
+<!-- All this part is not used by the filter -->
+<vars_for_All>
+<native>
+</native>
+</vars_for_All>
+</var2D>
+
+</root>
