@@ -5,8 +5,11 @@
                 class="vtkOGSComputeOkuboWeiss" 
                 label="OGS Compute Okubo-Weiss">
      <Documentation
-        long_help=""
-        short_help="">
+        long_help="This filter lets the user compute the Okubo-Weiss criterion on the surface."
+        short_help="Compute the Okubo-Weiss criterion on the surface.">
+        This filter requires a rectilinear grid and computes the Okubo-Weiss criterion using
+        the surface velocity, which is copied down at the successive layers. A second and a fourth
+        order algorithms can be used to compute the derivatives.
      </Documentation>
      <InputProperty
         name="Input"
@@ -85,6 +88,9 @@
     <Documentation
         long_help="This filter lets the user select the Okubo-Weiss regions from the Okubo-Weiss mask."
         short_help="Lets the user select the Okubo-Weiss regions from the Okubo-Weiss mask.">
+        Re-implementation of the vtkThreshold to use the Okubo-Weiss mask and
+        select the Okubo-Weiss regions once the Okubo-Weiss criterion has been
+        computed.
     </Documentation>
 
     <InputProperty command="SetInputConnection"
