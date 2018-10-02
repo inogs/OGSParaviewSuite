@@ -138,7 +138,7 @@
       </IntVectorProperty>
 
       <Hints>
-        <Visibility replace_input="2" />
+        <Visibility replace_input="1" />
         <ShowInMenu category="OGS" />
       </Hints>
       <!-- End Threshold -->
@@ -281,7 +281,7 @@
       </IntVectorProperty>
 
       <Hints>
-        <Visibility replace_input="2" />
+        <Visibility replace_input="1" />
         <ShowInMenu category="OGS" />
       </Hints>
       <!-- End Threshold -->
