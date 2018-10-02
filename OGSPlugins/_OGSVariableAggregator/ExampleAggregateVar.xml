@@ -10,7 +10,6 @@
 <!-- This part is not used by the filter -->
 </native>
 
-<aggregate>
 <!-- 
 	Variables must be defined inside aggregate
 	using the OGS standard notation.
@@ -21,6 +20,7 @@
 	As an example, let's define a new variable
 	PP_c which will be the sum of P1c and P2c
 -->
+<aggregate>
 <aggvar name="PP_c">
 <var name="P1c"></var> 
 <var name="P2c"></var>
