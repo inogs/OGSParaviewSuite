@@ -37,6 +37,10 @@ public:
   vtkBooleanMacro(deleteVars, int);
 
   // Description:
+  // Parse XML text in TextBox
+  vtkSetStringMacro(XMLText);
+
+  // Description:
   // The following methods allow selective seleccion of aggregate variables.
   int GetNumberOfVarArrays();
   const char * GetVarArrayName(int index);
@@ -60,12 +64,14 @@ private:
   void operator=(const vtkOGSVariableAggregator&) = delete;
 
   void ParseXML();
+  void SetAggrVarsText();
+
 
   class vtkVectorOfArrays;
 
   int deleteVars;
 
-  char *FileName;
+  char *FileName, *XMLText;
 };
 
 #endif

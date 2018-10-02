@@ -74,6 +74,25 @@
         </Documentation>
      </IntVectorProperty>
 
+     <!-- Variables Properties -->
+     <StringVectorProperty name="aggrVars"
+                           label="Aggregated Variables"
+                           command="SetXMLText"
+                           default_values=""
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+       <Documentation>
+        "
+         Instead of giving an XML file to load, the aggregated variables can be
+         instead written in this text box using XML syntax.
+
+         Just the aggregate node and the subseguent aggrVar and var are needed.
+       </Documentation>
+       <Hints>
+         <Widget type="multi_line" syntax="XML"/>
+       </Hints>
+     </StringVectorProperty>
+
      <!-- END EXPOSED PROPERTIES -->
 
      <Hints>

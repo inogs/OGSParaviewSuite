@@ -62,6 +62,7 @@ vtkOGSVariableAggregator::vtkOGSVariableAggregator() {
 
 	this->deleteVars = 0;
 	this->FileName   = NULL; 
+	this->XMLText    = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -69,6 +70,7 @@ vtkOGSVariableAggregator::~vtkOGSVariableAggregator() {
 	this->VarDataArraySelection->Delete();
 
 	this->SetFileName(0);
+	this->SetXMLText(0);
 }
 
 //----------------------------------------------------------------------------
@@ -89,6 +91,8 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Parse XML and TextBox
 	this->ParseXML();
+	this->SetAggrVarsText();
+	//return 1;
 // TODO: TextBox
 
 	/*
@@ -106,7 +110,6 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkArray->SetNumberOfComponents(1); // Scalar field
 		// Obtain the variables to aggregate
 		std::string vararray = this->AggrVar[this->GetVarArrayName(varId)];
-		std::cout << vararray << endl;
 		int celldata = 1;
 		int current,previous=0;
 		vtkVectorOfArrays *AgrVarArray;
@@ -197,6 +200,34 @@ void vtkOGSVariableAggregator::ParseXML() {
 	if ( doc.load_file(this->FileName) ) {
 		// Define our main node
 		xml::xml_node aggregate = doc.child("root").child("vars_for_All_Statistics").child("aggregate");
+		// Loop the node
+		for(xml::xml_node_iterator iter = aggregate.begin(); iter != aggregate.end(); iter++) {
+			// Loop the subnode and create the aggregated array
+			std::ostringstream buf;
+			for(xml::xml_node_iterator iter2 = iter->begin(); iter2 != iter->end(); iter2++)
+				buf << iter2->attribute("name").value() << ";";
+			// Define the variable
+			const char *varname = iter->attribute("name").value();
+			// Check whether the variable exists or not
+			if (this->GetVarArrayIndex(varname) < 0) { // Variable doesn't exist
+				// Add array
+				this->VarDataArraySelection->AddArray(varname);
+				this->VarDataArraySelection->EnableArray(varname);
+			}
+			// Insert or overwrite aggregated variables
+			this->AggrVar[varname] = buf.str();
+		}
+	}
+}
+
+//----------------------------------------------------------------------------
+void vtkOGSVariableAggregator::SetAggrVarsText() {
+	// Define an XML doc
+	xml::xml_document doc;
+	// If reading has been done correctly
+	if ( doc.load_string(this->XMLText) ) {
+		// Define our main node
+		xml::xml_node aggregate = doc.child("aggregate");
 		// Loop the node
 		for(xml::xml_node_iterator iter = aggregate.begin(); iter != aggregate.end(); iter++) {
 			// Loop the subnode and create the aggregated array
