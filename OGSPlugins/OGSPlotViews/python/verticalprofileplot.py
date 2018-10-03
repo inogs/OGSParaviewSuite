@@ -154,6 +154,6 @@ def RequestData():
 			ax.legend(loc=legend_location,prop=legend_prop)
 
 		if savefigure:
-			figure.savefig(filename,dpi=outdpi)
+			figure.savefig(filename,dpi=outdpi,bbox_inches='tight')
 
 		return python_view.figure_to_image(figure)
