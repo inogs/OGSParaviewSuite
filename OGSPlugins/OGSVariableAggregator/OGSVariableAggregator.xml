@@ -80,7 +80,7 @@
 
      <!-- Variables Properties -->
      <StringVectorProperty name="aggrVars"
-                           label="Aggregated Variables"
+                           label="Aggregated Variables XML"
                            command="SetXMLText"
                            default_values=""
                            number_of_elements="1"
