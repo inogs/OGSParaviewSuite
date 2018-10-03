@@ -45,13 +45,30 @@ Properties = dict(
 	);
 
 def RequestData():
+	def smooth(a,WSZ):
+		# a: NumPy 1-D array containing the data to be smoothed
+		# WSZ: smoothing window size needs, which must be odd number,
+		# as in the original MATLAB implementation
+		import numpy as np
+		out0 = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    
+		r = np.arange(1,WSZ-1,2)
+		start = np.cumsum(a[:WSZ-1])[::2]/r
+		stop = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]
+		return np.concatenate((  start , out0, stop  ))
 	def setup_data(view):
 		view.EnableAllAttributeArrays()
 	def render(view, width, height):
 		from paraview import python_view
+		from matplotlib import pyplot as plt
 		figure = python_view.matplotlib_figure(width, height)
-		import vtk
+		import vtk, numpy as np
 		from vtk.util import numpy_support as npvtk
+		from scipy.interpolate import spline
+
+		if plot_xkcd:
+			plt.xkcd()
+		else:
+			plt.rcdefaults()
 
 		# Set up the plot view
 		ax = figure.add_subplot(1,1,1)
@@ -116,6 +133,9 @@ def RequestData():
 					var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))
 					# Filter zeros inside 
 					if filterzeros: var[var == 0.] = None
+					# Algorithm to smooth data
+					if smoothdata: var = smooth(var,smoothorder)
+					# Plot
 					if args == None:
 						ax.plot(var,-z,label=varname)
 					elif kwargs == None:
@@ -132,5 +152,8 @@ def RequestData():
 			if legend_bold: legend_prop['weight'] = 'bold'
 			if legend_ital: legend_prop['style']  = 'italic'
 			ax.legend(loc=legend_location,prop=legend_prop)
+
+		if savefigure:
+			figure.savefig(filename,dpi=outdpi)
 
 		return python_view.figure_to_image(figure)
