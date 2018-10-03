@@ -35,7 +35,7 @@ void vtkOGSVerticalProfilePlot::Update() {
 	this->Superclass::EnableAllAttributeArrays();
 
 	// First we iterate over the parameters map to create the variable = value pairs
-	char aux1[512]; strcpy(aux1,"");
+	char aux1[1024]; strcpy(aux1,"");
 	std::map<std::string,std::string>::iterator it;
     for (it = this->mapParam.begin(); it != mapParam.end(); it++)
     	sprintf(aux1,"%s%s = %s\n",aux1,it->first.c_str(),it->second.c_str());
