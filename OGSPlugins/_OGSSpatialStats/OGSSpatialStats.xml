@@ -1,0 +1,37 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+
+   <SourceProxy name="OGSSpatialStatsFromFile" 
+                class="vtkOGSSpatialStatsFromFile" 
+                label="OGS Spatial Statistics From File">
+     <Documentation
+        long_help="This filter loads the spatial statistics computed by OGSTM BFM into the mesh."
+        short_help="Loads the spatial statistics computed by OGSTM BFM into the mesh.">
+        This filter requires a rectilinear grid and the basins mask active. It pulls the spatial
+        statistics postprocess from OGSTM BFM and loads the results into the mesh.
+     </Documentation>
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <!-- BEGIN EXPOSED PROPERTIES -->
+
+
+      <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <ShowInMenu category="OGS" />
+      </Hints>
+   </SourceProxy>
+
+ </ProxyGroup>
+</ServerManagerConfiguration>
+
