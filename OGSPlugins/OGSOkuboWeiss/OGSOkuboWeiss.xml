@@ -78,7 +78,9 @@
       <!-- END EXPOSED PROPERTIES -->
       
       <Hints>
+        <Visibility replace_input="1" />
         <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
       </Hints>
    </SourceProxy>
 
