@@ -555,7 +555,9 @@
                       <PropertyWidgetDecorator type="ShowWidgetDecorator">
                         <Property name="savefigure" function="boolean" />
                       </PropertyWidgetDecorator>
-                      <FileChooser extensions="png;pdf;eps" file_description="Output figure"/>
+                      <FileChooser extensions="png" file_description="High quality PNG"/>
+                      <FileChooser extensions="pdf" file_description="Vectorized PDF"/>
+                      <FileChooser extensions="eps" file_description="Vectorized EPS"/>
                       <AcceptAnyFile/>    
                    </Hints>
                </StringVectorProperty>
