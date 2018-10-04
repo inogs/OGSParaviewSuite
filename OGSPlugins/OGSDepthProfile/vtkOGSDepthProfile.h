@@ -58,6 +58,8 @@ protected:
   vtkOGSDepthProfile();
   ~vtkOGSDepthProfile() override;
 
+  int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
   void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output);

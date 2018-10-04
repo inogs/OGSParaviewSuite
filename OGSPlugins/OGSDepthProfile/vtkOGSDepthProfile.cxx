@@ -22,12 +22,14 @@
 #include "vtkPointData.h"
 #include "vtkPointSet.h"
 #include "vtkDataSet.h"
+#include "vtkImageData.h"
 #include "vtkExecutive.h"
 #include "vtkSmartPointer.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkStaticCellLocator.h"
 #include "vtkObjectFactory.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
@@ -88,6 +90,80 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 		this->BuildFieldList(source);
 		this->InitializeForProbing(input, output);
 		this->Interpolate(input, source, output);
+	}
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSDepthProfile::RequestInformation( vtkInformation *vtkNotUsed(request),
+	vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
+
+	// get the info objects
+	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
+	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
+	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
+
+	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+
+	outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);
+
+	// A variation of the bug fix from John Biddiscombe.
+	// Make sure that the scalar type and number of components
+	// are propagated from the source not the input.
+	if (vtkImageData::HasScalarType(sourceInfo))
+		vtkImageData::SetScalarType(vtkImageData::GetScalarType(sourceInfo),outInfo);
+	
+	if (vtkImageData::HasNumberOfScalarComponents(sourceInfo))
+		vtkImageData::SetNumberOfScalarComponents(vtkImageData::GetNumberOfScalarComponents(sourceInfo),outInfo);
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSDepthProfile::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
+	vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
+
+	// get the info objects
+	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
+	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
+	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
+
+	int usePiece = 0;
+
+	// What ever happened to CopyUpdateExtent in vtkDataObject?
+	// Copying both piece and extent could be bad.  Setting the piece
+	// of a structured data set will affect the extent.
+	vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
+	if (output &&
+		(!strcmp(output->GetClassName(), "vtkUnstructuredGrid") ||
+			!strcmp(output->GetClassName(), "vtkPolyData")))
+		usePiece = 1;
+
+	inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
+
+	sourceInfo->Remove(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT());
+	if (sourceInfo->Has(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()))
+		sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+			sourceInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()), 6);
+
+	// SpatialMatch does not exist in this implementation
+	sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), 0);
+	sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), 1);
+	sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 0);
+
+	if (usePiece) {
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()));
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()));
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
+	} else {
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()), 6);
 	}
 
 	return 1;
