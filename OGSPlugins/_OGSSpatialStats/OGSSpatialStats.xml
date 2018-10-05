@@ -65,6 +65,18 @@
         </Documentation>
      </StringVectorProperty>
 
+     <!-- Selection of coasts mask -->
+     <IntVectorProperty name="PerCoast"
+                         label="Statistics per Coast"
+                         command="Setper_coast"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 1, the statistics will be obtained per basin and per coast.
+        </Documentation>
+     </IntVectorProperty>
+
      <!-- Name of basins mask array -->
      <StringVectorProperty name="bmask_field"
                            label="Basins mask: "

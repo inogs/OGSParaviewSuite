@@ -38,6 +38,12 @@ public:
   vtkSetStringMacro(cmask_field);
 
   // Description:
+  // If true, obtains the statistics per basin and per coast
+  vtkGetMacro(per_coast, int);
+  vtkSetMacro(per_coast, int);
+  vtkBooleanMacro(per_coast, int);
+
+  // Description:
   // The following methods allow selective seleccion of aggregate variables.
   int GetNumberOfStatArrays();
   const char * GetStatArrayName(int index);
@@ -51,6 +57,8 @@ protected:
   vtkOGSSpatialStatsFromFile();
   ~vtkOGSSpatialStatsFromFile() override;
 
+  int RequestInformation( vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestUpdateExtent(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
   vtkDataArraySelection* StatDataArraySelection;
@@ -61,6 +69,8 @@ private:
 
   char *FolderName;
   char *bmask_field, *cmask_field;
+
+  int per_coast;
 };
 
 #endif

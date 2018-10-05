@@ -20,10 +20,15 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 
 #include "vtkOGSSpatialStatsFromFile.h"
 
 #include "vtkObjectFactory.h"
+
+#include <string>
+#include <algorithm>
+#include <map>
 
 namespace NetCDF
 {
@@ -31,10 +36,8 @@ namespace NetCDF
 #include "vtknetcdf/include/netcdf.h"
 }
 
-#define INDEX(ii,jj,kk,nx,ny) ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
-#define GETVTKVAL1(vtkarray,ii,jj,kk,nx,ny)     ( (vtkarray)->GetTuple1((nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii)) )
-#define GETVTKVAL3(vtkarray,ii,jj,kk,nx,ny)     ( (vtkarray)->GetTuple3((nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii)) )
-#define SETVTKVAL1(vtkarray,val,ii,jj,kk,nx,ny) ( (vtkarray)->SetTuple1((nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii),(val)) )
+#define INDEX(ii,jj,kk,nx,ny)                   ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
+#define INDEXSTAT(bId,cId,kk,sId,ns,nz,nc)      ( ns*nz*nc*bId + ns*nz*cId + ns*kk + sId )
 
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
@@ -87,6 +90,8 @@ vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
 	this->FolderName  = NULL;
 	this->bmask_field = NULL;
 	this->cmask_field = NULL;
+
+	this->per_coast = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -179,13 +184,110 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		// At this point we do have the statistics per basin, coast and depth level
 		// of a single variable. We must initialize a vector of vtkFloatArrays where
 		// the statistics will be stored during the loop.
+		std::map<std::string, vtkFloatArray*> mapStatArray;
 
-printf("%s\n",array_name);
+		for (int statId = 0; statId < nstat; statId++) {
+			const char *statName = this->GetStatArrayName(statId);
+			// Skip those arrays who have not been enabled
+			if (!this->GetStatArrayStatus(statName))
+				continue;
+			// Statistical variable name
+			char statVarName[256];
+			sprintf(statVarName,"%s, %s",array_name,statName);
+			// Define a new vtkFloatArray
+			vtkFloatArray *vtkStatVar = vtkFloatArray::New();
+			vtkStatVar->SetName(statVarName);
+			vtkStatVar->SetNumberOfComponents(1);
+			vtkStatVar->SetNumberOfTuples(nx*ny*nz);
+			vtkStatVar->Fill(0.);
+			// Store the array in the map
+			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
+		}
+
+		// We are now ready to loop the mesh and set the variables accordingly
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					// Which basin and which coast are we?
+					int basinId = (int)( basins_mask->GetTuple1(INDEX(ii,jj,kk,nx,ny)) ) - 1;
+					int coastId = this->per_coast ? 
+						(int)( coasts_mask->GetTuple1(INDEX(ii,jj,kk,nx,ny)) ) - 1 : 2;
+					// Loop all the requested statistics using an iterator
+					std::map<std::string,vtkFloatArray*>::iterator iter;
+					for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+						// Which statistic are we computing?
+						int statId = this->GetStatArrayIndex(iter->first.c_str());
+						// Recover value from the stat profile
+						double value = stat_profile[INDEXSTAT(basinId,coastId,kk,statId,nstat,nz,ncoasts)];
+						// Set the value
+						iter->second->SetTuple1(INDEX(ii,jj,kk,nx,ny),value);
+					}
+				}
+			}
+		}
+
+		// Now that we computed the arrays, we can set them in the output
+		// and deallocate memory
+		std::map<std::string,vtkFloatArray*>::iterator iter;
+		for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+			output->GetCellData()->AddArray(iter->second);
+			iter->second->Delete();
+		}
+
+		this->UpdateProgress(0.+1./(double)(narrays)*(double)(varId));
 	}
 	
-	
-	// Copy the input grid
+	// Update progress and exit successfully
 	this->UpdateProgress(1.);
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSSpatialStatsFromFile::RequestInformation( vtkInformation *vtkNotUsed(request),
+	vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
+
+	// get the info objects
+	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
+	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
+
+	outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSSpatialStatsFromFile::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
+	vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
+
+	// get the info objects
+	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
+	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
+
+	int usePiece = 0;
+
+	// What ever happened to CopyUpdateExtent in vtkDataObject?
+	// Copying both piece and extent could be bad.  Setting the piece
+	// of a structured data set will affect the extent.
+	vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
+	if (output &&
+		(!strcmp(output->GetClassName(), "vtkUnstructuredGrid") ||
+			!strcmp(output->GetClassName(), "vtkPolyData")))
+		usePiece = 1;
+
+	inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
+
+	if (usePiece) {
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()));
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()));
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
+	} else {
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()), 6);
+	}
 
 	return 1;
 }
