@@ -61,9 +61,6 @@ double *readNetCDF(const char *fname, const char *varname, int nb, int nc, int n
 	NetCDF::nc_get_var_double(fid,varid,out);
 	// Close the file
 	NetCDF::nc_close(fid);
-	// Eliminate the missing variables
-//	for (int ii=0;ii<nx*ny*nz;ii++)
-//		if(out[ii] > MAXVAL) out[ii] = 0.;
 
 	// Return
 	return out;
