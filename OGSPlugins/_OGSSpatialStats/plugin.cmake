@@ -19,5 +19,5 @@
    # than the <PluginName> specified,
    # you can use this option to notify ParaView of the plugin library names. ParaView uses these
    # names to locate the plugin at run time.
-   PLUGIN_NAMES OGSSpatialStatsFromFile
+   PLUGIN_NAMES OGSSpatialStats OGSSpatialStatsFromFile
  )
