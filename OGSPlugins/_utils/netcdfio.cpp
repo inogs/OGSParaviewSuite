@@ -35,13 +35,15 @@ double *readNetCDF(const char *fname, const char *varname, int n) {
 	// Allocate output variable
 	out = (double*)malloc(n*sizeof(double));
 	// Open file for reading
-	NetCDF::nc_open(fname,NC_NOWRITE,&fid);
+	if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )
+		return NULL;
 	// Get the variable id based on its name
-	NetCDF::nc_inq_varid(fid,varname,&varid);
+	if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR )
+		return NULL;
 	// Read the data
-	NetCDF::nc_get_var_double(fid,varid,out);
+	nc_get_var_double(fid,varid,out);
 	// Close the file
-	NetCDF::nc_close(fid);
+	nc_close(fid);
 	// Eliminate the missing variables
 	for (int ii=0;ii<n;ii++)
 		if(out[ii] > MAXVAL) out[ii] = 0.;
