@@ -108,6 +108,7 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 
 	// Compute the cell centers
 	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell centers",input);
+	this->UpdateProgress(updst+0.05);
 
 	// Compute the cell centers and number of different z points
 //	int nz = 0;
