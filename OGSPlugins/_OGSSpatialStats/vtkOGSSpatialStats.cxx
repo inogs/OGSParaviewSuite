@@ -14,12 +14,15 @@
 
 #include "vtkFloatArray.h"
 #include "vtkStringArray.h"
+#include "vtkCell.h"
+#include "vtkPoints.h"
 #include "vtkCellData.h"
 #include "vtkFieldData.h"
+#include "vtkDataSet.h"
+#include "vtkRectilinearGrid.h"
 #include "vtkDataArraySelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkRectilinearGrid.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
 #include "vtkOGSSpatialStats.h"
@@ -29,11 +32,17 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <vector>
 
-#define INDEX(ii,jj,kk,nx,ny)                   ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
+
+namespace VTK
+{
+// Include the VTK Operations
+#include "../_utils/vtkOperations.h"
+}
+
 
 vtkStandardNewMacro(vtkOGSSpatialStats);
-
 
 //----------------------------------------------------------------------------
 vtkOGSSpatialStats::vtkOGSSpatialStats(){
@@ -47,6 +56,8 @@ vtkOGSSpatialStats::vtkOGSSpatialStats(){
 	this->StatDataArraySelection->AddArray("p75");
 	this->StatDataArraySelection->AddArray("p95");
 	this->StatDataArraySelection->AddArray("max");
+
+	this->depth_factor = 1000.;
 }
 
 //----------------------------------------------------------------------------
@@ -62,9 +73,9 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
 	// Get the input and output
-	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(
+	vtkDataSet *input = vtkDataSet::SafeDownCast(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
-	vtkRectilinearGrid *output = vtkRectilinearGrid::SafeDownCast(
+	vtkDataSet *output = vtkDataSet::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
 	// We just want to copy the mesh, not the variables
@@ -72,119 +83,220 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 	this->UpdateProgress(0.);
 
+	// At this point we either have a rectilinear grid or an
+	// unstructured grid with either cell or point arrays
 
+	// Start by dealing with any cell array
+	this->CellStats(input,output,0.0);
+	this->UpdateProgress(1.);
 
-/*	// Next, recover the dimensions of the rectilinear grid
-	vtkFloatArray *vtkxcoord = vtkFloatArray::SafeDownCast(
-		input->GetXCoordinates());
-	int nx = vtkxcoord->GetNumberOfTuples();
-	vtkFloatArray *vtkycoord = vtkFloatArray::SafeDownCast(
-		input->GetYCoordinates());
-	int ny = vtkycoord->GetNumberOfTuples();
-	vtkFloatArray *vtkzcoord = vtkFloatArray::SafeDownCast(
-		input->GetZCoordinates());
-	int nz = vtkzcoord->GetNumberOfTuples();
+	// Start by dealing with any cell array
+//	this->PointStats(input,output,0.5);
+	this->UpdateProgress(1.);
 
-	// Also recover the basins and coasts mask
-	// and add them to the output
-	vtkFloatArray *basins_mask = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->bmask_field));
-	output->GetCellData()->AddArray(basins_mask);
-	int nbasins = 21;
-	vtkFloatArray *coasts_mask = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->cmask_field));
-	output->GetCellData()->AddArray(coasts_mask);
-	int ncoasts = 3;
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double updst) {
+	/*
+		Computation of spatial statistics on cell data.
+
+		Grabs the input and returns an output with the arrays filled.
+	*/
+	int ncells = input->GetNumberOfCells();
+
+	// Compute the cell centers
+	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell centers",input);
+
+	// Compute the cell centers and number of different z points
+//	int nz = 0;
+//	std::vector<double> zcoords;
+//	vtkFloatArray *vtkCellCenters;
+//
+//	vtkCellCenters = ComputeCellCenters(input,this->depth_factor,nz,zcoords);
 
 	// Loop the number of variables
 	// For each variable, we will see if a prost processing exists and
 	// then we will loop the mesh and create the statistics.
-	int narrays = input->GetCellData()->GetNumberOfArrays();
-	int nstat   = this->GetNumberOfStatArrays();
-	for (int varId = 0; varId < narrays; varId++) {
-		// Recover the array and the array name
-		vtkFloatArray *vtkVarArray = vtkFloatArray::SafeDownCast(
-			input->GetCellData()->GetArray(varId));
-		char *array_name = vtkVarArray->GetName();
+//	int narrays = input->GetCellData()->GetNumberOfArrays();
+//	int nstat   = this->GetNumberOfStatArrays();
+//	for (int varId = 0; varId < narrays; varId++) {
+//		// Recover the array and the array name
+//		vtkFloatArray *vtkVarArray = vtkFloatArray::SafeDownCast(
+//			input->GetCellData()->GetArray(varId));
+//		char *array_name = vtkVarArray->GetName();
+//
+//		// We need to decide which statistics to compute. Create a map and initialize
+//		// a map that will link the type of statistic and the associated vtkFloatArray
+//		std::map<std::string, vtkFloatArray*> mapStatArray;
+//
+//		for (int statId = 0; statId < nstat; statId++) {
+//			const char *statName = this->GetStatArrayName(statId);
+//			// Skip those arrays who have not been enabled
+//			if (!this->GetStatArrayStatus(statName))
+//				continue;
+//			// Statistical variable name
+//			char statVarName[256];
+//			sprintf(statVarName,"%s, %s",array_name,statName);
+//			// Define a new vtkFloatArray
+//			vtkFloatArray *vtkStatVar = vtkFloatArray::New();
+//			vtkStatVar->SetName(statVarName);
+//			vtkStatVar->SetNumberOfComponents( vtkVarArray->GetNumberOfComponents() );
+//			vtkStatVar->SetNumberOfTuples(ncells);
+//			vtkStatVar->Fill(0.);
+//			// Store the array in the map
+//			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
+//		}
+//
+//		// Define and allocate parameters
+//		int *nz_dep;
+//		double *meanval, *maxval, *minval;
+//		meanval = (double*)malloc(nz*sizeof(double));
+//		nz_dep  = (int*)malloc(nz*sizeof(int));
+//		maxval  = (double*)malloc(nz*sizeof(double));
+//		minval  = (double*)malloc(nz*sizeof(double));
+//		
+//		for (int kk = 0; kk < nz; kk++) {
+//			meanval[kk] = 0.;
+//			maxval[kk]  = -1.e20;
+//			minval[kk]  = 1.e20;
+//		}
+//
+//		// First loop in the mesh
+//		// Compute meanval, maxval and minval per depth level
+//		for (int cellId = 0; cellId < ncells; cellId++) {
+//			// Recover the cell center
+//			double xyz[3];
+//			vtkCellCenters->GetTuple(cellId,xyz);
+//			// Recover the variable value
+//			double value = vtkVarArray->GetTuple1(cellId);
+//			// Obtain the id for the current depth
+//			int zId = -1;
+//			for (int kk = 0; kk < nz && zId < 0; kk++)
+//				if ( fabs(xyz[2] - zcoords.at(kk)) < 1.e-4 ) zId = kk;
+//			if (zId < 0)
+//				vtkErrorMacro("Couldn't find depth level");
+//			// Set the variable according to the depth level
+//			// Mean
+//			meanval[zId] += value;
+//			nz_dep[zId]++;
+//			// Maximum and minimum
+//			if (value > maxval[zId]) maxval[zId] = value;
+//			if (value < minval[zId]) minval[zId] = value;
+//		}
+//		for (int kk = 0; kk < nz; kk++) 
+//			meanval[kk] /= (double)(nz_dep[kk]);
+//
+//
+//		// Final mesh loop
+//		// Set values to array
+//		for (int cellId = 0; cellId < ncells; cellId++) {
+//			// Recover the cell center
+//			double xyz[3];
+//			vtkCellCenters->GetTuple(cellId,xyz);
+//			// Recover the variable value
+//			double value = vtkVarArray->GetTuple1(cellId);
+//			// Obtain the id for the current depth
+//			int zId = -1;
+//			for (int kk = 0; kk < nz && zId < 0; kk++)
+//				if ( fabs(xyz[2] - zcoords.at(kk)) < 1.e-4 ) zId = kk;
+//			if (zId < 0)
+//				vtkErrorMacro("Couldn't find depth level");
+//			// Set values for statistics
+//			std::map<std::string,vtkFloatArray*>::iterator iter;
+//			for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+//				// Which statistic are we computing?
+//				int statId = this->GetStatArrayIndex(iter->first.c_str());
+//				switch (statId) {
+//					case 0: // Mean
+//						iter->second->SetTuple1(cellId,meanval[zId]);
+//						break;
+//					case 1: // Std dev
+//						break;
+//					case 2: // Min
+//						iter->second->SetTuple1(cellId,minval[zId]);
+//						break;
+//					case 3: // p05
+//						break;
+//					case 4: // p25
+//						break;
+//					case 5: // p50
+//						break;
+//					case 6: // p75
+//						break;
+//					case 7: // p95
+//						break;
+//					case 8: // Max
+//						iter->second->SetTuple1(cellId,maxval[zId]);
+//						break;
+//				}
+//			}
+//		}
+//
+//
+//
+//		free(meanval); free(nz_dep);
+//		free(maxval); free(minval);
 
-		// Do not work with the basins and coasts mask
-		if (std::string(basins_mask->GetName()) == std::string(array_name)) continue;
-		if (std::string(coasts_mask->GetName()) == std::string(array_name)) continue;
+//		double meanval = 0, maxval = -1.e20, minval = 1.e20;
+//		for (int cellId = 0; cellId < ncells; cellId++) {
+//			double value = vtkVarArray->GetTuple1(cellId);
+//			// Mean
+//			meanval += value;
+//			// Max and min
+//			maxval = value > maxval ? value : maxval;
+//			minval = value < minval ? value : minval;
+//		}
+//		meanval /= (double)(ncells);
 
-		// At this point, we can try to load the stat profile
-		double *stat_profile = readNetCDF(filename,    // Filename to read
-										  array_name,  // Array to obtain
-										  nbasins,     // Number of sub basins
-										  ncoasts,     // Number of coasts
-										  nz,		   // Number of z coords
-										  nstat        // Number of statistics
-										 );
-		// If file cannot be read or variable does not exist
-		if (stat_profile == NULL) {
-			vtkWarningMacro("File <"<<filename<<"> or variable <"
-				<<array_name<<"> cannot be read!");
-			continue;
-		}
+		// Second mesh loop
+		// Compute stddev and set values
+//		for (int cellId = 0; cellId < ncells; cellId++) {
+//			// stddev
+//			// Set values for statistics
+//			std::map<std::string,vtkFloatArray*>::iterator iter;
+//			for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+//				// Which statistic are we computing?
+//				int statId = this->GetStatArrayIndex(iter->first.c_str());
+//				switch (statId) {
+//					case 0: // Mean
+//						iter->second->SetTuple1(cellId,meanval);
+//						break;
+//					case 1: // Std dev
+//						break;
+//					case 2: // Min
+//						iter->second->SetTuple1(cellId,minval);
+//						break;
+//					case 3: // p05
+//						break;
+//					case 4: // p25
+//						break;
+//					case 5: // p50
+//						break;
+//					case 6: // p75
+//						break;
+//					case 7: // p95
+//						break;
+//					case 8: // Max
+//						iter->second->SetTuple1(cellId,maxval);
+//						break;
+//				}
+//			}
+//		}
 
-		// At this point we do have the statistics per basin, coast and depth level
-		// of a single variable. We must initialize a vector of vtkFloatArrays where
-		// the statistics will be stored during the loop.
-		std::map<std::string, vtkFloatArray*> mapStatArray;
-
-		for (int statId = 0; statId < nstat; statId++) {
-			const char *statName = this->GetStatArrayName(statId);
-			// Skip those arrays who have not been enabled
-			if (!this->GetStatArrayStatus(statName))
-				continue;
-			// Statistical variable name
-			char statVarName[256];
-			sprintf(statVarName,"%s, %s",array_name,statName);
-			// Define a new vtkFloatArray
-			vtkFloatArray *vtkStatVar = vtkFloatArray::New();
-			vtkStatVar->SetName(statVarName);
-			vtkStatVar->SetNumberOfComponents(1);
-			vtkStatVar->SetNumberOfTuples(nx*ny*nz);
-			vtkStatVar->Fill(0.);
-			// Store the array in the map
-			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
-		}
-
-		// We are now ready to loop the mesh and set the variables accordingly
-		for (int kk = 0; kk < nz; kk++) {
-			for (int jj = 0; jj < ny; jj++) {
-				for (int ii = 0; ii < nx; ii++) {
-					// Which basin and which coast are we?
-					int basinId = (int)( basins_mask->GetTuple1(INDEX(ii,jj,kk,nx,ny)) ) - 1;
-					int coastId = this->per_coast ? 
-						(int)( coasts_mask->GetTuple1(INDEX(ii,jj,kk,nx,ny)) ) - 1 : 2;
-					// Loop all the requested statistics using an iterator
-					std::map<std::string,vtkFloatArray*>::iterator iter;
-					for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-						// Which statistic are we computing?
-						int statId = this->GetStatArrayIndex(iter->first.c_str());
-						// Recover value from the stat profile
-						double value = stat_profile[INDEXSTAT(basinId,coastId,kk,statId,nstat,nz,ncoasts)];
-						// Set the value
-						iter->second->SetTuple1(INDEX(ii,jj,kk,nx,ny),value);
-					}
-				}
-			}
-		}
-
-		// Now that we computed the arrays, we can set them in the output
-		// and deallocate memory
-		std::map<std::string,vtkFloatArray*>::iterator iter;
-		for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-			output->GetCellData()->AddArray(iter->second);
-			iter->second->Delete();
-		}
-
-		this->UpdateProgress(0.+1./(double)(narrays)*(double)(varId));
-	}*/
-	
-	// Update progress and exit successfully
-	this->UpdateProgress(1.);
-	return 1;
+//		// Now that we computed the arrays, we can set them in the output
+//		// and deallocate memory
+//		std::map<std::string,vtkFloatArray*>::iterator iter;
+//		for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+//			output->GetCellData()->AddArray(iter->second);
+//			iter->second->Delete();
+//		}
+//
+//		this->UpdateProgress(0.+1./(double)(narrays)*(double)(varId));
+//	}
+	// Deallocate cell centers
+	vtkCellCenters->Delete();
 }
 
 //----------------------------------------------------------------------------

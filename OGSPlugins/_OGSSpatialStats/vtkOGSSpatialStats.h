@@ -43,11 +43,15 @@ protected:
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
+  void CellStats(vtkDataSet *, vtkDataSet *, double );
+
   vtkDataArraySelection* StatDataArraySelection;
 
 private:
   vtkOGSSpatialStats(const vtkOGSSpatialStats&) = delete;
   void operator=(const vtkOGSSpatialStats&) = delete;
+
+  double depth_factor;
 
 };
 
