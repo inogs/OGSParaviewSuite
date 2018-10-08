@@ -22,6 +22,11 @@
 
 #define MAXVAL 1.e15
 
+/* READNETCDF
+
+	Reads a NetCDF4 file given the name of the file, the name of the variable
+	to be read and its size.
+*/
 double *readNetCDF(const char *fname, const char *varname, int n) {
 
 	int fid, varid, retval;
