@@ -12,6 +12,20 @@
 
 =========================================================================*/
 
+#include "vtkOGSReader.h"
+
+#include "vtkCallbackCommand.h"
+#include "vtkCommand.h"
+#include "vtkCellData.h"
+#include "vtkDataArraySelection.h"
+#include "vtkInformation.h"
+#include "vtkInformationVector.h"
+#include "vtkRectilinearGrid.h"
+#include "vtkFloatArray.h"
+#include "vtkStringArray.h"
+
+#include "vtkObjectFactory.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <string>
@@ -19,25 +33,12 @@
 
 #include <vtksys/SystemTools.hxx>
 
-#include "vtkCallbackCommand.h"
-#include "vtkCommand.h"
-#include "vtkFloatArray.h"
-#include "vtkStringArray.h"
-#include "vtkCellData.h"
-#include "vtkDataArraySelection.h"
-#include "vtkInformation.h"
-#include "vtkInformationVector.h"
-#include "vtkRectilinearGrid.h"
-#include "vtkObjectFactory.h"
-
-#include "vtkOGSReader.h"
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
 vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
 #endif
 
-#define INDEX(array,ii,jj,kk,nx,ny) ( (array)[(nx)*(ny)*(kk) + (nx)*(jj) + (ii)] )
 
 vtkStandardNewMacro(vtkOGSReader);
 
@@ -56,105 +57,10 @@ namespace NetCDF
 #include "../_utils/netcdfio.cpp"
 }
 
-
-//----------------------------------------------------------------------------
-void createRectilinearGrid(int nLon, int nLat, int nLev,
-	double *Lon2Meters, double* Lat2Meters, double *nav_lev, double dps,
-	vtkRectilinearGrid *rgrid) {
-	/*
-		Create a vtkRectilinearGrid given the mesh dimensions.
-	*/
-	// Set vtkFloatArrays
-	vtkFloatArray *daLon = vtkFloatArray::New();
-	for (int ii = 0; ii < nLon; ii++) daLon->InsertNextValue(1.*Lon2Meters[ii]);
-
-	vtkFloatArray *daLat = vtkFloatArray::New();
-	for (int ii = 0; ii < nLat; ii++) daLat->InsertNextValue(1.*Lat2Meters[ii]);
-
-	vtkFloatArray *daLev = vtkFloatArray::New();
-	for (int ii=0; ii<nLev; ii++) daLev->InsertNextValue(-dps*nav_lev[ii]);
-
-	// Set rectilinear grid
-	rgrid->SetDimensions(nLon,nLat,nLev);
-	rgrid->SetXCoordinates(daLon);
-	rgrid->SetYCoordinates(daLat);
-	rgrid->SetZCoordinates(daLev);
-}
-
-vtkFloatArray *createVTKscaf(const char *name,int nx, int ny, int nz, double *array) {
-	/*
-		Create a vtk scalar field given the name, dimensions and
-		the array to be converted.
-	*/
-	// Create float array
-	vtkFloatArray *vtkArray = vtkFloatArray::New();
-	vtkArray->SetName(name);
-	vtkArray->SetNumberOfComponents(1); // Scalar field
-	vtkArray->SetNumberOfTuples(nx*ny*nz);
-
-	// Preallocate vtkArray to zero
-	vtkArray->Fill(0.);
-//	for (int ii = 0; ii < nx*ny*nz; ii++) 
-//		vtkArray->InsertNextValue(0.);
-
-	// Fill the vtkArray with the values of the array
-	for (int kk = 0; kk < nz-1; kk++) {
-		for (int jj = 0; jj < ny-1; jj++) {
-			for (int ii = 0; ii < nx-1; ii++) {
-				vtkArray->SetTuple1(ii+jj*(nx-1)+kk*(nx-1)*(ny-1),
-					INDEX(array,ii,jj,kk,nx,ny));
-			}
-		}
-	}
-
-	return vtkArray;
-}
-
-vtkFloatArray *createVTKvecf3(const char *name,int nx, int ny, int nz, double *a1, double *a2, double *a3) {
-	/*
-		Create a vtk vectorial field given the name, dimensions and
-		the array to be converted.
-	*/
-	// Create float array
-	vtkFloatArray *vtkArray = vtkFloatArray::New();
-	vtkArray->SetName(name);
-	vtkArray->SetNumberOfComponents(3); // Scalar field
-	vtkArray->SetNumberOfTuples(nx*ny*nz);
-
-	// Preallocate vtkArray to zero
-	vtkArray->Fill(0.);
-//	for (int ii = 0; ii < 3*nx*ny*nz; ii++) 
-//		vtkArray->InsertNextValue(0.);
-
-	// Fill the vtkArray with the values of the array
-	for (int kk = 0; kk < nz-1; kk++) {
-		for (int jj = 0; jj < ny-1; jj++) {
-			for (int ii = 0; ii < nx-1; ii++) {
-				vtkArray->SetTuple3(ii+jj*(nx-1)+kk*(nx-1)*(ny-1),
-					INDEX(a1,ii,jj,kk,nx,ny),
-					INDEX(a2,ii,jj,kk,nx,ny),
-					INDEX(a3,ii,jj,kk,nx,ny));
-			}
-		}
-	}
-
-	return vtkArray;
-}
-
-vtkStringArray *createVTKstrf(const char *name,const char *data) {
-	/*
-		Create a vtk string array given the name and data to be
-		converted.
-	*/
-	// Create string array
-	vtkStringArray *vtkArray = vtkStringArray::New();
-	vtkArray->SetName(name);
-	vtkArray->SetNumberOfTuples(1);
-
-	// Set the value
-	vtkArray->SetValue(0,data);
-
-	return vtkArray;
+namespace VTK
+{
+// Include the VTK Operations
+#include "../_utils/vtkOperations.cpp"
 }
 
 //----------------------------------------------------------------------------
@@ -282,12 +188,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	*/
 	int ncells = nLon*nLat*nLev;
-	createRectilinearGrid(nLon,nLat,nLev,Lon2Meters,Lat2Meters,nav_lev,this->DepthScale,this->Mesh);
+	VTK::createRectilinearGrid(nLon,nLat,nLev,Lon2Meters,Lat2Meters,nav_lev,
+		this->DepthScale,this->Mesh);
 	free(Lon2Meters); free(Lat2Meters); free(nav_lev);
 
 	// Sub-basins mask
 	if (this->SubBasinsMask) {
-		vtkFloatArray *vtkarray = createVTKscaf("basins mask",nLon,nLat,nLev,basins_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("basins mask",nLon,nLat,nLev,basins_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
@@ -295,7 +202,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	
 	// Coasts mask
 	if (this->CoastsMask) {
-		vtkFloatArray *vtkarray = createVTKscaf("coast mask" ,nLon,nLat,nLev,coast_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask" ,nLon,nLat,nLev,coast_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
@@ -322,13 +229,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",nLon*nLat*nLev),
 					   *v = NetCDF::readNetCDF(varpath,"vomecrty",nLon*nLat*nLev),
 					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",nLon*nLat*nLev);
-				vtkFloatArray *vtkarray = createVTKvecf3(varname,nLon,nLat,nLev,u,v,w);
+				vtkFloatArray *vtkarray = VTK::createVTKvecf3(varname,nLon,nLat,nLev,u,v,w);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(u); free(v); free(w);
 			}
 			else {
 				double *array = NetCDF::readNetCDF(varpath,cdfname,nLon*nLat*nLev);
-				vtkFloatArray *vtkarray = createVTKscaf(varname,nLon,nLat,nLev,array);
+				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(array);
 			}
@@ -351,7 +258,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(varname)) {
 			double *array = NetCDF::readNetCDF(varpath,cdfname,nLon*nLat*nLev);
-			vtkFloatArray *vtkarray = createVTKscaf(varname,nLon,nLat,nLev,array);
+			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
 			this->Mesh->GetCellData()->AddArray(vtkarray);
 			vtkarray->Delete(); free(array);
 		}
@@ -366,7 +273,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		and cannot be deactivated.
 
 	*/
-	vtkStringArray *strf = createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
+	vtkStringArray *strf = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
 	this->Mesh->GetFieldData()->AddArray(strf);
 	strf->Delete();
 
