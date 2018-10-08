@@ -60,7 +60,7 @@ namespace NetCDF
 namespace VTK
 {
 // Include the VTK Operations
-#include "../_utils/vtkOperations.cpp"
+#include "../_utils/vtkOperations.h"
 }
 
 //----------------------------------------------------------------------------
