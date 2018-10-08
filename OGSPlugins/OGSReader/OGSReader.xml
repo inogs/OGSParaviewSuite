@@ -47,6 +47,19 @@
         </Documentation>
      </IntVectorProperty>
 
+     <!-- MeshMask e1t and e2t -->
+     <IntVectorProperty name="MeshMask"
+                         label="Include meshmask e1t and e2t"
+                         command="SetRMeshMask"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 0, the mesh mask will not be read.
+        </Documentation>
+     </IntVectorProperty>
+
      <!-- Ave Freq array info-->
      <StringVectorProperty name="AveFreqInfo"
                             information_only="1">

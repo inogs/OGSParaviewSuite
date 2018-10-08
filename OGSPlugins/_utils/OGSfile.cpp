@@ -44,7 +44,7 @@ inline char *trim(char *str) {
 /* OGS File reader
 	TODO: description
 */
-extern "C" void readOGSFile(const char *fname, char *mesh_file,
+extern "C" void readOGSFile(const char *fname, char *mesh_file, char *mesh_mask,
 	ave_var *ave_phys, ave_var *ave_freq, ogs_time *timeStepInfo) {
 	
 	char line[BUFFSZ], wrkdir[BUFFSZ];
@@ -73,6 +73,7 @@ extern "C" void readOGSFile(const char *fname, char *mesh_file,
 		}
 		if (sec == 2 && !imesh) { // Mesh section, line contains path to the mesh file
 			sprintf(mesh_file,"%s/%s",wrkdir,trim(line));
+			sprintf(mesh_mask,"%s/meshmask.nc",wrkdir);
 			imesh = 1;
 		}
 		if (sec == 3 && !iave_phys) { // Physical variables

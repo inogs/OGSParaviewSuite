@@ -108,6 +108,38 @@ vtkFloatArray *createVTKscaf(const char *name, int n, double *array) {
 	return vtkArray;
 }
 
+/* CREATEVTKSCAFFROM2D
+	
+	Creates a vtkFloatArray for a scalar field given the array name, its dimensions
+	in x, y, z coordinates and an additional 2D array in z to fill.
+*/
+vtkFloatArray *createVTKscaffrom2d(const char *name, int nx, int ny, int nz, double *array) {
+	/*
+		Create a vtk scalar field given the name, dimensions and
+		the array to be converted.
+	*/
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(1); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (array != NULL) {
+		for (int kk = 0; kk < nz-1; kk++) {
+			for (int jj = 0; jj < ny-1; jj++) {
+				for (int ii = 0; ii < nx-1; ii++) {
+					vtkArray->SetTuple1(VTKIND(ii,jj,kk,nx,ny),
+						array[ARRIND(ii,jj,0,nx,ny)]);
+				}
+			}
+		}
+	}
+
+	return vtkArray;
+}
+
 /* CREATEVTKSCAF
 	
 	Creates a vtkFloatArray for a 3 component vector field given the array name, 

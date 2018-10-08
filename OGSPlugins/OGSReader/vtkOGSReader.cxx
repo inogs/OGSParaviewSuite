@@ -71,6 +71,7 @@ vtkOGSReader::vtkOGSReader() {
 
 	this->SubBasinsMask = 1;
 	this->CoastsMask    = 1;
+	this->RMeshMask     = 1;
 	this->DepthScale    = 1000.;
 
 	this->Mesh = (vtkRectilinearGrid*)vtkRectilinearGrid::New();
@@ -202,11 +203,25 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	
 	// Coasts mask
 	if (this->CoastsMask) {
-		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask" ,nLon,nLat,nLev,coast_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask",nLon,nLat,nLev,coast_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
 	free(coast_mask);
+
+	// Deal with e1t and e2t located in the meshmask
+	if (this->RMeshMask) {
+		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*nLon*nLat);
+		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*nLon*nLat);
+		// Create vtkArrays from these 2D arrays
+		vtkFloatArray *vtke1t = VTK::createVTKscaffrom2d("e1t",nLon,nLat,nLev,e1t);
+		vtkFloatArray *vtke2t = VTK::createVTKscaffrom2d("e2t",nLon,nLat,nLev,e2t);
+		// Add to mesh
+		this->Mesh->GetCellData()->AddArray(vtke1t);
+		this->Mesh->GetCellData()->AddArray(vtke2t);
+		vtke1t->Delete(); vtke2t->Delete();
+		free(e1t); free(e2t);
+	}
 
 	this->UpdateProgress(0.25);
 
@@ -297,7 +312,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 		See OGSmesh for further details.
 	*/
-	OGS::readOGSFile(this->FileName,this->meshfile,
+	OGS::readOGSFile(this->FileName,this->meshfile,this->meshmask,
 		&this->ave_phys,&this->ave_freq,&this->timeStepInfo);
 
 	/* SCAN THE PHYSICAL VARIABLES
