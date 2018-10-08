@@ -57,8 +57,6 @@ protected:
   vtkOGSSpatialStatsFromFile();
   ~vtkOGSSpatialStatsFromFile() override;
 
-  int RequestInformation( vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
-  int RequestUpdateExtent(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
   vtkDataArraySelection* StatDataArraySelection;

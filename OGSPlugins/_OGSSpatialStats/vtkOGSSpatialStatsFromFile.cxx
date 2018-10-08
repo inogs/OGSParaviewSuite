@@ -30,59 +30,34 @@
 #include <algorithm>
 #include <map>
 
+
 namespace NetCDF
 {
-// Include NetCDF functions
-#include "vtknetcdf/include/netcdf.h"
+// Include NetCDF IO
+#include "../_utils/netcdfio.cpp"
 }
 
-#define INDEX(ii,jj,kk,nx,ny)                   ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
-#define INDEXSTAT(bId,cId,kk,sId,ns,nz,nc)      ( ns*nz*nc*bId + ns*nz*cId + ns*kk + sId )
+namespace VTK
+{
+// Include the VTK Operations
+#include "../_utils/vtkOperations.cpp"
+}
+
 
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
 //----------------------------------------------------------------------------
-double *readNetCDF(const char *fname, const char *varname, int nb, int nc, int nz, int ns) {
-	/*
-		Read data from NetCDF files. Uses ParaView's built in NetCDF library.
-	*/
-	int fid, varid;
-	double *out;
-
-	// Open file for reading
-	int retval = NetCDF::nc_open(fname,NC_NOWRITE,&fid);
-	if ( retval != NC_NOERR )
-		return NULL;
-	// Get the variable id based on its name
-	if ( NetCDF::nc_inq_varid(fid,varname,&varid) != NC_NOERR )
-		return NULL;
-	// Read the data
-	out = (double*)malloc(nb*nc*nz*ns*sizeof(double));
-	NetCDF::nc_get_var_double(fid,varid,out);
-	// Close the file
-	NetCDF::nc_close(fid);
-
-	// Return
-	return out;
-}
-
-//----------------------------------------------------------------------------
-void addStat(vtkDataArraySelection *Array) {
-	Array->AddArray("Mean");
-	Array->AddArray("std");
-	Array->AddArray("min");
-	Array->AddArray("p05");
-	Array->AddArray("p25");
-	Array->AddArray("p50");
-	Array->AddArray("p75");
-	Array->AddArray("p95");
-	Array->AddArray("max");
-}
-
-//----------------------------------------------------------------------------
 vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
 	this->StatDataArraySelection = vtkDataArraySelection::New();
-	addStat(this->StatDataArraySelection);
+	this->StatDataArraySelection->AddArray("Mean");
+	this->StatDataArraySelection->AddArray("std");
+	this->StatDataArraySelection->AddArray("min");
+	this->StatDataArraySelection->AddArray("p05");
+	this->StatDataArraySelection->AddArray("p25");
+	this->StatDataArraySelection->AddArray("p50");
+	this->StatDataArraySelection->AddArray("p75");
+	this->StatDataArraySelection->AddArray("p95");
+	this->StatDataArraySelection->AddArray("max");
 
 	this->FolderName  = NULL;
 	this->bmask_field = NULL;
@@ -148,8 +123,16 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	output->GetCellData()->AddArray(coasts_mask);
 	int ncoasts = 3;
 
+	// Also copy e1t and e2t
+	vtkFloatArray *vtke1t = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e1t"));
+	output->GetCellData()->AddArray(vtke1t);
+	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e2t"));
+	output->GetCellData()->AddArray(vtke2t);
+
 	// Loop the number of variables
-	// For each variable, we will see if a prost processing exists and
+	// For each variable, we will see if a post processing exists and
 	// then we will loop the mesh and create the statistics.
 	int narrays = input->GetCellData()->GetNumberOfArrays();
 	int nstat   = this->GetNumberOfStatArrays();
@@ -159,18 +142,14 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 			input->GetCellData()->GetArray(varId));
 		char *array_name = vtkVarArray->GetName();
 
-		// Do not work with the basins and coasts mask
+		// Do not work with the basins, coasts mask, e1t or e2t
 		if (std::string(basins_mask->GetName()) == std::string(array_name)) continue;
 		if (std::string(coasts_mask->GetName()) == std::string(array_name)) continue;
+		if (std::string(vtke1t->GetName())      == std::string(array_name)) continue;
+		if (std::string(vtke2t->GetName())      == std::string(array_name)) continue;
 
 		// At this point, we can try to load the stat profile
-		double *stat_profile = readNetCDF(filename,    // Filename to read
-										  array_name,  // Array to obtain
-										  nbasins,     // Number of sub basins
-										  ncoasts,     // Number of coasts
-										  nz,		   // Number of z coords
-										  nstat        // Number of statistics
-										 );
+		double *stat_profile = NetCDF::readNetCDF(filename, array_name, nbasins*ncoasts*nz*nstat);
 		// If file cannot be read or variable does not exist
 		if (stat_profile == NULL) {
 			vtkWarningMacro("File <"<<filename<<"> or variable <"
@@ -192,11 +171,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 			char statVarName[256];
 			sprintf(statVarName,"%s, %s",array_name,statName);
 			// Define a new vtkFloatArray
-			vtkFloatArray *vtkStatVar = vtkFloatArray::New();
-			vtkStatVar->SetName(statVarName);
-			vtkStatVar->SetNumberOfComponents(1);
-			vtkStatVar->SetNumberOfTuples(nx*ny*nz);
-			vtkStatVar->Fill(0.);
+			vtkFloatArray *vtkStatVar = VTK::createVTKscaf(statVarName, nx, ny, nz, NULL);
 			// Store the array in the map
 			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
 		}
@@ -206,18 +181,18 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 			for (int jj = 0; jj < ny; jj++) {
 				for (int ii = 0; ii < nx; ii++) {
 					// Which basin and which coast are we?
-					int basinId = (int)( basins_mask->GetTuple1(INDEX(ii,jj,kk,nx,ny)) ) - 1;
+					int basinId = (int)( basins_mask->GetTuple1(VTKIND(ii,jj,kk,nx,ny)) ) - 1;
 					int coastId = this->per_coast ? 
-						(int)( coasts_mask->GetTuple1(INDEX(ii,jj,kk,nx,ny)) ) - 1 : 2;
+						(int)( coasts_mask->GetTuple1(VTKIND(ii,jj,kk,nx,ny)) ) - 1 : 2;
 					// Loop all the requested statistics using an iterator
 					std::map<std::string,vtkFloatArray*>::iterator iter;
 					for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
 						// Which statistic are we computing?
 						int statId = this->GetStatArrayIndex(iter->first.c_str());
 						// Recover value from the stat profile
-						double value = stat_profile[INDEXSTAT(basinId,coastId,kk,statId,nstat,nz,ncoasts)];
+						double value = stat_profile[STTIND(basinId,coastId,kk,statId,nstat,nz,ncoasts)];
 						// Set the value
-						iter->second->SetTuple1(INDEX(ii,jj,kk,nx,ny),value);
+						iter->second->SetTuple1(VTKIND(ii,jj,kk,nx,ny),value);
 					}
 				}
 			}
@@ -236,56 +211,6 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	
 	// Update progress and exit successfully
 	this->UpdateProgress(1.);
-	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSSpatialStatsFromFile::RequestInformation( vtkInformation *vtkNotUsed(request),
-	vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
-
-	// get the info objects
-	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
-	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
-
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);
-
-	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSSpatialStatsFromFile::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
-	vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
-
-	// get the info objects
-	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
-	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
-
-	int usePiece = 0;
-
-	// What ever happened to CopyUpdateExtent in vtkDataObject?
-	// Copying both piece and extent could be bad.  Setting the piece
-	// of a structured data set will affect the extent.
-	vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
-	if (output &&
-		(!strcmp(output->GetClassName(), "vtkUnstructuredGrid") ||
-			!strcmp(output->GetClassName(), "vtkPolyData")))
-		usePiece = 1;
-
-	inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
-
-	if (usePiece) {
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()));
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()));
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
-	} else {
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()), 6);
-	}
-
 	return 1;
 }
 
