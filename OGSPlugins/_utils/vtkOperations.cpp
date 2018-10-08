@@ -25,7 +25,12 @@
 #include "vtkDataSet.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOperations.h"
+/*
+	These macros return the index needed to iterate an array
+*/
+#define VTKIND(ii,jj,kk,nx,ny)          ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
+#define ARRIND(ii,jj,kk,nx,ny)          ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
+#define STTIND(bId,cId,kk,sId,ns,nz,nc) ( ns*nz*nc*bId + ns*nz*cId + ns*kk + sId )
 
 /* CREATERECTILINEARGRID
 
