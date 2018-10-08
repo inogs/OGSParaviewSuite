@@ -22,7 +22,7 @@
 
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-#include "OGSdefs.h"
+#include "../_utils/OGSdefs.h"
 
 class vtkDataSet;
 class vtkDataArraySelection;
