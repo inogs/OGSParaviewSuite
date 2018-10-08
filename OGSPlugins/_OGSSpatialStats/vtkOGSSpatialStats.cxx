@@ -38,7 +38,7 @@
 namespace VTK
 {
 // Include the VTK Operations
-#include "../_utils/vtkOperations.h"
+#include "../_utils/vtkOperations.cpp"
 }
 
 
