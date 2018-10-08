@@ -104,8 +104,8 @@ cd -
 	install_dir = os.path.join(os.getenv("HOME"),".local","lib")
 	# Copy
 	os.system("cp %s/libOGSmesh.so %s" % (plugin_dir,install_dir))
-	os.system("cp %s/OGSmesh.py %s" % (plugin_dir,os.path.join(install_dir,"python2.7","site-packages")))
-	os.system("cp %s/OGS2Paraview %s" % (plugin_dir,os.path.join(pvpath,"bin")))
+	os.system("cp %s/python/OGSmesh.py %s" % (plugin_dir,os.path.join(install_dir,"python2.7","site-packages")))
+	os.system("cp %s/python/OGS2Paraview %s" % (plugin_dir,os.path.join(pvpath,"bin")))
 
 #-------------------------------------------------------------------------------
 # Main
@@ -155,13 +155,14 @@ You can go grab a coffee meanwhile.
 		else:
 			plugin_name = "%s.xml" % pl_name
 			installPlugin(args.pvpath,plugin,plugin_name)
-		
-		# Specific installation prodcedures
-		if os.path.basename(plugin) == "OGSReader":
-			# Compilation of the OGSmesh library and python class
-			installOGSMesh(args.pvpath,plugin)
 
 		sys.stdout.write("  done!\n\n")
+
+	# Compilation and installation of python tools
+	# --------------------------------------------
+	installOGSMesh(args.pvpath,"_utils")
+	sys.stdout.write("  done!\n\n")
+
 
 	# Goodbye message
 	# ---------------
