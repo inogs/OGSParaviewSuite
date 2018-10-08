@@ -14,16 +14,18 @@
 
 =========================================================================*/
 
+#include "vtkCell.h"
+#include "vtkPoints.h"
+#include "vtkCellData.h"
+#include "vtkFieldData.h"
+
 #include "vtkFloatArray.h"
 #include "vtkStringArray.h"
+
+#include "vtkDataSet.h"
 #include "vtkRectilinearGrid.h"
 
-/*
-	This macro returns the index needed to iterate an array
-*/
-#define VTKIND(ii,jj,kk,nx,ny)          ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
-#define ARRIND(ii,jj,kk,nx,ny)          ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
-#define STTIND(bId,cId,kk,sId,ns,nz,nc) ( ns*nz*nc*bId + ns*nz*cId + ns*kk + sId )
+#include "vtkOperations.h"
 
 /* CREATERECTILINEARGRID
 
@@ -141,12 +143,13 @@ vtkFloatArray *createVTKscaffrom2d(const char *name, int nx, int ny, int nz, dou
 	return vtkArray;
 }
 
-/* CREATEVTKSCAF
+/* CREATEVTKVECF3
 	
 	Creates a vtkFloatArray for a 3 component vector field given the array name, 
 	its dimensions in x, y, z coordinates and an additional array to fill.
 */
-vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz, double *a1, double *a2, double *a3) {
+vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3) {
 
 	// Create float array
 	vtkFloatArray *vtkArray = vtkFloatArray::New();
@@ -209,5 +212,56 @@ vtkStringArray *createVTKstrf(const char *name,const char *data) {
 	// Set the value
 	vtkArray->SetValue(0,data);
 
+	return vtkArray;
+}
+
+/* GETCELLCOORDINATES
+
+	Computes the cell centers given a VTKDataSet
+*/
+vtkFloatArray *getCellCoordinates(const char *varname, vtkDataSet *mesh) {
+
+	int ncells = mesh->GetNumberOfCells();
+
+	// Create a vector array to store the cell centers
+	vtkFloatArray *vtkArray = createVTKvecf3(varname,ncells,NULL,NULL,NULL);
+
+	// Loop the mesh and get the cell coordinates
+	for (int cellId = 0; cellId < ncells; cellId++) {
+		// Get number of points per cell
+		int ncellp = mesh->GetCell(cellId)->GetNumberOfPoints();
+		// Loop the points in the cell
+		double xyzcen[3] = {0.,0.,0.};
+		for (int pId = 0; pId < ncellp; pId++) {
+			double xyz[3];
+			mesh->GetCell(cellId)->GetPoints()->GetPoint(pId,xyz);
+			// Average
+			for (int ii = 0; ii < 3; ii++) xyzcen[ii] += xyz[ii]/ncellp;
+		}
+		// Set the Array
+		vtkArray->SetTuple(cellId,xyzcen);
+	}
+	return vtkArray;
+}
+
+/* GETPOINTCOORDINATES
+
+	Computes the point centers given a VTKDataSet
+*/
+vtkFloatArray *getPointCoordinates(const char *varname, vtkDataSet *mesh) {
+
+	int npoints = mesh->GetNumberOfPoints();
+
+	// Create a vector array to store the cell centers
+	vtkFloatArray *vtkArray = createVTKvecf3(varname,npoints,NULL,NULL,NULL);
+
+	// Loop the mesh and get the cell coordinates
+	for (int pId = 0; pId < npoints; pId++) {
+		// Get point
+		double xyz[3];
+		mesh->GetPoint(pId,xyz);
+		// Set the Array
+		vtkArray->SetTuple(pId,xyz);
+	}
 	return vtkArray;
 }
