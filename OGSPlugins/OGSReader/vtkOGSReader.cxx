@@ -46,8 +46,8 @@ vtkStandardNewMacro(vtkOGSReader);
 namespace OGS
 {
 // Include OGS specific functions
-#include "OGSmesh.cpp"
-#include "OGSfile.cpp"
+#include "../_utils/OGSmesh.cpp"
+#include "../_utils/OGSfile.cpp"
 }
 
 namespace NetCDF
