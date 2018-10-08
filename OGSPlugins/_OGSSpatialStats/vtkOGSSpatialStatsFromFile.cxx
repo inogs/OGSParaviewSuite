@@ -19,7 +19,6 @@
 #include "vtkDataArraySelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkRectilinearGrid.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
 #include "vtkOGSSpatialStatsFromFile.h"
@@ -40,7 +39,7 @@ namespace NetCDF
 namespace VTK
 {
 // Include the VTK Operations
-#include "../_utils/vtkOperations.cpp"
+#include "../_utils/vtkOperations.h"
 }
 
 
