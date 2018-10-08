@@ -14,6 +14,8 @@
 
 #include "vtkOGSReader.h"
 
+#include "vtkCell.h"
+#include "vtkPoints.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
 #include "vtkCellData.h"
@@ -60,7 +62,7 @@ namespace NetCDF
 namespace VTK
 {
 // Include the VTK Operations
-#include "../_utils/vtkOperations.h"
+#include "../_utils/vtkOperations.cpp"
 }
 
 //----------------------------------------------------------------------------

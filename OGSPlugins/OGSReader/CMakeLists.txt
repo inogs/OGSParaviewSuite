@@ -26,7 +26,7 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSReader "1.0"
   SERVER_MANAGER_XML OGSReader.xml
-  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSReader.cxx
+  SERVER_MANAGER_SOURCES vtkOGSReader.cxx
   REQUIRED_ON_SERVER
   )
 
