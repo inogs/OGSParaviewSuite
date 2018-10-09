@@ -25,6 +25,8 @@
 #include "vtkDataSet.h"
 #include "vtkRectilinearGrid.h"
 
+#include <vector>
+
 /*
 	These macros return the index needed to iterate an array
 */
@@ -269,4 +271,38 @@ vtkFloatArray *getPointCoordinates(const char *varname, vtkDataSet *mesh) {
 		vtkArray->SetTuple(pId,xyz);
 	}
 	return vtkArray;
+}
+
+/* COUNTUNIQUEZ
+	
+	Counts the number of unique values in Z direction
+	and returns the values.
+*/
+int countUniqueZ(vtkFloatArray *vtkArray, int n, double epsi, 
+	int *uniqueid, std::vector<double> &uniquevals) {
+
+        int count = 0;
+
+        for (int ii = 0; ii < n; ii++) {
+                double xyz[3];
+                vtkArray->GetTuple(ii,xyz);
+
+                int isunique = 1;
+                for (int jj = 0; isunique && jj < ii; jj++) {
+                	double xyz2[3];
+                	vtkArray->GetTuple(jj,xyz2);
+                	if ( fabs(xyz[2] - xyz2[2]) < epsi ) isunique = 0;
+                }
+
+                if ( isunique ) {
+                	count++; uniquevals.push_back(xyz[2]);
+                }
+
+                uniqueid[ii] = -1;
+                for (int jj = 0; jj < count; jj++) {
+                	if ( fabs(xyz[2] - uniquevals.at(jj)) < epsi ) uniqueid[ii] = jj;
+                }
+        }
+        
+        return count;
 }
