@@ -149,6 +149,13 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 		if (std::string(array_name) == "e1t")         continue;
 		if (std::string(array_name) == "e2t")         continue;
 
+		// Also anything not being an scalar array should not be computed
+		if (vtkVarArray->GetNumberOfComponents() > 1) {
+			vtkWarningMacro("Variable "<<array_name<<
+				" is not an scalar array. Statistics will be skipped for this variable.");
+			continue;
+		}
+
 		// We need to decide which statistics to compute. Create a map and initialize
 		// a map that will link the type of statistic and the associated vtkFloatArray
 		std::map<std::string, vtkFloatArray*> mapStatArray;
