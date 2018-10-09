@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <numeric>
 
 
 namespace VTK
@@ -110,194 +111,203 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell centers",input);
 	this->UpdateProgress(updst+0.05);
 
-	// Compute the cell centers and number of different z points
-//	int nz = 0;
-//	std::vector<double> zcoords;
-//	vtkFloatArray *vtkCellCenters;
-//
-//	vtkCellCenters = ComputeCellCenters(input,this->depth_factor,nz,zcoords);
+	// Count the number of unique z coordinates
+	int *cellId2zId; cellId2zId = (int*)malloc(ncells*sizeof(int));
+	std::vector<double> zcoords;
+// TODO: epsilon should not be hardcoded
+// TODO: implement range of depths
+	int nz = VTK::countUniqueZ(vtkCellCenters,ncells,1000.*1e-3,cellId2zId,zcoords);
+	this->UpdateProgress(updst+0.1);
 
-	// Loop the number of variables
-	// For each variable, we will see if a prost processing exists and
-	// then we will loop the mesh and create the statistics.
-//	int narrays = input->GetCellData()->GetNumberOfArrays();
-//	int nstat   = this->GetNumberOfStatArrays();
-//	for (int varId = 0; varId < narrays; varId++) {
-//		// Recover the array and the array name
-//		vtkFloatArray *vtkVarArray = vtkFloatArray::SafeDownCast(
-//			input->GetCellData()->GetArray(varId));
-//		char *array_name = vtkVarArray->GetName();
-//
-//		// We need to decide which statistics to compute. Create a map and initialize
-//		// a map that will link the type of statistic and the associated vtkFloatArray
-//		std::map<std::string, vtkFloatArray*> mapStatArray;
-//
-//		for (int statId = 0; statId < nstat; statId++) {
-//			const char *statName = this->GetStatArrayName(statId);
-//			// Skip those arrays who have not been enabled
-//			if (!this->GetStatArrayStatus(statName))
-//				continue;
-//			// Statistical variable name
-//			char statVarName[256];
-//			sprintf(statVarName,"%s, %s",array_name,statName);
-//			// Define a new vtkFloatArray
-//			vtkFloatArray *vtkStatVar = vtkFloatArray::New();
-//			vtkStatVar->SetName(statVarName);
-//			vtkStatVar->SetNumberOfComponents( vtkVarArray->GetNumberOfComponents() );
-//			vtkStatVar->SetNumberOfTuples(ncells);
-//			vtkStatVar->Fill(0.);
-//			// Store the array in the map
-//			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
-//		}
-//
-//		// Define and allocate parameters
-//		int *nz_dep;
-//		double *meanval, *maxval, *minval;
-//		meanval = (double*)malloc(nz*sizeof(double));
-//		nz_dep  = (int*)malloc(nz*sizeof(int));
-//		maxval  = (double*)malloc(nz*sizeof(double));
-//		minval  = (double*)malloc(nz*sizeof(double));
-//		
-//		for (int kk = 0; kk < nz; kk++) {
-//			meanval[kk] = 0.;
-//			maxval[kk]  = -1.e20;
-//			minval[kk]  = 1.e20;
-//		}
-//
-//		// First loop in the mesh
-//		// Compute meanval, maxval and minval per depth level
-//		for (int cellId = 0; cellId < ncells; cellId++) {
-//			// Recover the cell center
-//			double xyz[3];
-//			vtkCellCenters->GetTuple(cellId,xyz);
-//			// Recover the variable value
-//			double value = vtkVarArray->GetTuple1(cellId);
-//			// Obtain the id for the current depth
-//			int zId = -1;
-//			for (int kk = 0; kk < nz && zId < 0; kk++)
-//				if ( fabs(xyz[2] - zcoords.at(kk)) < 1.e-4 ) zId = kk;
-//			if (zId < 0)
-//				vtkErrorMacro("Couldn't find depth level");
-//			// Set the variable according to the depth level
-//			// Mean
-//			meanval[zId] += value;
-//			nz_dep[zId]++;
-//			// Maximum and minimum
-//			if (value > maxval[zId]) maxval[zId] = value;
-//			if (value < minval[zId]) minval[zId] = value;
-//		}
-//		for (int kk = 0; kk < nz; kk++) 
-//			meanval[kk] /= (double)(nz_dep[kk]);
-//
-//
-//		// Final mesh loop
-//		// Set values to array
-//		for (int cellId = 0; cellId < ncells; cellId++) {
-//			// Recover the cell center
-//			double xyz[3];
-//			vtkCellCenters->GetTuple(cellId,xyz);
-//			// Recover the variable value
-//			double value = vtkVarArray->GetTuple1(cellId);
-//			// Obtain the id for the current depth
-//			int zId = -1;
-//			for (int kk = 0; kk < nz && zId < 0; kk++)
-//				if ( fabs(xyz[2] - zcoords.at(kk)) < 1.e-4 ) zId = kk;
-//			if (zId < 0)
-//				vtkErrorMacro("Couldn't find depth level");
-//			// Set values for statistics
-//			std::map<std::string,vtkFloatArray*>::iterator iter;
-//			for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-//				// Which statistic are we computing?
-//				int statId = this->GetStatArrayIndex(iter->first.c_str());
-//				switch (statId) {
-//					case 0: // Mean
-//						iter->second->SetTuple1(cellId,meanval[zId]);
-//						break;
-//					case 1: // Std dev
-//						break;
-//					case 2: // Min
-//						iter->second->SetTuple1(cellId,minval[zId]);
-//						break;
-//					case 3: // p05
-//						break;
-//					case 4: // p25
-//						break;
-//					case 5: // p50
-//						break;
-//					case 6: // p75
-//						break;
-//					case 7: // p95
-//						break;
-//					case 8: // Max
-//						iter->second->SetTuple1(cellId,maxval[zId]);
-//						break;
-//				}
-//			}
-//		}
-//
-//
-//
-//		free(meanval); free(nz_dep);
-//		free(maxval); free(minval);
+	// The previous operations could be grouped into one mesh loop
+	// For the sake of simplicity and reusability, they have been separated
+	// Moreover, this proved to be a faster approach.
 
-//		double meanval = 0, maxval = -1.e20, minval = 1.e20;
-//		for (int cellId = 0; cellId < ncells; cellId++) {
-//			double value = vtkVarArray->GetTuple1(cellId);
-//			// Mean
-//			meanval += value;
-//			// Max and min
-//			maxval = value > maxval ? value : maxval;
-//			minval = value < minval ? value : minval;
-//		}
-//		meanval /= (double)(ncells);
+	// Recover e1t and e2t
+	vtkFloatArray *vtke1t = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e1t"));
+	output->GetCellData()->AddArray(vtke1t);
+	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e2t"));
+	output->GetCellData()->AddArray(vtke2t);
 
-		// Second mesh loop
-		// Compute stddev and set values
-//		for (int cellId = 0; cellId < ncells; cellId++) {
-//			// stddev
-//			// Set values for statistics
-//			std::map<std::string,vtkFloatArray*>::iterator iter;
-//			for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-//				// Which statistic are we computing?
-//				int statId = this->GetStatArrayIndex(iter->first.c_str());
-//				switch (statId) {
-//					case 0: // Mean
-//						iter->second->SetTuple1(cellId,meanval);
-//						break;
-//					case 1: // Std dev
-//						break;
-//					case 2: // Min
-//						iter->second->SetTuple1(cellId,minval);
-//						break;
-//					case 3: // p05
-//						break;
-//					case 4: // p25
-//						break;
-//					case 5: // p50
-//						break;
-//					case 6: // p75
-//						break;
-//					case 7: // p95
-//						break;
-//					case 8: // Max
-//						iter->second->SetTuple1(cellId,maxval);
-//						break;
-//				}
-//			}
-//		}
+	// We can now loop the number of active variables
+	int narrays = input->GetCellData()->GetNumberOfArrays();
+	int nstat   = this->GetNumberOfStatArrays();
 
-//		// Now that we computed the arrays, we can set them in the output
-//		// and deallocate memory
-//		std::map<std::string,vtkFloatArray*>::iterator iter;
-//		for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-//			output->GetCellData()->AddArray(iter->second);
-//			iter->second->Delete();
-//		}
-//
-//		this->UpdateProgress(0.+1./(double)(narrays)*(double)(varId));
-//	}
-	// Deallocate cell centers
-	vtkCellCenters->Delete();
+	for (int varId = 0; varId < narrays; varId++) {
+		// Recover the array and the array name
+		vtkFloatArray *vtkVarArray = vtkFloatArray::SafeDownCast(
+			input->GetCellData()->GetArray(varId));
+		char *array_name = vtkVarArray->GetName();
+
+		// We should not average the coast or basins mask nor e1t or e2t
+		// Names have been harcoded here as there is no way to ensure that
+		// these arrays will exist or not.
+		if (std::string(array_name) == "coast mask")  continue;
+		if (std::string(array_name) == "basins mask") continue;
+		if (std::string(array_name) == "e1t")         continue;
+		if (std::string(array_name) == "e2t")         continue;
+
+		// We need to decide which statistics to compute. Create a map and initialize
+		// a map that will link the type of statistic and the associated vtkFloatArray
+		std::map<std::string, vtkFloatArray*> mapStatArray;
+
+		for (int statId = 0; statId < nstat; statId++) {
+			const char *statName = this->GetStatArrayName(statId);
+			// Skip those arrays who have not been enabled
+			if (!this->GetStatArrayStatus(statName))
+				continue;
+			// Statistical variable name
+			char statVarName[256];
+			sprintf(statVarName,"%s, %s",array_name,statName);
+			// Define a new vtkFloatArray
+			vtkFloatArray *vtkStatVar = vtkFloatArray::New();
+			vtkStatVar->SetName(statVarName);
+			vtkStatVar->SetNumberOfComponents( vtkVarArray->GetNumberOfComponents() );
+			vtkStatVar->SetNumberOfTuples(ncells);
+			vtkStatVar->Fill(0.);
+			// Store the array in the map
+			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
+		}
+
+		// Create a map that where for each depth level it will store the values
+		// of the variables and the weight as a 2D layer
+		std::map<int,std::vector<double>> vPerLayer;
+		std::map<int,std::vector<double>> wPerLayer;
+		std::map<int,std::vector<int>>    cPerLayer; // Cell per layer
+
+		// First loop in the mesh
+		// Set the vPerLayer and wPerLayer
+		for (int cellId = 0; cellId < ncells; cellId++) {
+			// Recover the variable value
+			double value = vtkVarArray->GetTuple1(cellId);
+			double e1t   = vtke1t->GetTuple1(cellId);
+			double e2t   = vtke2t->GetTuple1(cellId);
+			// Obtain the id for the current depth
+			int zId = cellId2zId[cellId];
+			if (zId < 0) vtkErrorMacro("Error computing <cellId2zId>");
+			// Store the variable per each layer
+			vPerLayer[zId].push_back(value);
+			wPerLayer[zId].push_back(e1t*e2t);
+			cPerLayer[zId].push_back(cellId);
+		}
+
+		// Loop the depth layers
+		for (int kk = 0; kk < nz; kk++) {
+			// Number of elements per layer
+			int nlayer = vPerLayer[kk].size();
+			// Occurrences vector
+			std::vector< std::pair<double,int> > orderVal;
+
+			// First loop on the layer, compute the weights, mean and min/max
+			double sum_weight = 0., meanval = 0., maxval = -1.e20, minval = 1.e20;
+			for (int ii = 0; ii < nlayer; ii++) {
+				// Minimum and Maximum
+				minval = (vPerLayer[kk].at(ii) < minval) ? vPerLayer[kk].at(ii) : minval;
+				maxval = (vPerLayer[kk].at(ii) > maxval) ? vPerLayer[kk].at(ii) : maxval;
+				// Weights and Mean
+				sum_weight += wPerLayer[kk].at(ii);
+				meanval += vPerLayer[kk].at(ii)*wPerLayer[kk].at(ii);
+				// List to order values
+				orderVal.push_back( std::make_pair(vPerLayer[kk].at(ii),ii) );
+			}
+			// Mean
+			meanval /= sum_weight;
+
+			// Order the values
+			std::sort(orderVal.begin(),orderVal.end());
+
+			// Second loop on the layer, std and percentile weight
+			double stdval = 0., weights = 0.;
+			std::vector<double> percw;
+			for (int ii = 0; ii < nlayer; ii++) {
+				// Std
+				double aux = vPerLayer[kk].at(ii) - meanval;
+				stdval += aux*aux*wPerLayer[kk].at(ii);
+				// Percentile weight
+				int ind = orderVal[ii].second;
+				weights += wPerLayer[kk].at(ind);
+				aux = (weights-0.5*wPerLayer[kk].at(ind))/sum_weight; // Reused variable
+				percw.push_back( aux );
+			}
+			// Std
+			stdval = sqrt(stdval/sum_weight);
+
+			// Compute the percentiles
+			double perc[]    = {.05,.25,.50,.75,.95};
+			double percval[] = { 0., 0., 0., 0., 0.};
+
+			for (int pp = 0; pp < 5; pp++) {
+				// Find the value that is equal to perc or immediately after.
+				std::vector<double>::iterator lbound;
+				lbound = std::lower_bound(percw.begin(),percw.end(),perc[pp]);
+				lbound--; // We need to decrement this value;
+				int s = lbound - percw.begin(); // This is our position on the ordered value array
+
+				// Set the value for the weight
+				if (s == 0)        {percval[pp] = orderVal[s].first; continue;} // == sd[0]
+				if (s == nlayer-1) {percval[pp] = orderVal[s].first; continue;} // == sd[n-1]
+
+				double f1 = (percw[s] - perc[pp])   / (percw[s] - percw[s-1]);
+				double f2 = (perc[pp] - percw[s-1]) / (percw[s] - percw[s-1]);
+
+				percval[pp] = f1*orderVal[s-1].first + f2*orderVal[s].first;
+			}
+
+			// Third loop on the layer, set the mesh
+			for (int ii = 0; ii < nlayer; ii++) {
+				int cellId = cPerLayer[kk].at(ii);
+				// Set values for statistics
+				std::map<std::string,vtkFloatArray*>::iterator iter;
+				for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+					// Which statistic are we computing?
+					int statId = this->GetStatArrayIndex(iter->first.c_str());
+					switch (statId) {
+						case 0: // Mean
+							iter->second->SetTuple1(cellId,meanval);
+							break;
+						case 1: // Std dev
+							iter->second->SetTuple1(cellId,stdval);
+							break;
+						case 2: // Min
+							iter->second->SetTuple1(cellId,minval);
+							break;
+						case 3: // p05
+							iter->second->SetTuple1(cellId,percval[0]);
+							break;
+						case 4: // p25
+							iter->second->SetTuple1(cellId,percval[1]);
+							break;
+						case 5: // p50
+							iter->second->SetTuple1(cellId,percval[2]);
+							break;
+						case 6: // p75
+							iter->second->SetTuple1(cellId,percval[3]);
+							break;
+						case 7: // p95
+							iter->second->SetTuple1(cellId,percval[4]);
+							break;
+						case 8: // Max
+							iter->second->SetTuple1(cellId,maxval);
+							break;
+					}
+				}
+			}
+		}
+
+		// Now that we computed the arrays, we can set them in the output
+		// and deallocate memory
+		std::map<std::string,vtkFloatArray*>::iterator iter;
+		for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
+			output->GetCellData()->AddArray(iter->second);
+			iter->second->Delete();
+		}
+
+		this->UpdateProgress(updst+0.1+0.4/(double)(narrays)*(double)(varId));
+	}
+	// Deallocate and delete
+	vtkCellCenters->Delete(); free(cellId2zId);
 }
 
 //----------------------------------------------------------------------------
