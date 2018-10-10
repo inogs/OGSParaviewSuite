@@ -22,7 +22,7 @@
 
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-#include "OGSdefs.h"
+#include "../_utils/OGSdefs.h"
 
 class vtkDataSet;
 class vtkDataArraySelection;
@@ -66,6 +66,12 @@ public:
 	vtkGetMacro(CoastsMask, int);
 	vtkSetMacro(CoastsMask, int);
 	vtkBooleanMacro(CoastsMask, int);
+
+	// Description:
+	// If false, do not include the meshmask. True by default.
+	vtkGetMacro(RMeshMask, int);
+	vtkSetMacro(RMeshMask, int);
+	vtkBooleanMacro(RMeshMask, int);
 
 	// Description:
 	// Lets the user select a multiplier factor for the depth
@@ -114,7 +120,7 @@ protected:
 	// Variables
 	char *FileName;
 
-	int SubBasinsMask, CoastsMask;
+	int SubBasinsMask, CoastsMask, RMeshMask;
 	double DepthScale;
 
 	int NumberOfAvePhysFields, NumberOfAvePhysComponents;
@@ -131,7 +137,7 @@ private:
 	vtkOGSReader(const vtkOGSReader&) = delete;
 	void operator=(const vtkOGSReader&) = delete;
 
-	char meshfile[512];
+	char meshfile[512], meshmask[512];
 
 	vtkRectilinearGrid* Mesh;
 

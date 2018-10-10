@@ -153,7 +153,7 @@ def RequestData():
 			if legend_ital: legend_prop['style']  = 'italic'
 			ax.legend(loc=legend_location,prop=legend_prop)
 
-		if savefigure:
+		if savefigure and filename:
 			figure.savefig(filename,dpi=outdpi,bbox_inches='tight')
 
 		return python_view.figure_to_image(figure)
