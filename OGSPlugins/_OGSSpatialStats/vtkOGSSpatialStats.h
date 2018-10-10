@@ -61,6 +61,7 @@ protected:
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
   void CellStats(vtkDataSet *, vtkDataSet *, double );
+  void PointStats(vtkDataSet *, vtkDataSet *, double );
 
   vtkDataArraySelection* StatDataArraySelection;
 
