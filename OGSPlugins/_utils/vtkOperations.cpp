@@ -297,7 +297,6 @@ int countUniqueZ(vtkFloatArray *vtkArray, int n, double epsi,
         if ( isunique ) {
         	count++; uniquevals.push_back(xyz[2]);
         }
-
         uniqueid[ii] = -1;
         for (int jj = 0; jj < count; jj++) {
         	if ( fabs(xyz[2] - uniquevals.at(jj)) < epsi ) uniqueid[ii] = jj;
@@ -316,6 +315,7 @@ int countUniqueCoords(vtkFloatArray *vtkArray, int n, int nunique, double epsi,
 	 int *uniqueid, std::vector<double> &uniquevals) {
 
 	int count  = 0;
+	uniquevals.clear();
 
     for (int ii = 0; ii < n; ii++) {
     	// Recover a point in the mesh
