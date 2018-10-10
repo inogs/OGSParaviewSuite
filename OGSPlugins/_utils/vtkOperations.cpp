@@ -282,6 +282,7 @@ int countUniqueZ(vtkFloatArray *vtkArray, int n, double epsi,
 	int *uniqueid, std::vector<double> &uniquevals) {
 
     int count = 0;
+    uniquevals.clear();
 
     for (int ii = 0; ii < n; ii++) {
         double xyz[3];
@@ -315,7 +316,6 @@ int countUniqueCoords(vtkFloatArray *vtkArray, int n, int nunique, double epsi,
 	 int *uniqueid, std::vector<double> &uniquevals) {
 
 	int count  = 0;
-	uniquevals.clear();
 
     for (int ii = 0; ii < n; ii++) {
     	// Recover a point in the mesh
