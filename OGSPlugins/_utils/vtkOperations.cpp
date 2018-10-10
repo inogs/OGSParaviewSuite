@@ -281,28 +281,58 @@ vtkFloatArray *getPointCoordinates(const char *varname, vtkDataSet *mesh) {
 int countUniqueZ(vtkFloatArray *vtkArray, int n, double epsi, 
 	int *uniqueid, std::vector<double> &uniquevals) {
 
-        int count = 0;
+    int count = 0;
 
-        for (int ii = 0; ii < n; ii++) {
-                double xyz[3];
-                vtkArray->GetTuple(ii,xyz);
+    for (int ii = 0; ii < n; ii++) {
+        double xyz[3];
+        vtkArray->GetTuple(ii,xyz);
 
-                int isunique = 1;
-                for (int jj = 0; isunique && jj < ii; jj++) {
-                	double xyz2[3];
-                	vtkArray->GetTuple(jj,xyz2);
-                	if ( fabs(xyz[2] - xyz2[2]) < epsi ) isunique = 0;
-                }
-
-                if ( isunique ) {
-                	count++; uniquevals.push_back(xyz[2]);
-                }
-
-                uniqueid[ii] = -1;
-                for (int jj = 0; jj < count; jj++) {
-                	if ( fabs(xyz[2] - uniquevals.at(jj)) < epsi ) uniqueid[ii] = jj;
-                }
+        int isunique = 1;
+        for (int jj = 0; isunique && jj < ii; jj++) {
+        	double xyz2[3];
+        	vtkArray->GetTuple(jj,xyz2);
+        	if ( fabs(xyz[2] - xyz2[2]) < epsi ) isunique = 0;
         }
-        
-        return count;
+
+        if ( isunique ) {
+        	count++; uniquevals.push_back(xyz[2]);
+        }
+
+        uniqueid[ii] = -1;
+        for (int jj = 0; jj < count; jj++) {
+        	if ( fabs(xyz[2] - uniquevals.at(jj)) < epsi ) uniqueid[ii] = jj;
+        }
+    }
+    
+    return count;
+}
+
+/* COUNTUNIQUECOORDS
+	
+	Counts the number of unique coordinates in z direction and returns
+	the true number of unique coordinates.
+*/
+int countUniqueCoords(vtkFloatArray *vtkArray, int n, int nunique, double epsi, 
+	 int *uniqueid, std::vector<double> &uniquevals) {
+
+	int count  = 0;
+
+    for (int ii = 0; ii < n; ii++) {
+    	// Recover a point in the mesh
+        double xyz[3];
+        vtkArray->GetTuple(ii,xyz);
+
+        // Loop on the unique values to set the uniqueid
+        uniqueid[ii] = -1;
+        for (int jj = 0; jj < nunique-1 && uniqueid[ii] < 0; jj++) {
+        	if ( uniquevals.at(jj) < xyz[2] )
+        		uniqueid[ii] = jj;
+        }
+        // If the point hasn't been set, default it to the last one
+        if (uniqueid[ii] < 0) uniqueid[ii] = nunique - 1;
+        // Set count 
+        count = (uniqueid[ii] > count-1) ? uniqueid[ii]+1 : count;
+    }
+
+    return count;
 }

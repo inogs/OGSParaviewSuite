@@ -47,7 +47,53 @@
         <Documentation>
           This property contains a list of all the statistics to compute.
         </Documentation>
-     </StringVectorProperty>
+      </StringVectorProperty>
+
+      <!-- Tolerance -->
+      <DoubleVectorProperty name="Tolerance"
+                            label="Tolerance: "
+                            command="Setepsi"
+                            animateable="1"
+                            default_values="0.001"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Tolerance for finding the different depth levels.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <!-- Depth Level -->
+      <DoubleVectorProperty name="DepthFactor"
+                            label="Depth multiplication factor: "
+                            command="Setdepth_factor"
+                            animateable="1"
+                            default_values="1000."
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Set the depth multiplication factor.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <!-- Optional range of depths -->
+      <DoubleVectorProperty command="SetDepthLevels"
+                            name="DepthLevels"
+                            animateable="1"
+                            number_of_elements="0"
+                            number_of_elements_per_command="1"
+                            repeat_command="1"
+                            use_index="1"
+                            set_number_command="SetNumberOfDepthLevels">
+        <ArrayRangeDomain name="scalar_range"/>
+        <Documentation>
+          Optional range of dephts to compute the statistics. If not inputed
+          the statistics will be computed for each depth level.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="Selection of Depth Levels">
+        <Property name="DepthLevels"/>
+      </PropertyGroup>
 
       <!-- END EXPOSED PROPERTIES -->
       

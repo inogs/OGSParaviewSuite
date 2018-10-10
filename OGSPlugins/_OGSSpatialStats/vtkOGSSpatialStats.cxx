@@ -58,12 +58,16 @@ vtkOGSSpatialStats::vtkOGSSpatialStats(){
 	this->StatDataArraySelection->AddArray("p95");
 	this->StatDataArraySelection->AddArray("max");
 
+	this->epsi = 1.e-3;
 	this->depth_factor = 1000.;
+
+	this->ndepths = 0;
 }
 
 //----------------------------------------------------------------------------
 vtkOGSSpatialStats::~vtkOGSSpatialStats() {
 	this->StatDataArraySelection->Delete();
+	this->zcoords.clear();
 }
 
 //----------------------------------------------------------------------------
@@ -89,9 +93,10 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Start by dealing with any cell array
 	this->CellStats(input,output,0.0);
-	this->UpdateProgress(1.);
+	this->UpdateProgress(0.5);
 
 	// Start by dealing with any cell array
+// TODO: Implement point array
 //	this->PointStats(input,output,0.5);
 	this->UpdateProgress(1.);
 
@@ -113,10 +118,18 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 
 	// Count the number of unique z coordinates
 	int *cellId2zId; cellId2zId = (int*)malloc(ncells*sizeof(int));
-	std::vector<double> zcoords;
-// TODO: epsilon should not be hardcoded
-// TODO: implement range of depths
-	int nz = VTK::countUniqueZ(vtkCellCenters,ncells,1000.*1e-3,cellId2zId,zcoords);
+
+	int nz = 0;
+	if (this->ndepths == 0)
+		// The user hasn't inputed any depth coordinates so we will compute the
+		// statistics for each depth level. Obtain cellId2zId for each depth.
+		nz = VTK::countUniqueZ(vtkCellCenters,ncells,
+			this->depth_factor*this->epsi,cellId2zId,this->zcoords);
+	else
+		// The user has inputed some depth levels. Use them to generate the
+		// cellId2zId array
+		nz = VTK::countUniqueCoords(vtkCellCenters,ncells,
+			this->ndepths,this->depth_factor*this->epsi,cellId2zId,this->zcoords);
 	this->UpdateProgress(updst+0.1);
 
 	// The previous operations could be grouped into one mesh loop
@@ -199,7 +212,6 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 			wPerLayer[zId].push_back(e1t*e2t);
 			cPerLayer[zId].push_back(cellId);
 		}
-
 		// Loop the depth layers
 		for (int kk = 0; kk < nz; kk++) {
 			// Number of elements per layer
@@ -250,12 +262,11 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 				std::vector<double>::iterator lbound;
 				lbound = std::lower_bound(percw.begin(),percw.end(),perc[pp]);
 				lbound--; // We need to decrement this value;
-				int s = lbound - percw.begin(); // This is our position on the ordered value array
-
+				// This is our position on the ordered value array
+				int s = (lbound - percw.begin()) < 0 ? 0 : lbound - percw.begin(); 
 				// Set the value for the weight
 				if (s == 0)        {percval[pp] = orderVal[s].first; continue;} // == sd[0]
 				if (s == nlayer-1) {percval[pp] = orderVal[s].first; continue;} // == sd[n-1]
-
 				double f1 = (percw[s] - perc[pp])   / (percw[s] - percw[s-1]);
 				double f2 = (perc[pp] - percw[s-1]) / (percw[s] - percw[s-1]);
 
@@ -315,6 +326,22 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 	}
 	// Deallocate and delete
 	vtkCellCenters->Delete(); free(cellId2zId);
+}
+
+//----------------------------------------------------------------------------
+void vtkOGSSpatialStats::SetNumberOfDepthLevels(int n)
+{
+	// We basically use this function to set nz
+	this->ndepths = n > 0 ? n+1 : 0;
+	// Also restart the vector that stores the coordinates
+	this->zcoords.clear();
+	this->Modified();
+}
+
+void vtkOGSSpatialStats::SetDepthLevels(int i, double value)
+{
+	// We basically use this function to set zcoords
+	this->zcoords.push_back(-value*this->depth_factor);
 }
 
 //----------------------------------------------------------------------------

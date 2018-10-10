@@ -21,11 +21,28 @@
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAlgorithm.h"
 
+#include <vector>
+
 class VTK_EXPORT vtkOGSSpatialStats : public vtkDataSetAlgorithm
 {
 public:
   static vtkOGSSpatialStats* New();
   vtkTypeMacro(vtkOGSSpatialStats, vtkDataSetAlgorithm);
+
+  // Description:
+  // Get the epsilon
+  vtkSetMacro(epsi, double);
+  vtkGetMacro(epsi, double);
+
+  // Description:
+  // Get the depth_factor
+  vtkSetMacro(depth_factor, double);
+  vtkGetMacro(depth_factor, double);
+
+  //
+  //
+  void SetNumberOfDepthLevels(int n);
+  void SetDepthLevels(int i, double value);
 
   // Description:
   // The following methods allow selective seleccion of aggregate variables.
@@ -51,7 +68,10 @@ private:
   vtkOGSSpatialStats(const vtkOGSSpatialStats&) = delete;
   void operator=(const vtkOGSSpatialStats&) = delete;
 
-  double depth_factor;
+  double epsi, depth_factor;
+
+  int ndepths;
+  std::vector<double> zcoords;
 
 };
 
