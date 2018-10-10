@@ -154,6 +154,8 @@ vtkFloatArray *createVTKscaffrom2d(const char *name, int nx, int ny, int nz, dou
 	
 	Creates a vtkFloatArray for a 3 component vector field given the array name, 
 	its dimensions in x, y, z coordinates and an additional array to fill.
+
+	This function is compliant with OGSTM-BFM code.
 */
 vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz, 
 	double *a1, double *a2, double *a3) {
@@ -170,10 +172,16 @@ vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz,
 		for (int kk = 0; kk < nz-1; kk++) {
 			for (int jj = 0; jj < ny-1; jj++) {
 				for (int ii = 0; ii < nx-1; ii++) {
+					// Project velocity on the staggered mesh
+					double aux_u = (ii == 0) ? a1[ARRIND(ii,jj,kk,nx,ny)] : 
+						(a1[ARRIND(ii-1,jj,kk,nx,ny)] + a1[ARRIND(ii,jj,kk,nx,ny)])/2.;
+					double aux_v = (jj == 0) ? a2[ARRIND(ii,jj,kk,nx,ny)] : 
+						(a2[ARRIND(ii,jj-1,kk,nx,ny)] + a2[ARRIND(ii,jj-1,kk,nx,ny)])/2.;
+					double aux_w = (kk == 0) ? a3[ARRIND(ii,jj,kk,nx,ny)] : 
+						(a3[ARRIND(ii,jj,kk-1,nx,ny)] + a3[ARRIND(ii,jj,kk,nx,ny)])/2.;
+					// Set array value
 					vtkArray->SetTuple3(VTKIND(ii,jj,kk,nx,ny),
-						a1[ARRIND(ii,jj,kk,nx,ny)],
-						a2[ARRIND(ii,jj,kk,nx,ny)],
-						a3[ARRIND(ii,jj,kk,nx,ny)]);
+						aux_u, aux_v, aux_w);
 				}
 			}
 		}
@@ -182,10 +190,12 @@ vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz,
 	return vtkArray;
 }
 
-/* CREATEVTKSCAF
+/* CREATEVTKVECF3
 	
 	Creates a vtkFloatArray for a 3 component vector field given the array name, 
 	its dimensions and an additional array to fill.
+
+	This function is not compliant with OGSTM-BFM code.
 */
 vtkFloatArray *createVTKvecf3(const char *name, int n, double *a1, double *a2, double *a3) {
 
