@@ -34,17 +34,8 @@ namespace VTK
 #include "../_utils/vtkOperations.cpp"
 }
 
-//#define INDEX(ii,jj,kk,nx,ny) ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
-//#define GETVTKVAL1(vtkarray,ii,jj,kk,nx,ny)     ( (vtkarray)->GetTuple1((nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii)) )
-//#define GETVTKVAL3(vtkarray,ii,jj,kk,nx,ny)     ( (vtkarray)->GetTuple3((nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii)) )
-//#define SETVTKVAL1(vtkarray,val,ii,jj,kk,nx,ny) ( (vtkarray)->SetTuple1((nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii),(val)) )
 
 vtkStandardNewMacro(vtkOGSComputeOkuboWeiss);
-
-//----------------------------------------------------------------------------
-
-
-
 
 //----------------------------------------------------------------------------
 vtkOGSComputeOkuboWeiss::vtkOGSComputeOkuboWeiss()
