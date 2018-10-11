@@ -49,7 +49,7 @@
 
      <!-- MeshMask e1t and e2t -->
      <IntVectorProperty name="MeshMask"
-                         label="Include meshmask e1t and e2t"
+                         label="Include meshmask weights"
                          command="SetRMeshMask"
                          number_of_elements="1"
                          default_values="1"

@@ -215,14 +215,24 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	if (this->RMeshMask) {
 		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*nLon*nLat);
 		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*nLon*nLat);
+		double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*nLon*nLat);
+		double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*nLon*nLat);
+		double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
 		// Create vtkArrays from these 2D arrays
 		vtkFloatArray *vtke1t = VTK::createVTKscaffrom2d("e1t",nLon,nLat,nLev,e1t);
 		vtkFloatArray *vtke2t = VTK::createVTKscaffrom2d("e2t",nLon,nLat,nLev,e2t);
+		vtkFloatArray *vtke1u = VTK::createVTKscaffrom2d("e1u",nLon,nLat,nLev,e1u);
+		vtkFloatArray *vtke2v = VTK::createVTKscaffrom2d("e2v",nLon,nLat,nLev,e2v);
+		vtkFloatArray *vtke3w = VTK::createVTKscaf("e3w",nLon,nLat,nLev,e3w);
 		// Add to mesh
 		this->Mesh->GetCellData()->AddArray(vtke1t);
 		this->Mesh->GetCellData()->AddArray(vtke2t);
+		this->Mesh->GetCellData()->AddArray(vtke1u);
+		this->Mesh->GetCellData()->AddArray(vtke2v);
+		this->Mesh->GetCellData()->AddArray(vtke3w);
 		vtke1t->Delete(); vtke2t->Delete();
-		free(e1t); free(e2t);
+		vtke1u->Delete(); vtke2v->Delete(); vtke3w->Delete();
+		free(e1t); free(e2t); free(e1u); free(e2v); free(e3w);
 	}
 
 	this->UpdateProgress(0.25);
