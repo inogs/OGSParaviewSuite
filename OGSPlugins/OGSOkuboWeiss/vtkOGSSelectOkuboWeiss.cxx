@@ -14,6 +14,7 @@
 
 #include "vtkFloatArray.h"
 #include "vtkCellData.h"
+#include "vtkPointData.h"
 #include "vtkDataArraySelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -26,18 +27,13 @@
 vtkStandardNewMacro(vtkOGSSelectOkuboWeiss);
 
 //----------------------------------------------------------------------------
-void addOWZones(vtkDataArraySelection *OWDataArraySelection) {
-	OWDataArraySelection->AddArray("Vorticity dominated");
-	OWDataArraySelection->AddArray("Strain dominated");
-	OWDataArraySelection->AddArray("Background field");
-}
-
-//----------------------------------------------------------------------------
 vtkOGSSelectOkuboWeiss::vtkOGSSelectOkuboWeiss() {
 
 	// Add the sub basins into the array
 	this->OWDataArraySelection = vtkDataArraySelection::New();
-	addOWZones(this->OWDataArraySelection);
+	this->OWDataArraySelection->AddArray("Vorticity dominated");
+	this->OWDataArraySelection->AddArray("Strain dominated");
+	this->OWDataArraySelection->AddArray("Background field");
 
 	this->mask_field = NULL;
 }
@@ -70,14 +66,19 @@ int vtkOGSSelectOkuboWeiss::RequestData(
 	vtkUnstructuredGrid *output = vtkUnstructuredGrid::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-	// Get the number of points
-	int npoints = input->GetNumberOfPoints();
-
 	this->UpdateProgress(0.0);
 
-	// Get the basins mask
+	// Assume we are working with cell arrays
 	vtkFloatArray *ow_mask = vtkFloatArray::SafeDownCast(
 		input->GetCellData()->GetArray(this->mask_field));
+	int npoints = input->GetNumberOfCells();
+
+	// Check if we are really working with cell arrays
+	if (ow_mask == NULL) {
+		vtkFloatArray *ow_mask = vtkFloatArray::SafeDownCast(
+			input->GetPointData()->GetArray(this->mask_field));
+		int npoints = input->GetNumberOfPoints();	
+	}	
 
 	// Generate a new vtkFloatArray that will be used for the mask
 	vtkFloatArray *mask = vtkFloatArray::New();
@@ -90,18 +91,15 @@ int vtkOGSSelectOkuboWeiss::RequestData(
 	// Loop the mesh and set the mask
 	for (int ii = 0; ii < npoints; ii++) {
 		// Recover value from basins mask
-		double owmask_val = ow_mask->GetTuple1(ii);
+		int owmask_val = (int)(ow_mask->GetTuple1(ii));
 		// Initialize mask to zero
 		mask->SetTuple1(ii,0);
 		// Set the conditions
-		if (this->GetOWArrayStatus("Vorticity dominated") && 
-			fabs(owmask_val - (-1.)) < 1.e-3)
+		if (this->GetOWArrayStatus("Vorticity dominated") && owmask_val == -1)
 				mask->SetTuple1(ii,1);
-		if (this->GetOWArrayStatus("Strain dominated") && 
-			fabs(owmask_val - (1.)) < 1.e-3)
+		if (this->GetOWArrayStatus("Strain dominated") && owmask_val == 1)
 				mask->SetTuple1(ii,1);
-		if (this->GetOWArrayStatus("Background field") && 
-			fabs(owmask_val - (0.)) < 1.e-3)
+		if (this->GetOWArrayStatus("Background field") && owmask_val == 0)
 				mask->SetTuple1(ii,1);
 	}
 

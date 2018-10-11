@@ -41,12 +41,24 @@ class OGSmesh(object):
 			> fname: full path to the meshmask.nc file
 		'''
 		# Load the meshmask (requires bit.sea)
-		self.mask = Mask(fname,ylevelsmatvar="gphit", xlevelsmatvar="glamt")
+		# This first mask is for loading the cell centered masks
+		self.mask = Mask(fname,zlevelsvar="nav_lev",ylevelsmatvar="gphit", xlevelsmatvar="glamt")
+		# This mask is for generating the mesh points
+		mask = Mask(fname,zlevelsvar="gdepw",ylevelsmatvar="gphif", xlevelsmatvar="glamf")
 		# Set variables
-		dims    = self.mask.shape
-		Lon     = self.mask.xlevels
-		Lat     = self.mask.ylevels
-		nav_lev = self.mask.zlevels
+		dims    = list(mask.shape) # We need to add the missing points
+		dims[0] += 1
+		dims[1] += 1
+		dims[2] += 1
+		# Longitudinal coordinates, add one in the right
+		Lon = np.insert(mask.xlevels,0,mask.xlevels[0,:] - (mask.xlevels[0,:] - mask.xlevels[1,:])/2.,axis=0)
+		Lon = np.insert(Lon,0,Lon[:,0] - (Lon[:,0] - Lon[:,1])/2.,axis=1)
+		# Latitudinal coordinates, add one in the right
+		Lat = np.insert(mask.ylevels,0,mask.ylevels[0,:] + (mask.ylevels[0,:] - mask.ylevels[1,:])/2.,axis=0)
+		Lat = np.insert(Lat,0,Lat[:,0] - (Lat[:,0] - Lat[:,1])/2.,axis=1)
+		# Depth coordinates, add the one in the left
+		nav_lev = np.append(mask.zlevels,mask.zlevels[-1] + (mask.zlevels[-1] - mask.zlevels[-2])/2.)
+
 		# Return
 		return dims, Lon, Lat, nav_lev
 
@@ -81,10 +93,6 @@ class OGSmesh(object):
 			index = SUBlist.index(sub)
 			basin = OGS.P.basin_list[index]
 			# Extract the sub mask
-			#TODO: fix error for low resolution mesh
-#			if args.res == 'low':
-#				s = SubMask(basin, Regular=False, maskobject=mesh.mask)
-#			else:
 			s = SubMask(basin, maskobject=self.mask)
 			# Build the basins mask for ParaView
 			basins_mask[s.mask] = index + 1
@@ -188,7 +196,6 @@ class OGSmesh(object):
 		'''
 		# Read the mesh mask
 		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self.maskpath,"meshmask.nc"))
-
 		# Obtain the coasts_mask and the basins_mask
 		basins_mask = self.generateBasinsMask().ravel()
 		coasts_mask = self.generateCoastsMask().ravel()

@@ -213,16 +213,26 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	// Deal with e1t and e2t located in the meshmask
 	if (this->RMeshMask) {
-		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*nLon*nLat);
-		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*nLon*nLat);
+		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
+		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
+		double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
+		double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
+		double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
 		// Create vtkArrays from these 2D arrays
 		vtkFloatArray *vtke1t = VTK::createVTKscaffrom2d("e1t",nLon,nLat,nLev,e1t);
 		vtkFloatArray *vtke2t = VTK::createVTKscaffrom2d("e2t",nLon,nLat,nLev,e2t);
+		vtkFloatArray *vtke1u = VTK::createVTKscaffrom2d("e1u",nLon,nLat,nLev,e1u);
+		vtkFloatArray *vtke2v = VTK::createVTKscaffrom2d("e2v",nLon,nLat,nLev,e2v);
+		vtkFloatArray *vtke3w = VTK::createVTKscaf("e3w",nLon,nLat,nLev,e3w);
 		// Add to mesh
 		this->Mesh->GetCellData()->AddArray(vtke1t);
 		this->Mesh->GetCellData()->AddArray(vtke2t);
+		this->Mesh->GetCellData()->AddArray(vtke1u);
+		this->Mesh->GetCellData()->AddArray(vtke2v);
+		this->Mesh->GetCellData()->AddArray(vtke3w);
 		vtke1t->Delete(); vtke2t->Delete();
-		free(e1t); free(e2t);
+		vtke1u->Delete(); vtke2v->Delete(); vtke3w->Delete();
+		free(e1t); free(e2t); free(e1u); free(e2v); free(e3w);
 	}
 
 	this->UpdateProgress(0.25);
@@ -243,15 +253,15 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		if (this->GetAvePhysArrayStatus(varname)) {
 			// Velocity is treated separately
 			if (std::string(varname) == "Velocity") {
-				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",nLon*nLat*nLev),
-					   *v = NetCDF::readNetCDF(varpath,"vomecrty",nLon*nLat*nLev),
-					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",nLon*nLat*nLev);
+				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",(nLon-1)*(nLat-1)*(nLev-1)),
+					   *v = NetCDF::readNetCDF(varpath,"vomecrty",(nLon-1)*(nLat-1)*(nLev-1)),
+					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",(nLon-1)*(nLat-1)*(nLev-1));
 				vtkFloatArray *vtkarray = VTK::createVTKvecf3(varname,nLon,nLat,nLev,u,v,w);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(u); free(v); free(w);
 			}
 			else {
-				double *array = NetCDF::readNetCDF(varpath,cdfname,nLon*nLat*nLev);
+				double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
 				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(array);
@@ -274,7 +284,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			this->timeStepInfo.datetime[ii_tstep],"*");
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(varname)) {
-			double *array = NetCDF::readNetCDF(varpath,cdfname,nLon*nLat*nLev);
+			double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
 			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
 			this->Mesh->GetCellData()->AddArray(vtkarray);
 			vtkarray->Delete(); free(array);

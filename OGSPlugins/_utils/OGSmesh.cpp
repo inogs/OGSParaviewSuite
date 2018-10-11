@@ -48,7 +48,7 @@ extern "C" void writeOGSMesh(const char *fname, int nLon, int nLat, int nLev,
 	if (fwrite(Lat2Meters,DBLSZ,nLat,myfile) != nLat) ERROR("Error writing file")
 	if (fwrite(nav_lev,DBLSZ,nLev,myfile)    != nLev) ERROR("Error writing file")
 	// Write the masks
-	int ncells = nLon*nLat*nLev;
+	int ncells = (nLon-1)*(nLat-1)*(nLev-1);
 	if (fwrite(basins_mask,DBLSZ,ncells,myfile) != ncells) ERROR("Error writing file")
 	if (fwrite(coast_mask,DBLSZ,ncells,myfile)  != ncells) ERROR("Error writing file")
 	// Close the file
@@ -85,7 +85,7 @@ extern "C" void readOGSMesh(const char *fname, int *nLon, int *nLat, int *nLev,
 	if (fread(*Lat2Meters,DBLSZ,*nLat,myfile) != (*nLat)) ERROR("Error reading file")
 	if (fread(*nav_lev,DBLSZ,*nLev,myfile)    != (*nLev)) ERROR("Error reading file")
 	// Read the masks
-	int ncells = (*nLon)*(*nLat)*(*nLev); 
+	int ncells = ((*nLon)-1)*((*nLat)-1)*((*nLev)-1); 
 	*basins_mask = (double*)malloc(ncells*DBLSZ); if (*basins_mask == NULL) ERROR("Cannot allocate memory")
 	*coast_mask  = (double*)malloc(ncells*DBLSZ); if (*coast_mask  == NULL) ERROR("Cannot allocate memory")
 	if (fread(*basins_mask,DBLSZ,ncells,myfile) != ncells) ERROR("Error reading file")

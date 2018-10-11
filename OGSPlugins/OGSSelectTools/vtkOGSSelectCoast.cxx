@@ -14,6 +14,7 @@
 
 #include "vtkFloatArray.h"
 #include "vtkCellData.h"
+#include "vtkPointData.h"
 #include "vtkDataArraySelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -69,14 +70,18 @@ int vtkOGSSelectCoast::RequestData(
 	vtkUnstructuredGrid *output = vtkUnstructuredGrid::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-	// Get the number of points
-	int npoints = input->GetNumberOfPoints();
-
 	this->UpdateProgress(0.0);
 
 	// Get the basins mask
 	vtkFloatArray *coasts_mask = vtkFloatArray::SafeDownCast(
 		input->GetCellData()->GetArray(this->mask_field));
+	int npoints = input->GetNumberOfCells();
+
+	if (coasts_mask == NULL) {
+		vtkFloatArray *coasts_mask = vtkFloatArray::SafeDownCast(
+			input->GetPointData()->GetArray(this->mask_field));
+		int npoints = input->GetNumberOfPoints();	
+	}
 
 	// Generate a new vtkFloatArray that will be used for the mask
 	vtkFloatArray *mask = vtkFloatArray::New();
