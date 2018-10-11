@@ -389,6 +389,9 @@ void vtkOGSSpatialStats::PointStats(vtkDataSet *input, vtkDataSet *output, doubl
 		if (std::string(array_name) == "basins mask") continue;
 		if (std::string(array_name) == "e1t")         continue;
 		if (std::string(array_name) == "e2t")         continue;
+		if (std::string(array_name) == "e1u")         continue;
+		if (std::string(array_name) == "e2v")         continue;
+		if (std::string(array_name) == "e3w")         continue;
 
 		// Also anything not being an scalar array should not be computed
 		if (vtkVarArray->GetNumberOfComponents() > 1) {
