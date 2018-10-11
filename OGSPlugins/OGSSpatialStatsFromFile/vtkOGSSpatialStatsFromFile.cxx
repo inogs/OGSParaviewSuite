@@ -103,15 +103,9 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	sprintf(filename,"%s/ave.%s.stat_profiles.nc",this->FolderName,datetime);
 
 	// Next, recover the dimensions of the rectilinear grid
-	vtkFloatArray *vtkxcoord = vtkFloatArray::SafeDownCast(
-		input->GetXCoordinates());
-	int nx = vtkxcoord->GetNumberOfTuples();
-	vtkFloatArray *vtkycoord = vtkFloatArray::SafeDownCast(
-		input->GetYCoordinates());
-	int ny = vtkycoord->GetNumberOfTuples();
-	vtkFloatArray *vtkzcoord = vtkFloatArray::SafeDownCast(
-		input->GetZCoordinates());
-	int nz = vtkzcoord->GetNumberOfTuples();
+	int nx = input->GetXCoordinates()->GetNumberOfTuples();
+	int ny = input->GetYCoordinates()->GetNumberOfTuples();
+	int nz = input->GetZCoordinates()->GetNumberOfTuples();
 
 	// Also recover the basins and coasts mask
 	// and add them to the output
@@ -153,7 +147,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		if ("e3w"                               == std::string(array_name)) continue;
 
 		// At this point, we can try to load the stat profile
-		double *stat_profile = NetCDF::readNetCDF(filename, array_name, nbasins*ncoasts*nz*nstat);
+		double *stat_profile = NetCDF::readNetCDF(filename, array_name, nbasins*ncoasts*(nz-1)*nstat);
 		// If file cannot be read or variable does not exist
 		if (stat_profile == NULL) {
 			vtkWarningMacro("File <"<<filename<<"> or variable <"
@@ -175,28 +169,28 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 			char statVarName[256];
 			sprintf(statVarName,"%s, %s",array_name,statName);
 			// Define a new vtkFloatArray
-			vtkFloatArray *vtkStatVar = VTK::createVTKscaf(statVarName, nx, ny, nz, NULL);
+			vtkFloatArray *vtkStatVar = VTK::createVTKscaf(statVarName,nx,ny,nz,NULL);
 			// Store the array in the map
 			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
 		}
 
 		// We are now ready to loop the mesh and set the variables accordingly
-		for (int kk = 0; kk < nz; kk++) {
-			for (int jj = 0; jj < ny; jj++) {
-				for (int ii = 0; ii < nx; ii++) {
+		for (int kk = 0; kk < nz-1; kk++) {
+			for (int jj = 0; jj < ny-1; jj++) {
+				for (int ii = 0; ii < nx-1; ii++) {
 					// Which basin and which coast are we?
-					int basinId = (int)( basins_mask->GetTuple1(VTKIND(ii,jj,kk,nx,ny)) ) - 1;
+					int basinId = (int)( basins_mask->GetTuple1(CLLIND(ii,jj,kk,nx,ny)) ) - 1;
 					int coastId = this->per_coast ? 
-						(int)( coasts_mask->GetTuple1(VTKIND(ii,jj,kk,nx,ny)) ) - 1 : 2;
+						(int)( coasts_mask->GetTuple1(CLLIND(ii,jj,kk,nx,ny)) ) - 1 : 2;
 					// Loop all the requested statistics using an iterator
 					std::map<std::string,vtkFloatArray*>::iterator iter;
 					for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
 						// Which statistic are we computing?
 						int statId = this->GetStatArrayIndex(iter->first.c_str());
 						// Recover value from the stat profile
-						double value = stat_profile[STTIND(basinId,coastId,kk,statId,nstat,nz,ncoasts)];
+						double value = stat_profile[STTIND(basinId,coastId,kk,statId,nstat,nz-1,ncoasts)];
 						// Set the value
-						iter->second->SetTuple1(VTKIND(ii,jj,kk,nx,ny),value);
+						iter->second->SetTuple1(CLLIND(ii,jj,kk,nx,ny),value);
 					}
 				}
 			}
