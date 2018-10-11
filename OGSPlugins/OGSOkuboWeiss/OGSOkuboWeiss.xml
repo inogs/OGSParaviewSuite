@@ -70,6 +70,8 @@
           <Entry value="0" text="FC 2nd Order"/> <!-- Face Centered 2nd Order -->
           <Entry value="1" text="FC 4th Order"/> <!-- Face Centered 4th Order -->
           <Entry value="2" text="OGSTM-BFM"/>    <!-- OGSTM-BFM approach -->
+          <Entry value="3" text="OGSTM-BFM2"/>   <!-- OGSTM-BFM approach -->
+          <Entry value="4" text="OGSTM-BFM4"/>   <!-- OGSTM-BFM approach -->
         </EnumerationDomain>
         <Documentation>
           Selection of the gradient computation method.

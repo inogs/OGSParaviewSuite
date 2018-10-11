@@ -135,6 +135,18 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 							VTK::vtkGrad3OGS1(ii,jj,kk,nx,ny,nz,
 								vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
 							break;
+						case 3:	// 2nd order OGSTM-BFM approach
+								// This gradient is experimental
+							for (int dd = 0; dd < 9; dd++) deri_old[dd] = deri[dd];
+							VTK::vtkGrad3OGS2(ii,jj,kk,nx,ny,nz,
+								vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
+							break;
+						case 4:	// 4th order OGSTM-BFM approach
+								// This gradient is experimental
+							for (int dd = 0; dd < 9; dd++) deri_old[dd] = deri[dd];
+							VTK::vtkGrad3OGS4(ii,jj,kk,nx,ny,nz,
+								vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
+							break;
 					}
 					// Rates of strain and stress
 					double Sn = (deri[1] - deri[3]); // dudy - dvdx

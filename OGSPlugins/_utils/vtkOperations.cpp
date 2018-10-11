@@ -640,3 +640,230 @@ void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[5] = (ii == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
 	deri[8] = (ii == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;
 }
+
+/* VTKGRAD3OGS2
+
+	Second order, face centered, approximation of the gradient for
+	a vtk vectorial field using OGSTM-BFM approach.
+
+	This gradient lives in the staggered mesh. 
+
+	The input is assumed to be on the cell centered mesh. 
+
+	The output is returned on the cell centered mesh.
+
+	This gradient method is experimental
+
+	Output deri is in the form: [dudx, dudy, dudz, 
+	                             dvdx, dvdy, dvdz, 
+	                             dwdx, dwdy, dwdz]
+*/
+void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
+	double deri[9], double deri_old[9]) {
+
+	int ind = 0, ind1 = 0;
+	double val[3], val1[3];
+
+	// Recover e1u, e2v and e3w
+	double e1u = vtke1u->GetTuple1(VTKIND(ii,jj,kk,nx,ny));
+	double e2v = vtke2v->GetTuple1(VTKIND(ii,jj,kk,nx,ny));
+	double e3w = vtke3w->GetTuple1(VTKIND(ii,jj,kk,nx,ny));
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii == 0) {
+		ind  = VTKIND(ii+1,jj,kk,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+	} else if (ii == nx-1) {
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii-1,jj,kk,nx,ny);
+	} else {
+		ind  = VTKIND(ii+1,jj,kk,nx,ny); ind1 = VTKIND(ii-1,jj,kk,nx,ny);
+		e1u *= 2.;
+	}
+	// Recover values from vtkArrays
+	vtkvecf->GetTuple(ind,val); vtkvecf->GetTuple(ind1,val1);
+	// Compute the derivatives with respect to x
+	deri[0] = (val[0] - val1[0])/e1u; // dudx
+	deri[3] = (val[1] - val1[1])/e1u; // dvdx
+	deri[6] = (val[2] - val1[2])/e1u; // dwdx
+	// Interpolate on the centered grid
+	deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
+	deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
+	deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
+
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj == 0) {
+		ind  = VTKIND(ii,jj+1,kk,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+	} else if (jj == ny-1) {
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii,jj-1,kk,nx,ny);
+	} else {
+		ind  = VTKIND(ii,jj+1,kk,nx,ny); ind1 = VTKIND(ii,jj-1,kk,nx,ny);
+		e2v *= 2.;
+	}
+	// Recover values from vtkArrays
+	vtkvecf->GetTuple(ind,val); vtkvecf->GetTuple(ind1,val1);
+	// Compute the derivatives with respect to x
+	deri[1] = (val[0] - val1[0])/e2v; // dudy
+	deri[4] = (val[1] - val1[1])/e2v; // dvdy
+	deri[7] = (val[2] - val1[2])/e2v; // dwdy
+	// Interpolate on the centered grid
+	deri[1] = (ii == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
+	deri[4] = (ii == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
+	deri[7] = (ii == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk == 0) {
+		ind  = VTKIND(ii,jj,kk+1,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+	} else if (kk == nz-1) {
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii,jj,kk-1,nx,ny);
+	} else {
+		ind  = VTKIND(ii,jj,kk+1,nx,ny); ind1 = VTKIND(ii,jj,kk-1,nx,ny);
+		e3w *= 2.;
+	}
+	// Recover values from vtkArrays
+	vtkvecf  ->GetTuple(ind,val); vtkvecf  ->GetTuple(ind1,val1);
+	// Compute the derivatives with respect to x
+	deri[2] = (val[0] - val1[0])/e3w;  // dudz
+	deri[5] = (val[1] - val1[1])/e3w;  // dvdz
+	deri[8] = (val[2] - val1[2])/e3w;  // dwdz
+	// Interpolate on the centered grid
+	deri[2] = (ii == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
+	deri[5] = (ii == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
+	deri[8] = (ii == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;
+}
+
+/* VTKGRAD3OGS4
+
+	Fourth order, face centered, approximation of the gradient for
+	a vtk vectorial field using OGSTM-BFM approach.
+
+	This gradient lives in the staggered mesh. 
+
+	The input is assumed to be on the cell centered mesh. 
+
+	The output is returned on the cell centered mesh.
+
+	This gradient method is experimental
+
+	Output deri is in the form: [dudx, dudy, dudz, 
+	                             dvdx, dvdy, dvdz, 
+	                             dwdx, dwdy, dwdz]
+*/
+void vtkGrad3OGS4(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
+	double deri[9], double deri_old[9]) {
+
+	double val[3], val1[3], val2[3], val3[3];
+
+	// Recover e1u, e2v and e3w
+	double e1u = vtke1u->GetTuple1(VTKIND(ii,jj,kk,nx,ny));
+	double e2v = vtke2v->GetTuple1(VTKIND(ii,jj,kk,nx,ny));
+	double e3w = vtke3w->GetTuple1(VTKIND(ii,jj,kk,nx,ny));
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii <= 1) {
+		vtkvecf->GetTuple(VTKIND(ii+2,jj,kk,nx,ny), val );
+		vtkvecf->GetTuple(VTKIND(ii+1,jj,kk,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , val2);
+		
+		deri[0] = (-val[0] + 4*val1[0] - 3*val2[0])/2./e1u;  // dudx
+		deri[3] = (-val[1] + 4*val1[1] - 3*val2[1])/2./e1u;  // dvdx
+		deri[6] = (-val[2] + 4*val1[2] - 3*val2[2])/2./e1u;  // dwdx
+	} else if (ii >= nx-2) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii-1,jj,kk,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii-2,jj,kk,nx,ny), val2);
+
+		deri[0] = (3*val[0] - 4*val1[0] + val2[0])/2./e1u; // dudx
+		deri[3] = (3*val[1] - 4*val1[1] + val2[1])/2./e1u; // dvdx
+		deri[6] = (3*val[2] - 4*val1[2] + val2[2])/2./e1u; // dwdx
+	} else {
+		vtkvecf->GetTuple(VTKIND(ii+2,jj,kk,nx,ny), val );
+		vtkvecf->GetTuple(VTKIND(ii+1,jj,kk,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii-1,jj,kk,nx,ny), val2);
+		vtkvecf->GetTuple(VTKIND(ii-2,jj,kk,nx,ny), val3);
+
+		deri[0] = (-val[0] + 8*val1[0] - 8*val2[0] + val3[0])/12./e1u; // dudx
+		deri[3] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/12./e1u; // dvdx
+		deri[6] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/12./e1u; // dwdx
+	}
+	// Interpolate on the centered grid
+	deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
+	deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
+	deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
+					
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj <= 1) {
+		vtkvecf->GetTuple(VTKIND(ii,jj+2,kk,nx,ny), val );
+		vtkvecf->GetTuple(VTKIND(ii,jj+1,kk,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , val2);
+		
+		deri[1] = (-val[0] + 4*val1[0] - 3*val2[0])/2./e2v; // dudy
+		deri[4] = (-val[1] + 4*val1[1] - 3*val2[1])/2./e2v; // dvdy
+		deri[7] = (-val[2] + 4*val1[2] - 3*val2[2])/2./e2v; // dwdy
+	} else if (jj >= ny-2) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj-1,kk,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj-2,kk,nx,ny), val2);
+
+		deri[1] = (3*val[0] - 4*val1[0] + val2[0])/2./e2v; // dudy
+		deri[4] = (3*val[1] - 4*val1[1] + val2[1])/2./e2v; // dvdy
+		deri[7] = (3*val[2] - 4*val1[2] + val2[2])/2./e2v; // dwdy
+	} else {
+		vtkvecf->GetTuple(VTKIND(ii,jj+2,kk,nx,ny), val );
+		vtkvecf->GetTuple(VTKIND(ii,jj+1,kk,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj-1,kk,nx,ny), val2);
+		vtkvecf->GetTuple(VTKIND(ii,jj-2,kk,nx,ny), val3);
+
+		deri[1] = (-val[0] + 8*val1[0] - 8*val2[0] + val3[0])/12./e2v; // dudy
+		deri[4] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/12./e2v; // dvdy
+		deri[7] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/12./e2v; // dwdy
+	}
+	// Interpolate on the centered grid
+	deri[1] = (ii == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
+	deri[4] = (ii == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
+	deri[7] = (ii == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk <= 1) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+2,nx,ny), val );
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+1,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , val2);
+		
+		deri[2] = (-val[0] + 4*val1[0] - 3*val2[0])/2./e3w; // dudz
+		deri[5] = (-val[1] + 4*val1[1] - 3*val2[1])/2./e3w; // dvdz
+		deri[8] = (-val[2] + 4*val1[2] - 3*val2[2])/2./e3w; // dwdz
+	} else if (kk >= nz-2) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-1,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-2,nx,ny), val2);
+
+		deri[1] = (3*val[0] - 4*val1[0] + val2[0])/2./e3w; // dudz
+		deri[4] = (3*val[1] - 4*val1[1] + val2[1])/2./e3w; // dvdz
+		deri[7] = (3*val[2] - 4*val1[2] + val2[2])/2./e3w; // dwdz
+	} else {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+2,nx,ny), val );
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+1,nx,ny), val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-1,nx,ny), val2);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-2,nx,ny), val3);
+
+		deri[1] = (-val[0] + 8*val1[0] - 8*val2[0] + val3[0])/12./e3w; // dudz
+		deri[4] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/12./e3w; // dvdz
+		deri[7] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/12./e3w; // dwdz
+	}
+	// Interpolate on the centered grid
+	deri[2] = (ii == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
+	deri[5] = (ii == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
+	deri[8] = (ii == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;
+}
