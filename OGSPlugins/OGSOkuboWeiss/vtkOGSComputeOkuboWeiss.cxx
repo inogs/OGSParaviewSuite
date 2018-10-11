@@ -88,6 +88,12 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 		input->GetCellData()->GetArray("e1t"));
 	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
 		input->GetCellData()->GetArray("e2t"));
+	vtkFloatArray *vtke1u = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e1u"));
+	vtkFloatArray *vtke2v = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e2v"));
+	vtkFloatArray *vtke3w = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e3w"));
 
 	// Recover velocity vector
 	vtkFloatArray *vtkVeloc = vtkFloatArray::SafeDownCast(
@@ -104,6 +110,7 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 
 	// Loop the mesh
 	double OW_mean = 0., sum_weights = 0., OW_std = 0.;
+	double deri_old[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 	for (int kk = 0; kk < nz; kk++) {
 		// Computation of the Okubo-Weiss criterion at the surface
@@ -111,7 +118,7 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 			// First loop the 2D mesh and compute the gradients and mean
 			for (int jj = 0; jj < ny; jj++) {
 				for (int ii = 0; ii < nx; ii++) {
-					double deri[9]; // We will not use the z derivatives
+					double deri[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.}; // We will not use the z derivatives
 					// Selection of the gradient method
 					switch (this->grad_type) {
 						case 0: // Second order, face centered gradient
@@ -124,6 +131,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 							break;
 						case 2:	// OGSTM-BFM approach according to the NEMO handbook
 								// This gradient is safe as it relies on the code implementation
+							for (int dd = 0; dd < 9; dd++) deri_old[dd] = deri[dd];
+							VTK::vtkGrad3OGS1(ii,jj,kk,nx,ny,nz,
+								vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
 							break;
 					}
 					// Rates of strain and stress
