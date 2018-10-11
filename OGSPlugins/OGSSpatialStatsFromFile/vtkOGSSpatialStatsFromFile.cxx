@@ -148,6 +148,9 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		if (std::string(coasts_mask->GetName()) == std::string(array_name)) continue;
 		if (std::string(vtke1t->GetName())      == std::string(array_name)) continue;
 		if (std::string(vtke2t->GetName())      == std::string(array_name)) continue;
+		if ("e1u"                               == std::string(array_name)) continue;
+		if ("e2v"                               == std::string(array_name)) continue;
+		if ("e3w"                               == std::string(array_name)) continue;
 
 		// At this point, we can try to load the stat profile
 		double *stat_profile = NetCDF::readNetCDF(filename, array_name, nbasins*ncoasts*nz*nstat);
