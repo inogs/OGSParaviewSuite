@@ -17,6 +17,7 @@
 #include "vtkCell.h"
 #include "vtkPoints.h"
 #include "vtkCellData.h"
+#include "vtkPointData.h"
 #include "vtkFieldData.h"
 
 #include "vtkFloatArray.h"
@@ -346,3 +347,206 @@ int countUniqueCoords(vtkFloatArray *vtkArray, int n, int nunique, double epsi,
 
     return count;
 }
+
+/* VTKGRAD3XY2
+
+	Second order, face centered, approximation of the gradient for
+	a vtk vectorial field.
+
+	Output deri is in the form: [dudx, dudy, dudz, 
+	                             dvdx, dvdy, dvdz, 
+	                             dwdx, dwdy, dwdz]
+*/
+void vtkGrad3XY2(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkvecf, vtkFloatArray *vtkpoints, double deri[9]) {
+
+	int ind = 0, ind1 = 0;
+	double xyz[3], xyz1[3], val[3], val1[3];
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii == 0) {
+		ind  = VTKIND(ii+1,jj,kk,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+		ind  = VTKIND(ii+1,jj,kk,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+	} else if (ii == nx-1) {
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii-1,jj,kk,nx,ny);
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii-1,jj,kk,nx,ny);
+	} else {
+		ind  = VTKIND(ii+1,jj,kk,nx,ny); ind1 = VTKIND(ii-1,jj,kk,nx,ny);
+		ind  = VTKIND(ii+1,jj,kk,nx,ny); ind1 = VTKIND(ii-1,jj,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	vtkvecf  ->GetTuple(ind,val); vtkvecf  ->GetTuple(ind1,val1);
+	vtkpoints->GetTuple(ind,xyz); vtkpoints->GetTuple(ind1,xyz1);
+	// Compute the derivatives with respect to x
+	deri[0] = (val[0] - val1[0])/(xyz[0] - xyz1[0]); // dudx
+	deri[3] = (val[1] - val1[1])/(xyz[0] - xyz1[0]); // dvdx
+	deri[6] = (val[2] - val1[2])/(xyz[0] - xyz1[0]); // dwdx
+
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj == 0) {
+		ind  = VTKIND(ii,jj+1,kk,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+		ind  = VTKIND(ii,jj+1,kk,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+	} else if (jj == ny-1) {
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii,jj-1,kk,nx,ny);
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii,jj-1,kk,nx,ny);
+	} else {
+		ind  = VTKIND(ii,jj+1,kk,nx,ny); ind1 = VTKIND(ii,jj-1,kk,nx,ny);
+		ind  = VTKIND(ii,jj+1,kk,nx,ny); ind1 = VTKIND(ii,jj-1,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	vtkvecf  ->GetTuple(ind,val); vtkvecf  ->GetTuple(ind1,val1);
+	vtkpoints->GetTuple(ind,xyz); vtkpoints->GetTuple(ind1,xyz1);
+	// Compute the derivatives with respect to x
+	deri[1] = (val[0] - val1[0])/(xyz[1] - xyz1[1]); // dudy
+	deri[4] = (val[1] - val1[1])/(xyz[1] - xyz1[1]); // dvdy
+	deri[7] = (val[2] - val1[2])/(xyz[1] - xyz1[1]); // dwdy
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk == 0) {
+		ind  = VTKIND(ii,jj,kk+1,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+		ind  = VTKIND(ii,jj,kk+1,nx,ny); ind1 = VTKIND(ii,jj,kk,nx,ny);
+	} else if (kk == nz-1) {
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii,jj,kk-1,nx,ny);
+		ind  = VTKIND(ii,jj,kk,nx,ny); ind1 = VTKIND(ii,jj,kk-1,nx,ny);
+	} else {
+		ind  = VTKIND(ii,jj,kk+1,nx,ny); ind1 = VTKIND(ii,jj,kk-1,nx,ny);
+		ind  = VTKIND(ii,jj,kk+1,nx,ny); ind1 = VTKIND(ii,jj,kk-1,nx,ny);
+	}
+	// Recover values from vtkArrays
+	vtkvecf  ->GetTuple(ind,val); vtkvecf  ->GetTuple(ind1,val1);
+	vtkpoints->GetTuple(ind,xyz); vtkpoints->GetTuple(ind1,xyz1);
+	// Compute the derivatives with respect to x
+	deri[2] = (val[0] - val1[0])/(xyz[2] - xyz1[2]);  // dudz
+	deri[5] = (val[1] - val1[1])/(xyz[2] - xyz1[2]);  // dvdz
+	deri[8] = (val[2] - val1[2])/(xyz[2] - xyz1[2]);  // dwdz
+}
+
+/* VTKGRAD3XY4
+
+	Fourth order, face centered, approximation of the gradient for
+	a vtk vectorial field.
+
+	Output deri is in the form: [dudx, dudy, dudz, 
+	                             dvdx, dvdy, dvdz, 
+	                             dwdx, dwdy, dwdz]
+*/
+void vtkGrad3XY4(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkvecf, vtkFloatArray *vtkpoints, double deri[9]) {
+	
+	double xyz[3], xyz1[3], val[3], val1[3], val2[3], val3[3];
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii <= 1) {
+		vtkvecf->GetTuple(VTKIND(ii+2,jj,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii+1,jj,kk,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)    , val2);
+		vtkpoints->GetTuple(VTKIND(ii+1,jj,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , xyz1);
+		
+		deri[0] = (-val[0] + 4*val1[0] - 3*val2[0])/2./(xyz[0] - xyz1[0]);  // dudx
+		deri[3] = (-val[1] + 4*val1[1] - 3*val2[1])/2./(xyz[0] - xyz1[0]);  // dvdx
+		deri[6] = (-val[2] + 4*val1[2] - 3*val2[2])/2./(xyz[0] - xyz1[0]);  // dwdx
+	} else if (ii >= nx-2) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)    , val );
+		vtkvecf->GetTuple(VTKIND(ii-1,jj,kk,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii-2,jj,kk,nx,ny)  , val2);
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , xyz );
+		vtkpoints->GetTuple(VTKIND(ii-1,jj,kk,nx,ny), xyz1);
+
+		deri[0] = (3*val[0] - 4*val1[0] + val2[0])/2./(xyz[0] - xyz1[0]); // dudx
+		deri[3] = (3*val[1] - 4*val1[1] + val2[1])/2./(xyz[0] - xyz1[0]); // dvdx
+		deri[6] = (3*val[2] - 4*val1[2] + val2[2])/2./(xyz[0] - xyz1[0]); // dwdx
+	} else {
+		vtkvecf->GetTuple(VTKIND(ii+2,jj,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii+1,jj,kk,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii-1,jj,kk,nx,ny)  , val2);
+		vtkvecf->GetTuple(VTKIND(ii-2,jj,kk,nx,ny)  , val3);
+		vtkpoints->GetTuple(VTKIND(ii+1,jj,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(VTKIND(ii-1,jj,kk,nx,ny), xyz1);
+
+		deri[0] = (-val[0] + 8*val1[0] - 8*val2[0] + val3[0])/6./(xyz[0] - xyz1[0]); // dudx
+		deri[3] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/6./(xyz[0] - xyz1[0]); // dvdx
+		deri[6] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/6./(xyz[0] - xyz1[0]); // dwdx
+	}
+					
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj <= 1) {
+		vtkvecf->GetTuple(VTKIND(ii,jj+2,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj+1,kk,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)    , val2);
+		vtkpoints->GetTuple(VTKIND(ii,jj+1,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , xyz1);
+		
+		deri[1] = (-val[0] + 4*val1[0] - 3*val2[0])/2./(xyz[1] - xyz1[1]); // dudy
+		deri[4] = (-val[1] + 4*val1[1] - 3*val2[1])/2./(xyz[1] - xyz1[1]); // dvdy
+		deri[7] = (-val[2] + 4*val1[2] - 3*val2[2])/2./(xyz[1] - xyz1[1]); // dwdy
+	} else if (jj >= ny-2) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)    , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj-1,kk,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj-2,kk,nx,ny)  , val2);
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj-1,kk,nx,ny), xyz1);
+
+		deri[1] = (3*val[0] - 4*val1[0] + val2[0])/2./(xyz[1] - xyz1[1]); // dudy
+		deri[4] = (3*val[1] - 4*val1[1] + val2[1])/2./(xyz[1] - xyz1[1]); // dvdy
+		deri[7] = (3*val[2] - 4*val1[2] + val2[2])/2./(xyz[1] - xyz1[1]); // dwdy
+	} else {
+		vtkvecf->GetTuple(VTKIND(ii,jj+2,kk,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj+1,kk,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj-1,kk,nx,ny)  , val2);
+		vtkvecf->GetTuple(VTKIND(ii,jj-2,kk,nx,ny)  , val3);
+		vtkpoints->GetTuple(VTKIND(ii,jj+1,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj-1,kk,nx,ny), xyz1);
+
+		deri[1] = (-val[0] + 8*val1[0] - 8*val2[0] + val3[0])/6./(xyz[1] - xyz1[1]); // dudy
+		deri[4] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/6./(xyz[1] - xyz1[1]); // dvdy
+		deri[7] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/6./(xyz[1] - xyz1[1]); // dwdy
+	}
+	
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk <= 1) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+2,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+1,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)    , val2);
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk+1,nx,ny), xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , xyz1);
+		
+		deri[2] = (-val[0] + 4*val1[0] - 3*val2[0])/2./(xyz[2] - xyz1[2]); // dudz
+		deri[5] = (-val[1] + 4*val1[1] - 3*val2[1])/2./(xyz[2] - xyz1[2]); // dvdz
+		deri[8] = (-val[2] + 4*val1[2] - 3*val2[2])/2./(xyz[2] - xyz1[2]); // dwdz
+	} else if (kk >= nz-2) {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk,nx,ny)    , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-1,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-2,nx,ny)  , val2);
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk,nx,ny)  , xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk-1,nx,ny), xyz1);
+
+		deri[1] = (3*val[0] - 4*val1[0] + val2[0])/2./(xyz[2] - xyz1[2]); // dudz
+		deri[4] = (3*val[1] - 4*val1[1] + val2[1])/2./(xyz[2] - xyz1[2]); // dvdz
+		deri[7] = (3*val[2] - 4*val1[2] + val2[2])/2./(xyz[2] - xyz1[2]); // dwdz
+	} else {
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+2,nx,ny)  , val );
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk+1,nx,ny)  , val1);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-1,nx,ny)  , val2);
+		vtkvecf->GetTuple(VTKIND(ii,jj,kk-2,nx,ny)  , val3);
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk+1,nx,ny), xyz );
+		vtkpoints->GetTuple(VTKIND(ii,jj,kk-1,nx,ny), xyz1);
+
+		deri[1] = (-val[0] + 8*val1[0] - 8*val2[0] + val3[0])/6./(xyz[2] - xyz1[2]); // dudz
+		deri[4] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/6./(xyz[2] - xyz1[2]); // dvdz
+		deri[7] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/6./(xyz[2] - xyz1[2]); // dwdz
+	}
+}
+
