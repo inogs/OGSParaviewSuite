@@ -98,7 +98,6 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	this->UpdateProgress(0.5);
 
 	// Start by dealing with any cell array
-// TODO: Implement point array
 	if (input->GetPointData()->GetNumberOfArrays() > 0)
 		this->PointStats(input,output,0.5);
 	this->UpdateProgress(1.);
@@ -164,6 +163,9 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 		if (std::string(array_name) == "basins mask") continue;
 		if (std::string(array_name) == "e1t")         continue;
 		if (std::string(array_name) == "e2t")         continue;
+		if (std::string(array_name) == "e1u")         continue;
+		if (std::string(array_name) == "e2v")         continue;
+		if (std::string(array_name) == "e3w")         continue;
 
 		// Also anything not being an scalar array should not be computed
 		if (vtkVarArray->GetNumberOfComponents() > 1) {
