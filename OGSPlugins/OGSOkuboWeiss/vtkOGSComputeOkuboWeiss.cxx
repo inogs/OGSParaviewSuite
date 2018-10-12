@@ -28,14 +28,11 @@
 
 #include "vtkObjectFactory.h"
 
-#ifndef vtkOperations_cpp
-#define vtkOperations_cpp
 namespace VTK
 {
 // Include the VTK Operations
 #include "../_utils/vtkOperations.cpp"
 }
-#endif
 
 vtkStandardNewMacro(vtkOGSComputeOkuboWeiss);
 
