@@ -197,7 +197,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	// Sub-basins mask
 	if (this->SubBasinsMask) {
-		vtkFloatArray *vtkarray = VTK::createVTKscaf("basins mask",nLon,nLat,nLev,basins_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("basins mask",nLon-1,nLat-1,nLev-1,basins_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
@@ -205,34 +205,52 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	
 	// Coasts mask
 	if (this->CoastsMask) {
-		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask",nLon,nLat,nLev,coast_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask",nLon-1,nLat-1,nLev-1,coast_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
 	free(coast_mask);
 
-	// Deal with e1t and e2t located in the meshmask
+	// Deal with meshmask stretching arrays
 	if (this->RMeshMask) {
+		// e1
+		double *e1f = NetCDF::readNetCDF(this->meshmask,"e1f",1*(nLon-1)*(nLat-1));
 		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
-		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
 		double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
+		double *e1v = NetCDF::readNetCDF(this->meshmask,"e1v",1*(nLon-1)*(nLat-1));
+		
+		vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,
+			e1f,e1t,e1u,e1v);
+
+		this->Mesh->GetCellData()->AddArray(vtke1);
+		vtke1->Delete(); 
+		free(e1f); free(e1t); free(e1u); free(e1v);
+
+		// e2
+		double *e2f = NetCDF::readNetCDF(this->meshmask,"e2f",1*(nLon-1)*(nLat-1));
+		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
+		double *e2u = NetCDF::readNetCDF(this->meshmask,"e2u",1*(nLon-1)*(nLat-1));
 		double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
+		
+		vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,
+			e2f,e2t,e2u,e2v);
+
+		this->Mesh->GetCellData()->AddArray(vtke2);
+		vtke2->Delete(); 
+		free(e2f); free(e2t); free(e2u); free(e2v);
+
+		// e3
+		double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",nLev*nLon*nLat);
+		double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",nLev*nLon*nLat);
+		double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",nLev*nLon*nLat);
 		double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
-		// Create vtkArrays from these 2D arrays
-		vtkFloatArray *vtke1t = VTK::createVTKscaffrom2d("e1t",nLon,nLat,nLev,e1t);
-		vtkFloatArray *vtke2t = VTK::createVTKscaffrom2d("e2t",nLon,nLat,nLev,e2t);
-		vtkFloatArray *vtke1u = VTK::createVTKscaffrom2d("e1u",nLon,nLat,nLev,e1u);
-		vtkFloatArray *vtke2v = VTK::createVTKscaffrom2d("e2v",nLon,nLat,nLev,e2v);
-		vtkFloatArray *vtke3w = VTK::createVTKscaf("e3w",nLon,nLat,nLev,e3w);
-		// Add to mesh
-		this->Mesh->GetCellData()->AddArray(vtke1t);
-		this->Mesh->GetCellData()->AddArray(vtke2t);
-		this->Mesh->GetCellData()->AddArray(vtke1u);
-		this->Mesh->GetCellData()->AddArray(vtke2v);
-		this->Mesh->GetCellData()->AddArray(vtke3w);
-		vtke1t->Delete(); vtke2t->Delete();
-		vtke1u->Delete(); vtke2v->Delete(); vtke3w->Delete();
-		free(e1t); free(e2t); free(e1u); free(e2v); free(e3w);
+		
+		vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
+			e3t,e3u,e3v,e3w);
+
+		this->Mesh->GetCellData()->AddArray(vtke3);
+		vtke3->Delete(); 
+		free(e3w); free(e3t); free(e3u); free(e3v);
 	}
 
 	this->UpdateProgress(0.25);
@@ -262,7 +280,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			}
 			else {
 				double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
-				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
+				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(array);
 			}
@@ -285,7 +303,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(varname)) {
 			double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
-			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
+			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 			this->Mesh->GetCellData()->AddArray(vtkarray);
 			vtkarray->Delete(); free(array);
 		}
