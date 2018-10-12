@@ -190,7 +190,6 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		to user selection.
 
 	*/
-	int ncells = nLon*nLat*nLev;
 	VTK::createRectilinearGrid(nLon,nLat,nLev,Lon2Meters,Lat2Meters,nav_lev,
 		this->DepthScale,this->Mesh);
 	free(Lon2Meters); free(Lat2Meters); free(nav_lev);
@@ -236,10 +235,10 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	free(e2f); free(e2t); free(e2u); free(e2v);
 
 	// e3
-	double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",nLev*nLon*nLat);
-	double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",nLev*nLon*nLat);
-	double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",nLev*nLon*nLat);
-	double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
+	double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",(nLev-1)*(nLon-1)*(nLat-1));
+	double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",(nLev-1)*(nLon-1)*(nLat-1));
+	double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",(nLev-1)*(nLon-1)*(nLat-1));
+	double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",(nLev-1)*(nLon-1)*(nLat-1));
 	
 	vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
 		e3t,e3u,e3v,e3w);
@@ -317,7 +316,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	strf->Delete();
 
 	// Deallocate meshmask components
-	if (!this->RMeshMask) { 
+	if (this->RMeshMask) { 
 		this->Mesh->GetCellData()->AddArray(vtke1);
 		this->Mesh->GetCellData()->AddArray(vtke2);
 		this->Mesh->GetCellData()->AddArray(vtke3);
