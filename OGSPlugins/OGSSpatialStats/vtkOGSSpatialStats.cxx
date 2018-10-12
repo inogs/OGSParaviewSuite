@@ -139,12 +139,18 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 	// Moreover, this proved to be a faster approach.
 
 	// Recover e1t and e2t
-	vtkFloatArray *vtke1t = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e1t"));
-	output->GetCellData()->AddArray(vtke1t);
-	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e2t"));
-	output->GetCellData()->AddArray(vtke2t);
+	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e1"));
+	output->GetCellData()->AddArray(vtke1);
+	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e2"));
+	output->GetCellData()->AddArray(vtke2);
+	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e3"));
+	output->GetCellData()->AddArray(vtke3);
+
+	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)
+		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
 
 	// We can now loop the number of active variables
 	int narrays = input->GetCellData()->GetNumberOfArrays();
@@ -161,11 +167,9 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 		// these arrays will exist or not.
 		if (std::string(array_name) == "coast mask")  continue;
 		if (std::string(array_name) == "basins mask") continue;
-		if (std::string(array_name) == "e1t")         continue;
-		if (std::string(array_name) == "e2t")         continue;
-		if (std::string(array_name) == "e1u")         continue;
-		if (std::string(array_name) == "e2v")         continue;
-		if (std::string(array_name) == "e3w")         continue;
+		if (std::string(array_name) == "e1")          continue;
+		if (std::string(array_name) == "e2")          continue;
+		if (std::string(array_name) == "e3")          continue;
 
 		// Also anything not being an scalar array should not be computed
 		if (vtkVarArray->GetNumberOfComponents() > 1) {
@@ -207,14 +211,15 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 		for (int cellId = 0; cellId < ncells; cellId++) {
 			// Recover the variable value
 			double value = vtkVarArray->GetTuple1(cellId);
-			double e1t   = vtke1t->GetTuple1(cellId);
-			double e2t   = vtke2t->GetTuple1(cellId);
+			double e1[4], e2[4];
+			vtke1->GetTuple(cellId,e1);
+			vtke2->GetTuple(cellId,e2);
 			// Obtain the id for the current depth
 			int zId = cellId2zId[cellId];
 			if (zId < 0) vtkErrorMacro("Error computing <cellId2zId>");
 			// Store the variable per each layer
 			vPerLayer[zId].push_back(value);
-			wPerLayer[zId].push_back(e1t*e2t);
+			wPerLayer[zId].push_back(e1[0]*e2[0]);
 			cPerLayer[zId].push_back(cellId);
 		}
 		// Loop the depth layers
@@ -367,12 +372,18 @@ void vtkOGSSpatialStats::PointStats(vtkDataSet *input, vtkDataSet *output, doubl
 	// Moreover, this proved to be a faster approach.
 
 	// Recover e1t and e2t
-	vtkFloatArray *vtke1t = vtkFloatArray::SafeDownCast(
-		input->GetPointData()->GetArray("e1t"));
-	output->GetPointData()->AddArray(vtke1t);
-	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
-		input->GetPointData()->GetArray("e2t"));
-	output->GetPointData()->AddArray(vtke2t);
+	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
+		input->GetPointData()->GetArray("e1"));
+	output->GetPointData()->AddArray(vtke1);
+	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
+		input->GetPointData()->GetArray("e2"));
+	output->GetPointData()->AddArray(vtke2);
+	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
+		input->GetPointData()->GetArray("e3"));
+	output->GetPointData()->AddArray(vtke3);
+
+	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)
+		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
 
 	// We can now loop the number of active variables
 	int narrays = input->GetPointData()->GetNumberOfArrays();
@@ -389,11 +400,9 @@ void vtkOGSSpatialStats::PointStats(vtkDataSet *input, vtkDataSet *output, doubl
 		// these arrays will exist or not.
 		if (std::string(array_name) == "coast mask")  continue;
 		if (std::string(array_name) == "basins mask") continue;
-		if (std::string(array_name) == "e1t")         continue;
-		if (std::string(array_name) == "e2t")         continue;
-		if (std::string(array_name) == "e1u")         continue;
-		if (std::string(array_name) == "e2v")         continue;
-		if (std::string(array_name) == "e3w")         continue;
+		if (std::string(array_name) == "e1")          continue;
+		if (std::string(array_name) == "e2")          continue;
+		if (std::string(array_name) == "e3")          continue;
 
 		// Also anything not being an scalar array should not be computed
 		if (vtkVarArray->GetNumberOfComponents() > 1) {
@@ -435,14 +444,15 @@ void vtkOGSSpatialStats::PointStats(vtkDataSet *input, vtkDataSet *output, doubl
 		for (int pId = 0; pId < npoints; pId++) {
 			// Recover the variable value
 			double value = vtkVarArray->GetTuple1(pId);
-			double e1t   = vtke1t->GetTuple1(pId);
-			double e2t   = vtke2t->GetTuple1(pId);
+			double e1[4], e2[4];
+			vtke1->GetTuple(pId,e1);
+			vtke2->GetTuple(pId,e2);
 			// Obtain the id for the current depth
 			int zId = pId2zId[pId];
 			if (zId < 0) vtkErrorMacro("Error computing <pId2zId>");
 			// Store the variable per each layer
 			vPerLayer[zId].push_back(value);
-			wPerLayer[zId].push_back(e1t*e2t);
+			wPerLayer[zId].push_back(e1[0]*e2[0]);
 			cPerLayer[zId].push_back(pId);
 		}
 		// Loop the depth layers
