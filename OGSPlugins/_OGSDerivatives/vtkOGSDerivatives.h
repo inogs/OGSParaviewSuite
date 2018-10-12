@@ -1,0 +1,55 @@
+// -*- c++ -*-
+/*=========================================================================
+
+  Program:   OGSDerivatives
+  Module:    vtkOGSDerivatives.h
+
+  Copyright (c) 2018 Arnau Miro, OGS
+  All rights reserved.
+
+     This software is distributed WITHOUT ANY WARRANTY; without even
+     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+     PURPOSE.  See the above copyright notice for more information.
+
+=========================================================================*/
+
+#ifndef vtkOGSDerivatives_h
+#define vtkOGSDerivatives_h
+
+#include "vtkDataSet.h"
+#include "vtkFloatArray.h"
+#include "vtkRectilinearGridAlgorithm.h"
+
+class VTK_EXPORT vtkOGSDerivatives : public vtkRectilinearGridAlgorithm
+{
+public:
+  static vtkOGSDerivatives* New();
+  vtkTypeMacro(vtkOGSDerivatives, vtkRectilinearGridAlgorithm);
+
+  // Description:
+  // Gradient method for computing Okubo-Weiss
+  vtkSetMacro(grad_type, int);
+  vtkGetMacro(grad_type, int);
+
+  // Description:
+  // Get the name of the velocity field
+  vtkSetStringMacro(field);
+
+protected:
+  vtkOGSDerivatives();
+  ~vtkOGSDerivatives() override;
+
+  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+
+  void ScalarArrayDerivatives(vtkFloatArray *, vtkRectilinearGrid *);
+  void VectorArrayDerivatives(vtkFloatArray *, vtkRectilinearGrid *);
+
+private:
+  vtkOGSDerivatives(const vtkOGSDerivatives&) = delete;
+  void operator=(const vtkOGSDerivatives&) = delete;
+
+  char *field;
+  int grad_type;
+};
+
+#endif
