@@ -66,6 +66,8 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	vtkRectilinearGrid *output = vtkRectilinearGrid::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	output->ShallowCopy(input);
+
 	this->UpdateProgress(0.);
 
 	// Recover XYZ number of nodes
@@ -100,12 +102,17 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 
 	// Loop the mesh
 	double OW_mean = 0., sum_weights = 0., OW_std = 0.;
+	double deri[9]     = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 	double deri_old[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 	// Loop on the 2D surface mesh (k == 0) and compute the Okubo-Weiss parameter
 	for (int jj = 0; jj < ny-1; jj++) {
 		for (int ii = 0; ii < nx-1; ii++) {
-			double deri[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.}; // We will not use the z derivatives
+			// Store the previous derivative
+			if (this->grad_type > 1) {
+				for (int dd = 0; dd < 9; dd++) 
+					deri_old[dd] = deri[dd];
+			}
 			// Selection of the gradient method
 			switch (this->grad_type) {
 				case 0: // Second order, face centered gradient
@@ -118,22 +125,31 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 					break;
 				case 2:	// OGSTM-BFM approach according to the NEMO handbook
 						// This gradient is safe as it relies on the code implementation
-					for (int dd = 0; dd < 9; dd++) deri_old[dd] = deri[dd];
 					VTK::vtkGrad3OGS1(ii,jj,0,nx-1,ny-1,nz-1,
-						vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
+						vtkVeloc,vtke1u,vtke2v,vtke3w,deri);
 					break;
 				case 3:	// 2nd order OGSTM-BFM approach
 						// This gradient is experimental
-					for (int dd = 0; dd < 9; dd++) deri_old[dd] = deri[dd];
 					VTK::vtkGrad3OGS2(ii,jj,0,nx-1,ny-1,nz-1,
-						vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
+						vtkVeloc,vtke1u,vtke2v,vtke3w,deri);
 					break;
 				case 4:	// 4th order OGSTM-BFM approach
 						// This gradient is experimental
-					for (int dd = 0; dd < 9; dd++) deri_old[dd] = deri[dd];
 					VTK::vtkGrad3OGS4(ii,jj,0,nx-1,ny-1,nz-1,
-						vtkVeloc,vtke1u,vtke2v,vtke3w,deri,deri_old);
+						vtkVeloc,vtke1u,vtke2v,vtke3w,deri);
 					break;
+			}
+			// Interpolate on the centered grid
+			if (this->grad_type > 1) {
+				deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
+				deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
+				deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
+				deri[1] = (jj == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
+				deri[4] = (jj == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
+				deri[7] = (jj == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
+				//deri[2] = (kk == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
+				//deri[5] = (kk == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
+				//deri[8] = (kk == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;				
 			}
 			// Rates of strain and stress
 			double Sn = (deri[1] - deri[3]); // dudy - dvdx
@@ -149,6 +165,7 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 			// Set Okubo-Weiss
 			vtkOW->SetTuple1(CLLIND(ii,jj,0,nx,ny),OW);
 		}
+		this->UpdateProgress(0.1+0.1/(ny-1.)*jj);
 	}
 	// Up to this point the Okubo-Weiss criterion in the surface is computed
 	// and stored in vtkOW and the mean in OW_mean.
@@ -162,6 +179,7 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 			double OW  = vtkOW->GetTuple1(CLLIND(ii,jj,0,nx,ny));
 			OW_std    += (OW - OW_mean)*(OW - OW_mean)*e1t*e2t;
 		}
+		this->UpdateProgress(0.2+0.1/(ny-1.)*jj);
 	}
 	OW_std = this->coef*sqrt(OW_std/sum_weights);
 
@@ -177,6 +195,7 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 			if (OW > OW_std)
 					vtkOWm->SetTuple1(CLLIND(ii,jj,0,nx,ny),1.);
 		}
+		this->UpdateProgress(0.3+0.1/(ny-1.)*jj);
 	}	
 
 	// Now run the rest of the mesh and set the values
@@ -189,18 +208,16 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 					vtkOWm->GetTuple1(CLLIND(ii,jj,0,nx,ny)));
 			}
 		}
-		this->UpdateProgress(0.1+0.8/(nz-1)*kk);
+		this->UpdateProgress(0.4+0.6/(nz-1)*kk);
 	}
 		
 	vtkCellCenters->Delete();
 
 	// Add arrays to input
-	input->GetCellData()->AddArray(vtkOW);  vtkOW->Delete();
-	input->GetCellData()->AddArray(vtkOWm); vtkOWm->Delete();
+	output->GetCellData()->AddArray(vtkOW);  vtkOW->Delete();
+	output->GetCellData()->AddArray(vtkOWm); vtkOWm->Delete();
 
 	// Copy the input grid
 	this->UpdateProgress(1.);
-	output->ShallowCopy(input);
-
 	return 1;
 }
