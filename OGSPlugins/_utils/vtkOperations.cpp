@@ -1093,16 +1093,10 @@ void vtkGrad3XY4(int ii, int jj, int kk, int nx, int ny, int nz,
 	Output deri is in the form: [dqdx, dqdy, dqdz]
 */
 void vtkGradOGS1(int ii, int jj, int kk, int nx, int ny, int nz,
-	vtkFloatArray *vtkscaf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[3]) {
+	vtkFloatArray *vtkscaf, double e1u, double e2v, double e3w, double deri[3]) {
 
 	int ind = 0, ind1 = 0;
 	double val, val1;
-
-	// Recover e1u, e2v and e3w
-	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
 
 	/*
 		DERIVATIVES WITH RESPECT TO X
@@ -1164,16 +1158,10 @@ void vtkGradOGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	                             dwdx, dwdy, dwdz]
 */
 void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
-	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[9]) {
+	vtkFloatArray *vtkvecf, double e1u, double e2v, double e3w, double deri[9]) {
 
 	int ind = 0, ind1 = 0;
 	double val[3], val1[3];
-
-	// Recover e1u, e2v and e3w
-	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
 
 	/*
 		DERIVATIVES WITH RESPECT TO X
@@ -1241,16 +1229,10 @@ void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	Output deri is in the form: [dudx, dudy, dudz]
 */
 void vtkGradOGS2(int ii, int jj, int kk, int nx, int ny, int nz,
-	vtkFloatArray *vtkscaf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[3]) {
+	vtkFloatArray *vtkscaf, double e1u, double e2v, double e3w, double deri[3]) {
 
 	int ind = 0, ind1 = 0;
 	double val, val1;
-
-	// Recover e1u, e2v and e3w
-	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
 
 	/*
 		DERIVATIVES WITH RESPECT TO X
@@ -1319,16 +1301,10 @@ void vtkGradOGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 	                             dwdx, dwdy, dwdz]
 */
 void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
-	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[9]) {
+	vtkFloatArray *vtkvecf, double e1u, double e2v, double e3w, double deri[9]) {
 
 	int ind = 0, ind1 = 0;
 	double val[3], val1[3];
-
-	// Recover e1u, e2v and e3w
-	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
 
 	/*
 		DERIVATIVES WITH RESPECT TO X
@@ -1399,15 +1375,9 @@ void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 	Output deri is in the form: [dudx, dudy, dudz]
 */
 void vtkGradOGS4(int ii, int jj, int kk, int nx, int ny, int nz,
-	vtkFloatArray *vtkscaf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[3]) {
+	vtkFloatArray *vtkscaf, double e1u, double e2v, double e3w, double deri[3]) {
 
 	double val, val1, val2, val3;
-
-	// Recover e1u, e2v and e3w
-	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
 
 	/*
 		DERIVATIVES WITH RESPECT TO X
@@ -1500,15 +1470,9 @@ void vtkGradOGS4(int ii, int jj, int kk, int nx, int ny, int nz,
 	                             dwdx, dwdy, dwdz]
 */
 void vtkGrad3OGS4(int ii, int jj, int kk, int nx, int ny, int nz,
-	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[9]) {
+	vtkFloatArray *vtkvecf, double e1u, double e2v, double e3w, double deri[9]) {
 
 	double val[3], val1[3], val2[3], val3[3];
-
-	// Recover e1u, e2v and e3w
-	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
-	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
 
 	/*
 		DERIVATIVES WITH RESPECT TO X
