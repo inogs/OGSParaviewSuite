@@ -94,10 +94,10 @@ void createRectilinearGrid(int nLon, int nLat, int nLev,
 
 	// Set vtkFloatArrays
 	vtkFloatArray *daLon = vtkFloatArray::New();
-	for (int ii = 0; ii < nLon; ii++) daLon->InsertNextValue(1.*Lon2Meters[ii]);
+	for (int ii = 0; ii < nLon; ii++) daLon->InsertNextValue(Lon2Meters[ii]);
 
 	vtkFloatArray *daLat = vtkFloatArray::New();
-	for (int ii = 0; ii < nLat; ii++) daLat->InsertNextValue(1.*Lat2Meters[ii]);
+	for (int ii = 0; ii < nLat; ii++) daLat->InsertNextValue(Lat2Meters[ii]);
 
 	vtkFloatArray *daLev = vtkFloatArray::New();
 	for (int ii=0; ii<nLev; ii++) daLev->InsertNextValue(-dps*nav_lev[ii]);
