@@ -119,12 +119,15 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	int ncoasts = 3;
 
 	// Also copy e1t and e2t
-	vtkFloatArray *vtke1t = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e1t"));
-	output->GetCellData()->AddArray(vtke1t);
-	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e2t"));
-	output->GetCellData()->AddArray(vtke2t);
+	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e1"));
+	output->GetCellData()->AddArray(vtke1);
+	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e2"));
+	output->GetCellData()->AddArray(vtke2);
+	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e3"));
+	output->GetCellData()->AddArray(vtke3);
 
 	// Loop the number of variables
 	// For each variable, we will see if a post processing exists and
@@ -140,11 +143,9 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		// Do not work with the basins, coasts mask, e1t or e2t
 		if (std::string(basins_mask->GetName()) == std::string(array_name)) continue;
 		if (std::string(coasts_mask->GetName()) == std::string(array_name)) continue;
-		if (std::string(vtke1t->GetName())      == std::string(array_name)) continue;
-		if (std::string(vtke2t->GetName())      == std::string(array_name)) continue;
-		if ("e1u"                               == std::string(array_name)) continue;
-		if ("e2v"                               == std::string(array_name)) continue;
-		if ("e3w"                               == std::string(array_name)) continue;
+		if (std::string(vtke1->GetName())       == std::string(array_name)) continue;
+		if (std::string(vtke2->GetName())       == std::string(array_name)) continue;
+		if (std::string(vtke3->GetName())       == std::string(array_name)) continue;
 
 		// At this point, we can try to load the stat profile
 		double *stat_profile = NetCDF::readNetCDF(filename, array_name, nbasins*ncoasts*(nz-1)*nstat);
@@ -169,7 +170,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 			char statVarName[256];
 			sprintf(statVarName,"%s, %s",array_name,statName);
 			// Define a new vtkFloatArray
-			vtkFloatArray *vtkStatVar = VTK::createVTKscaf(statVarName,nx,ny,nz,NULL);
+			vtkFloatArray *vtkStatVar = VTK::createVTKscaf(statVarName,nx-1,ny-1,nz-1,NULL);
 			// Store the array in the map
 			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
 		}
