@@ -35,6 +35,54 @@
 #define PNTIND(ii,jj,kk,nx,ny)          ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 #define STTIND(bId,cId,kk,sId,ns,nz,nc) ( (ns)*(nz)*(nc)*(bId) + (ns)*(nz)*(cId) + (ns)*(kk) + (sId) )
 
+
+void facecen2cellcen(int ii,int jj,int kk, int nx, int ny, double in0[],double in1[],
+	vtkFloatArray *vtke1, vtkFloatArray *vtke2, vtkFloatArray *vtke3, double out[]) {
+
+	double e1_0[4], e2_0[4], e3_0[4];
+	double e1_1[4], e2_1[4], e3_1[4];
+
+	vtke1->GetTuple(PNTIND(ii,jj,kk,nx,ny),e1_1);
+	vtke2->GetTuple(PNTIND(ii,jj,kk,nx,ny),e2_1);
+	vtke3->GetTuple(PNTIND(ii,jj,kk,nx,ny),e3_1);
+
+	/*
+		X COORDINATE
+	*/
+	out[0] = in1[0];
+	if (ii > 0) {
+		// Recover weights
+		vtke2->GetTuple(PNTIND(ii-1,jj,kk,nx,ny),e2_0);
+		vtke3->GetTuple(PNTIND(ii-1,jj,kk,nx,ny),e3_0);
+		// Set weights
+		in0[0] *= (e2_0[1]*e3_0[1]); // (e2u*e3u)_(i-1)
+		in1[0] *= (e2_1[1]*e3_1[1]); // (e2u*e3u)_i
+		// Set output
+		out[0] = 0.5*(in0[0] + in1[0])/e2_1[0]/e3_1[0]; // 0.5*(a1_(i-1)+a1_(i))/e2t/e3t
+	}
+	
+	/*
+		Y COORDINATE
+	*/
+	out[1] = in1[1];
+	if (jj > 0) {
+		// Recover weights
+		vtke1->GetTuple(PNTIND(ii,jj-1,kk,nx,ny),e1_0);
+		vtke3->GetTuple(PNTIND(ii,jj-1,kk,nx,ny),e3_0);
+		// Set weights
+		in0[1] *= (e1_0[1]*e3_0[1]); // (e1u*e3u)_(j-1)
+		in1[1] *= (e1_1[1]*e3_1[1]); // (e1u*e3u)_j
+		// Set output
+		out[1] = 0.5*(in0[1] + in1[1])/e1_1[0]/e3_1[0]; // 0.5*(a2_(j-1)+a2_(j))/e1t/e3t
+	}
+
+	/*
+		Z COORDINATE
+	*/
+	out[2] = (kk==0) ? in1[2] : 0.5*(in0[2] + in1[2]);
+}
+
+
 /* CREATERECTILINEARGRID
 
 	Creates a VTK rectilinear grid given the mesh dimensions and the 
@@ -155,8 +203,6 @@ vtkFloatArray *createVTKscaffrom2d(const char *name, int nx, int ny, int nz, dou
 	
 	Creates a vtkFloatArray for a 3 component vector field given the array name, 
 	its dimensions in x, y, z coordinates and an additional array to fill.
-
-	This function is compliant with OGSTM-BFM code.
 */
 vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz, 
 	double *a1, double *a2, double *a3) {
@@ -165,29 +211,23 @@ vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz,
 	vtkFloatArray *vtkArray = vtkFloatArray::New();
 	vtkArray->SetName(name);
 	vtkArray->SetNumberOfComponents(3); // Vectorial field
-	vtkArray->SetNumberOfTuples((nx-1)*(ny-1)*(nz-1));
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
 	vtkArray->Fill(0.); // Preallocate vtkArray to zero
 
 	// Fill the vtkArray with the values of the array
 	if (a1 != NULL) {
-		for (int kk = 0; kk < nz-1; kk++) {
-			for (int jj = 0; jj < ny-1; jj++) {
-				for (int ii = 0; ii < nx-1; ii++) {
-					// Project velocity on the staggered mesh
-					double aux_u = (ii == 0) ? a1[CLLIND(ii,jj,kk,nx,ny)] : 
-						(a1[CLLIND(ii-1,jj,kk,nx,ny)] + a1[CLLIND(ii,jj,kk,nx,ny)])/2.;
-					double aux_v = (jj == 0) ? a2[CLLIND(ii,jj,kk,nx,ny)] : 
-						(a2[CLLIND(ii,jj-1,kk,nx,ny)] + a2[CLLIND(ii,jj-1,kk,nx,ny)])/2.;
-					double aux_w = (kk == 0) ? a3[CLLIND(ii,jj,kk,nx,ny)] : 
-						(a3[CLLIND(ii,jj,kk-1,nx,ny)] + a3[CLLIND(ii,jj,kk,nx,ny)])/2.;
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
 					// Set array value
-					vtkArray->SetTuple3(CLLIND(ii,jj,kk,nx,ny),
-						aux_u, aux_v, aux_w);
+					vtkArray->SetTuple3(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,kk,nx,ny)], 
+						a1[PNTIND(ii,jj,kk,nx,ny)], 
+						a1[PNTIND(ii,jj,kk,nx,ny)]);
 				}
 			}
 		}
 	}
-
 	return vtkArray;
 }
 
@@ -195,8 +235,6 @@ vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz,
 	
 	Creates a vtkFloatArray for a 3 component vector field given the array name, 
 	its dimensions and an additional array to fill.
-
-	This function is not compliant with OGSTM-BFM code.
 */
 vtkFloatArray *createVTKvecf3(const char *name, int n, double *a1, double *a2, double *a3) {
 
@@ -213,6 +251,50 @@ vtkFloatArray *createVTKvecf3(const char *name, int n, double *a1, double *a2, d
 			vtkArray->SetTuple3(ii,a1[ii],a2[ii],a3[ii]);
 	}
 
+	return vtkArray;
+}
+
+/* CREATEVTKVECF3
+	
+	Creates a vtkFloatArray for a 3 component vector field given the array name, 
+	its dimensions in x, y, z coordinates and an additional array to fill.
+
+	This function is compliant with OGSTM-BFM code.
+*/
+vtkFloatArray *createVTKvecf3(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3,
+	vtkFloatArray *vtke1, vtkFloatArray *vtke2, vtkFloatArray *vtke3) {
+
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(3); // Vectorial field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					// Perform interpolation of vector defined at the
+					// (u,v,w) coordinates to the T system (cell center)
+					double in0[3], in1[3], out[3];
+					in0[0] = (ii==0) ? 0. : a1[PNTIND(ii-1,jj,kk,nx,ny)];
+					in0[1] = (jj==0) ? 0. : a2[PNTIND(ii,jj-1,kk,nx,ny)];
+					in0[2] = (kk==0) ? 0. : a3[PNTIND(ii,jj,kk-1,nx,ny)];
+					in1[0] = a1[PNTIND(ii,jj,kk,nx,ny)];
+					in1[1] = a2[PNTIND(ii,jj,kk,nx,ny)];
+					in1[2] = a3[PNTIND(ii,jj,kk,nx,ny)];
+
+					facecen2cellcen(ii,jj,kk,nx,ny,in0,in1,vtke1,vtke2,vtke3,out);
+
+					// Set array value
+					vtkArray->SetTuple3(PNTIND(ii,jj,kk,nx,ny),out[0],out[1],out[2]);
+				}
+			}
+		}
+	}
 	return vtkArray;
 }
 
@@ -411,7 +493,7 @@ vtkFloatArray *createVTKtenf9(const char *name, int nx, int ny, int nz,
 		for (int kk = 0; kk < nz; kk++) {
 			for (int jj = 0; jj < ny; jj++) {
 				for (int ii = 0; ii < nx; ii++) {
-					vtkArray->SetTuple6(PNTIND(ii,jj,kk,nx,ny),
+					vtkArray->SetTuple9(PNTIND(ii,jj,kk,nx,ny),
 						a1[PNTIND(ii,jj,kk,nx,ny)],
 						a2[PNTIND(ii,jj,kk,nx,ny)],
 						a3[PNTIND(ii,jj,kk,nx,ny)],
@@ -447,7 +529,7 @@ vtkFloatArray *createVTKtenf9(const char *name, int n,
 	// Fill the vtkArray with the values of the array
 	if (a1 != NULL) {
 		for (int ii = 0; ii < n; ii++) {
-			vtkArray->SetTuple6(ii,a1[ii],a2[ii],a3[ii],a4[ii],a5[ii],a6[ii],a7[ii],a8[ii],a9[ii]);
+			vtkArray->SetTuple9(ii,a1[ii],a2[ii],a3[ii],a4[ii],a5[ii],a6[ii],a7[ii],a8[ii],a9[ii]);
 		}
 	}
 	return vtkArray;
@@ -474,7 +556,7 @@ vtkFloatArray *createVTKtenf9from2D(const char *name, int nx, int ny, int nz,
 		for (int kk = 0; kk < nz; kk++) {
 			for (int jj = 0; jj < ny; jj++) {
 				for (int ii = 0; ii < nx; ii++) {
-					vtkArray->SetTuple6(PNTIND(ii,jj,kk,nx,ny),
+					vtkArray->SetTuple9(PNTIND(ii,jj,kk,nx,ny),
 						a1[PNTIND(ii,jj,0,nx,ny)],
 						a2[PNTIND(ii,jj,0,nx,ny)],
 						a3[PNTIND(ii,jj,0,nx,ny)],
