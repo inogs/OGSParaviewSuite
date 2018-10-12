@@ -76,16 +76,15 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	int nz = input->GetZCoordinates()->GetNumberOfTuples();
 
 	// Recover weights
-	vtkFloatArray *vtke1t = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e1t"));
-	vtkFloatArray *vtke2t = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e2t"));
-	vtkFloatArray *vtke1u = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e1u"));
-	vtkFloatArray *vtke2v = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e2v"));
-	vtkFloatArray *vtke3w = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e3w"));
+	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e1"));
+	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e2"));
+	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("e3"));
+
+	if (this->grad_type > 1 && (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL))
+		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
 
 	// Recover velocity vector
 	vtkFloatArray *vtkVeloc = vtkFloatArray::SafeDownCast(
@@ -95,8 +94,8 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell Centers",input);
 
 	// Generate a new scalar array to store the Okubo-Weiss and the mask
-	vtkFloatArray *vtkOW  = VTK::createVTKscaf("Okubo-Weiss",nx,ny,nz,NULL);
-	vtkFloatArray *vtkOWm = VTK::createVTKscaf("Okubo-Weiss mask",nx,ny,nz,NULL);
+	vtkFloatArray *vtkOW  = VTK::createVTKscaf("Okubo-Weiss",nx-1,ny-1,nz-1,NULL);
+	vtkFloatArray *vtkOWm = VTK::createVTKscaf("Okubo-Weiss mask",nx-1,ny-1,nz-1,NULL);
 
 	this->UpdateProgress(0.1);
 
@@ -113,6 +112,11 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 				for (int dd = 0; dd < 9; dd++) 
 					deri_old[dd] = deri[dd];
 			}
+			// Recover e1u, e2v and e3w
+			double e1[4], e2[4], e3[4];
+			vtke1->GetTuple(CLLIND(ii,jj,0,nx,ny),e1);
+			vtke2->GetTuple(CLLIND(ii,jj,0,nx,ny),e2);
+			vtke3->GetTuple(CLLIND(ii,jj,0,nx,ny),e3);
 			// Selection of the gradient method
 			switch (this->grad_type) {
 				case 0: // Second order, face centered gradient
@@ -126,30 +130,30 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 				case 2:	// OGSTM-BFM approach according to the NEMO handbook
 						// This gradient is safe as it relies on the code implementation
 					VTK::vtkGrad3OGS1(ii,jj,0,nx-1,ny-1,nz-1,
-						vtkVeloc,vtke1u,vtke2v,vtke3w,deri);
+						vtkVeloc,e1[1],e2[2],e3[3],deri);
 					break;
 				case 3:	// 2nd order OGSTM-BFM approach
 						// This gradient is experimental
 					VTK::vtkGrad3OGS2(ii,jj,0,nx-1,ny-1,nz-1,
-						vtkVeloc,vtke1u,vtke2v,vtke3w,deri);
+						vtkVeloc,e1[1],e2[2],e3[3],deri);
 					break;
 				case 4:	// 4th order OGSTM-BFM approach
 						// This gradient is experimental
 					VTK::vtkGrad3OGS4(ii,jj,0,nx-1,ny-1,nz-1,
-						vtkVeloc,vtke1u,vtke2v,vtke3w,deri);
+						vtkVeloc,e1[1],e2[2],e3[3],deri);
 					break;
 			}
 			// Interpolate on the centered grid
 			if (this->grad_type > 1) {
-				deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
-				deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
-				deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
-				deri[1] = (jj == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
-				deri[4] = (jj == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
-				deri[7] = (jj == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
-				//deri[2] = (kk == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
-				//deri[5] = (kk == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
-				//deri[8] = (kk == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;				
+				// Interpolation first component
+				VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
+					deri_old,deri,vtke1,vtke2,vtke3,deri);
+				// Interpolation second component
+				VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
+					deri_old+3,deri+3,vtke1,vtke2,vtke3,deri+3);
+				// Interpolation third component
+				VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
+					deri_old+6,deri+6,vtke1,vtke2,vtke3,deri+6);		
 			}
 			// Rates of strain and stress
 			double Sn = (deri[1] - deri[3]); // dudy - dvdx
@@ -158,10 +162,8 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 			// Compute Okubo-Weiss
 			double OW = Sn*Sn + Ss*Ss - W*W;
 			// Compute the mean
-			double e1t   = vtke1t->GetTuple1(CLLIND(ii,jj,0,nx,ny));
-			double e2t   = vtke2t->GetTuple1(CLLIND(ii,jj,0,nx,ny));
-			OW_mean     += OW*e1t*e2t;
-			sum_weights += e1t*e2t;
+			OW_mean     += OW*e1[0]*e2[0];
+			sum_weights += e1[0]*e2[0];
 			// Set Okubo-Weiss
 			vtkOW->SetTuple1(CLLIND(ii,jj,0,nx,ny),OW);
 		}
@@ -174,10 +176,11 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	// Now we work out the standard deviation
 	for(int jj = 0; jj < ny-1; jj++){
 		for (int ii = 0; ii < nx-1; ii++) {
-			double e1t = vtke1t->GetTuple1(CLLIND(ii,jj,0,nx,ny));
-			double e2t = vtke2t->GetTuple1(CLLIND(ii,jj,0,nx,ny));
+			double e1[4], e2[4];
+			vtke1->GetTuple(CLLIND(ii,jj,0,nx,ny),e1);
+			vtke2->GetTuple(CLLIND(ii,jj,0,nx,ny),e2);
 			double OW  = vtkOW->GetTuple1(CLLIND(ii,jj,0,nx,ny));
-			OW_std    += (OW - OW_mean)*(OW - OW_mean)*e1t*e2t;
+			OW_std    += (OW - OW_mean)*(OW - OW_mean)*e1[0]*e2[0];
 		}
 		this->UpdateProgress(0.2+0.1/(ny-1.)*jj);
 	}
