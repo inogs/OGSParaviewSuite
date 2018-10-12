@@ -71,17 +71,14 @@ vtkOGSReader::vtkOGSReader() {
 	this->SetNumberOfInputPorts(0);
 	this->SetNumberOfOutputPorts(1);
 
+	this->FileName = NULL;
+
 	this->SubBasinsMask = 1;
 	this->CoastsMask    = 1;
 	this->RMeshMask     = 1;
 	this->DepthScale    = 1000.;
 
-	this->Mesh = (vtkRectilinearGrid*)vtkRectilinearGrid::New();
-
-	this->NumberOfAvePhysFields     = 0;
-	this->NumberOfAvePhysComponents = 0;
-	this->NumberOfAveFreqFields     = 0;
-	this->NumberOfAveFreqComponents = 0;
+	this->Mesh = vtkRectilinearGrid::New();
 
 	this->AvePhysDataArraySelection = vtkDataArraySelection::New();
 	this->AveFreqDataArraySelection = vtkDataArraySelection::New();
@@ -96,10 +93,7 @@ vtkOGSReader::vtkOGSReader() {
 vtkOGSReader::~vtkOGSReader() {
 
 	this->FileName = NULL;
-	this->SetFileName(0);
-
-	if (this->ave_phys.nvars > 0) free(this->ave_phys.vars);
-	if (this->ave_freq.nvars > 0) free(this->ave_freq.vars);
+	this->SetFileName(NULL);
 
 	if (this->timeStepInfo.ntsteps > 0) {
 		for (int ii = 0; ii < this->timeStepInfo.ntsteps; ii++)
@@ -110,7 +104,7 @@ vtkOGSReader::~vtkOGSReader() {
 	this->AvePhysDataArraySelection->Delete();
 	this->AveFreqDataArraySelection->Delete();
 
-	if(this->Mesh) this->DeleteMesh();
+	this->DeleteMesh();
 
 	#ifdef PARAVIEW_USE_MPI
   		this->SetController(NULL);	
@@ -120,7 +114,6 @@ vtkOGSReader::~vtkOGSReader() {
 //----------------------------------------------------------------------------
 int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-
 
 	#ifdef PARAVIEW_USE_MPI
 	  	if (this->Controller) {
@@ -140,7 +133,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	// Clear the mesh
 	if (this->Mesh) this->DeleteMesh();
-	this->Mesh = (vtkRectilinearGrid*)vtkRectilinearGrid::New();
+	this->Mesh = vtkRectilinearGrid::New();
 
 	this->UpdateProgress(0.0);
 
@@ -190,14 +183,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		to user selection.
 
 	*/
-	int ncells = nLon*nLat*nLev;
 	VTK::createRectilinearGrid(nLon,nLat,nLev,Lon2Meters,Lat2Meters,nav_lev,
 		this->DepthScale,this->Mesh);
 	free(Lon2Meters); free(Lat2Meters); free(nav_lev);
 
 	// Sub-basins mask
 	if (this->SubBasinsMask) {
-		vtkFloatArray *vtkarray = VTK::createVTKscaf("basins mask",nLon,nLat,nLev,basins_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("basins mask",nLon-1,nLat-1,nLev-1,basins_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
@@ -205,35 +197,46 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	
 	// Coasts mask
 	if (this->CoastsMask) {
-		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask",nLon,nLat,nLev,coast_mask);
+		vtkFloatArray *vtkarray = VTK::createVTKscaf("coast mask",nLon-1,nLat-1,nLev-1,coast_mask);
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	}
 	free(coast_mask);
 
-	// Deal with e1t and e2t located in the meshmask
-	if (this->RMeshMask) {
-		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
-		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
-		double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
-		double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
-		double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
-		// Create vtkArrays from these 2D arrays
-		vtkFloatArray *vtke1t = VTK::createVTKscaffrom2d("e1t",nLon,nLat,nLev,e1t);
-		vtkFloatArray *vtke2t = VTK::createVTKscaffrom2d("e2t",nLon,nLat,nLev,e2t);
-		vtkFloatArray *vtke1u = VTK::createVTKscaffrom2d("e1u",nLon,nLat,nLev,e1u);
-		vtkFloatArray *vtke2v = VTK::createVTKscaffrom2d("e2v",nLon,nLat,nLev,e2v);
-		vtkFloatArray *vtke3w = VTK::createVTKscaf("e3w",nLon,nLat,nLev,e3w);
-		// Add to mesh
-		this->Mesh->GetCellData()->AddArray(vtke1t);
-		this->Mesh->GetCellData()->AddArray(vtke2t);
-		this->Mesh->GetCellData()->AddArray(vtke1u);
-		this->Mesh->GetCellData()->AddArray(vtke2v);
-		this->Mesh->GetCellData()->AddArray(vtke3w);
-		vtke1t->Delete(); vtke2t->Delete();
-		vtke1u->Delete(); vtke2v->Delete(); vtke3w->Delete();
-		free(e1t); free(e2t); free(e1u); free(e2v); free(e3w);
-	}
+	// Deal with meshmask stretching arrays
+	// They must be forcefully loaded to project the velocity
+	// e1
+	double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
+	double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
+	double *e1v = NetCDF::readNetCDF(this->meshmask,"e1v",1*(nLon-1)*(nLat-1));
+	double *e1f = NetCDF::readNetCDF(this->meshmask,"e1f",1*(nLon-1)*(nLat-1));
+	
+	vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,
+		e1t,e1u,e1v,e1f);
+
+	free(e1t); free(e1u); free(e1v); free(e1f);
+
+	// e2
+	double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
+	double *e2u = NetCDF::readNetCDF(this->meshmask,"e2u",1*(nLon-1)*(nLat-1));
+	double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
+	double *e2f = NetCDF::readNetCDF(this->meshmask,"e2f",1*(nLon-1)*(nLat-1));
+	
+	vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,
+		e2t,e2u,e2v,e2f);
+
+	free(e2t); free(e2u); free(e2v); free(e2f);
+
+	// e3
+	double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",(nLev-1)*(nLon-1)*(nLat-1));
+	double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",(nLev-1)*(nLon-1)*(nLat-1));
+	double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",(nLev-1)*(nLon-1)*(nLat-1));
+	double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",(nLev-1)*(nLon-1)*(nLat-1));
+	
+	vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
+		e3t,e3u,e3v,e3w);
+
+	free(e3w); free(e3t); free(e3u); free(e3v);
 
 	this->UpdateProgress(0.25);
 
@@ -256,13 +259,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",(nLon-1)*(nLat-1)*(nLev-1)),
 					   *v = NetCDF::readNetCDF(varpath,"vomecrty",(nLon-1)*(nLat-1)*(nLev-1)),
 					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",(nLon-1)*(nLat-1)*(nLev-1));
-				vtkFloatArray *vtkarray = VTK::createVTKvecf3(varname,nLon,nLat,nLev,u,v,w);
+				vtkFloatArray *vtkarray = 
+					VTK::createVTKvecf3(varname,nLon-1,nLat-1,nLev-1,u,v,w,vtke1,vtke2,vtke3);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(u); free(v); free(w);
 			}
 			else {
 				double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
-				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
+				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(array);
 			}
@@ -285,7 +289,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(varname)) {
 			double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
-			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon,nLat,nLev,array);
+			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 			this->Mesh->GetCellData()->AddArray(vtkarray);
 			vtkarray->Delete(); free(array);
 		}
@@ -304,6 +308,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	this->Mesh->GetFieldData()->AddArray(strf);
 	strf->Delete();
 
+	// Deallocate meshmask components
+	if (this->RMeshMask) { 
+		this->Mesh->GetCellData()->AddArray(vtke1);
+		this->Mesh->GetCellData()->AddArray(vtke2);
+		this->Mesh->GetCellData()->AddArray(vtke3);
+	}
+	vtke1->Delete(); vtke2->Delete(); vtke3->Delete();
+
 	// Set output
 	output->ShallowCopy(this->Mesh);
 	this->UpdateProgress(1.0);
@@ -315,7 +327,6 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 //----------------------------------------------------------------------------
 int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-
   	/* READING THE MASTER FILE
 
 		The master file contains the information of the working directory and the
@@ -333,15 +344,8 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		file and list them inside the array selection.
 
 	*/
-	for(int ii = 0; ii < this->ave_phys.nvars; ii++) {
-		// Add the variable to the array selection
+	for(int ii = 0; ii < this->ave_phys.nvars; ii++)
 		this->AvePhysDataArraySelection->AddArray(this->ave_phys.vars[ii].name);
-		this->NumberOfAvePhysComponents += 1;
-		if (std::string(this->ave_phys.vars[ii].name) == "Velocity")
-			this->NumberOfAvePhysFields += 3;
-		else
-			this->NumberOfAvePhysFields += 1;
-	}
 
 	/* SCAN THE BIOGEOCHEMICAL VARIABLES
 
@@ -349,12 +353,8 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		file and list them inside the array selection.
 
 	*/
-	for(int ii = 0; ii < this->ave_freq.nvars; ii++) {
-		// Add the variable to the array selection
-		this->AveFreqDataArraySelection->AddArray(this->ave_freq.vars[ii].name);
-		this->NumberOfAveFreqComponents += 1;
-		this->NumberOfAveFreqFields += 1;		
-	}
+	for(int ii = 0; ii < this->ave_freq.nvars; ii++) 
+		this->AveFreqDataArraySelection->AddArray(this->ave_freq.vars[ii].name);	
 
 	/* SET UP THE TIMESTEP
 
@@ -365,8 +365,9 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
 	// Set the time step value
-	double *timeSteps;
-	timeSteps = (double*)malloc(this->timeStepInfo.ntsteps*sizeof(double));
+	double *timeSteps = NULL;
+	timeSteps = new double[this->timeStepInfo.ntsteps];
+	//timeSteps = (double*)malloc(this->timeStepInfo.ntsteps*sizeof(double));
 	for (int ii = 0; ii < this->timeStepInfo.ntsteps; ii++)
 		timeSteps[ii] = ii;
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timeSteps[0], 
@@ -378,7 +379,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
     timeRange[1] = timeSteps[this->timeStepInfo.ntsteps-1];
 	outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
-	free(timeSteps);
+	delete [] timeSteps;
 
 	return 1;
 }
@@ -407,10 +408,10 @@ int vtkOGSReader::GetNumberOfAvePhysArrays()
 
 const char* vtkOGSReader::GetAvePhysArrayName(int index)
 {
-	if (index >= (int)this->NumberOfAvePhysComponents || index < 0)
-	return NULL;
+	if (index >= (int)this->GetNumberOfAvePhysArrays() || index < 0)
+		return NULL;
 	else
-	return this->AvePhysDataArraySelection->GetArrayName(index);
+		return this->AvePhysDataArraySelection->GetArrayName(index);
 }
 
 int vtkOGSReader::GetAvePhysArrayIndex(const char* name)
@@ -451,10 +452,10 @@ int vtkOGSReader::GetNumberOfAveFreqArrays()
 
 const char* vtkOGSReader::GetAveFreqArrayName(int index)
 {
-	if (index >= (int)this->NumberOfAveFreqComponents || index < 0)
-	return NULL;
+	if (index >= (int)this->GetNumberOfAveFreqArrays() || index < 0)
+		return NULL;
 	else
-	return this->AveFreqDataArraySelection->GetArrayName(index);
+		return this->AveFreqDataArraySelection->GetArrayName(index);
 }
 
 int vtkOGSReader::GetAveFreqArrayIndex(const char* name)
