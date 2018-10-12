@@ -212,46 +212,39 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	free(coast_mask);
 
 	// Deal with meshmask stretching arrays
-	if (this->RMeshMask) {
-		// e1
-		double *e1f = NetCDF::readNetCDF(this->meshmask,"e1f",1*(nLon-1)*(nLat-1));
-		double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
-		double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
-		double *e1v = NetCDF::readNetCDF(this->meshmask,"e1v",1*(nLon-1)*(nLat-1));
-		
-		vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,
-			e1f,e1t,e1u,e1v);
+	// They must be forcefully loaded to project the velocity
+	// e1
+	double *e1f = NetCDF::readNetCDF(this->meshmask,"e1f",1*(nLon-1)*(nLat-1));
+	double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
+	double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
+	double *e1v = NetCDF::readNetCDF(this->meshmask,"e1v",1*(nLon-1)*(nLat-1));
+	
+	vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,
+		e1t,e1u,e1v,e1f);
 
-		this->Mesh->GetCellData()->AddArray(vtke1);
-		vtke1->Delete(); 
-		free(e1f); free(e1t); free(e1u); free(e1v);
+	free(e1f); free(e1t); free(e1u); free(e1v);
 
-		// e2
-		double *e2f = NetCDF::readNetCDF(this->meshmask,"e2f",1*(nLon-1)*(nLat-1));
-		double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
-		double *e2u = NetCDF::readNetCDF(this->meshmask,"e2u",1*(nLon-1)*(nLat-1));
-		double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
-		
-		vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,
-			e2f,e2t,e2u,e2v);
+	// e2
+	double *e2f = NetCDF::readNetCDF(this->meshmask,"e2f",1*(nLon-1)*(nLat-1));
+	double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
+	double *e2u = NetCDF::readNetCDF(this->meshmask,"e2u",1*(nLon-1)*(nLat-1));
+	double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
+	
+	vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,
+		e2t,e2u,e2v,e2f);
 
-		this->Mesh->GetCellData()->AddArray(vtke2);
-		vtke2->Delete(); 
-		free(e2f); free(e2t); free(e2u); free(e2v);
+	free(e2f); free(e2t); free(e2u); free(e2v);
 
-		// e3
-		double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",nLev*nLon*nLat);
-		double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",nLev*nLon*nLat);
-		double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",nLev*nLon*nLat);
-		double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
-		
-		vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
-			e3t,e3u,e3v,e3w);
+	// e3
+	double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",nLev*nLon*nLat);
+	double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",nLev*nLon*nLat);
+	double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",nLev*nLon*nLat);
+	double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",nLev*nLon*nLat);
+	
+	vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
+		e3t,e3u,e3v,e3w);
 
-		this->Mesh->GetCellData()->AddArray(vtke3);
-		vtke3->Delete(); 
-		free(e3w); free(e3t); free(e3u); free(e3v);
-	}
+	free(e3w); free(e3t); free(e3u); free(e3v);
 
 	this->UpdateProgress(0.25);
 
@@ -274,7 +267,8 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",(nLon-1)*(nLat-1)*(nLev-1)),
 					   *v = NetCDF::readNetCDF(varpath,"vomecrty",(nLon-1)*(nLat-1)*(nLev-1)),
 					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",(nLon-1)*(nLat-1)*(nLev-1));
-				vtkFloatArray *vtkarray = VTK::createVTKvecf3(varname,nLon,nLat,nLev,u,v,w);
+				vtkFloatArray *vtkarray = 
+					VTK::createVTKvecf3(varname,nLon-1,nLat-1,nLev-1,u,v,w,vtke1,vtke2,vtke3);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(u); free(v); free(w);
 			}
@@ -321,6 +315,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	vtkStringArray *strf = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
 	this->Mesh->GetFieldData()->AddArray(strf);
 	strf->Delete();
+
+	// Deallocate meshmask components
+	if (!this->RMeshMask) { 
+		this->Mesh->GetCellData()->AddArray(vtke1);
+		this->Mesh->GetCellData()->AddArray(vtke2);
+		this->Mesh->GetCellData()->AddArray(vtke3);
+	}
+	vtke1->Delete(); vtke2->Delete(); vtke3->Delete();
 
 	// Set output
 	output->ShallowCopy(this->Mesh);
