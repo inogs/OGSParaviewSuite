@@ -41,19 +41,9 @@ public:
 	vtkTypeMacro(vtkOGSReader, vtkRectilinearGridAlgorithm);
 
 	// Description:
-	// Get the number of data fields at the cell centers.
-	vtkGetMacro(NumberOfAvePhysFields, int);
-	vtkGetMacro(NumberOfAveFreqFields, int);
-
-	// Description:
-	// Get the number of data components at the nodes and cells.
-	vtkGetMacro(NumberOfAvePhysComponents, int);
-	vtkGetMacro(NumberOfAveFreqComponents, int);
-
-	// Description:
 	// Get the name of the master file to read
 	vtkSetStringMacro(FileName);
-//	vtkGetStringMacro(FileName);
+	vtkGetStringMacro(FileName);
 
 	// Description:
 	// If false, do not include the sub basins. True by default.
@@ -122,9 +112,6 @@ protected:
 
 	int SubBasinsMask, CoastsMask, RMeshMask;
 	double DepthScale;
-
-	int NumberOfAvePhysFields, NumberOfAvePhysComponents;
-	int NumberOfAveFreqFields, NumberOfAveFreqComponents;
 
 	vtkDataArraySelection* AvePhysDataArraySelection;
 	vtkDataArraySelection* AveFreqDataArraySelection;
