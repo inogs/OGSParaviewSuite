@@ -348,6 +348,77 @@ int countUniqueCoords(vtkFloatArray *vtkArray, int n, int nunique, double epsi,
     return count;
 }
 
+/* VTKGRADXY2
+
+	Second order, face centered, approximation of the gradient for
+	a vtk scalar field.
+
+	Output deri is in the form: [dqdx, dqdy, dqdz]
+*/
+void vtkGradXY2(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkscaf, vtkFloatArray *vtkpoints, double deri[3]) {
+
+	int ind = 0, ind1 = 0;
+	double xyz[3], xyz1[3], val, val1;
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii == 0) {
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+	} else if (ii == nx-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+	} else {
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind); val1 = vtkscaf->GetTuple1(ind1);
+	vtkpoints->GetTuple(ind,xyz);  vtkpoints->GetTuple(ind1,xyz1);
+	// Compute the derivatives with respect to x
+	deri[0] = (val - val1)/(xyz[0] - xyz1[0]); // dqdx
+
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj == 0) {
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+	} else if (jj == ny-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+	} else {
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind); val1 = vtkscaf->GetTuple1(ind1);
+	vtkpoints->GetTuple(ind,xyz);  vtkpoints->GetTuple(ind1,xyz1);
+	// Compute the derivatives with respect to x
+	deri[1] = (val - val1)/(xyz[1] - xyz1[1]); // dqdy
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk == 0) {
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+	} else if (kk == nz-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+	} else {
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind); val1 = vtkscaf->GetTuple1(ind1);
+	vtkpoints->GetTuple(ind,xyz);  vtkpoints->GetTuple(ind1,xyz1);
+	// Compute the derivatives with respect to x
+	deri[2] = (val - val1)/(xyz[2] - xyz1[2]);  // dqdz
+}
+
 /* VTKGRAD3XY2
 
 	Second order, face centered, approximation of the gradient for
@@ -425,6 +496,109 @@ void vtkGrad3XY2(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[2] = (val[0] - val1[0])/(xyz[2] - xyz1[2]);  // dudz
 	deri[5] = (val[1] - val1[1])/(xyz[2] - xyz1[2]);  // dvdz
 	deri[8] = (val[2] - val1[2])/(xyz[2] - xyz1[2]);  // dwdz
+}
+
+/* VTKGRADXY4
+
+	Fourth order, face centered, approximation of the gradient for
+	a vtk scalar field.
+
+	Output deri is in the form: [dudx, dudy, dudz]
+*/
+void vtkGradXY4(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkscaf, vtkFloatArray *vtkpoints, double deri[3]) {
+	
+	double xyz[3], xyz1[3], val, val1, val2, val3;
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii <= 1) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii+2,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii+1,jj,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii+1,jj,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk,nx,ny)  , xyz1);
+		
+		deri[0] = (-val + 4*val1 - 3*val2)/2./(xyz[0] - xyz1[0]);  // dqdx
+	} else if (ii >= nx-2) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii-1,jj,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii-2,jj,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk,nx,ny)  , xyz );
+		vtkpoints->GetTuple(PNTIND(ii-1,jj,kk,nx,ny), xyz1);
+
+		deri[0] = (3*val - 4*val1 + val2)/2./(xyz[0] - xyz1[0]); // dqdx
+	} else {
+		val  = vtkscaf->GetTuple1(PNTIND(ii+2,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii+1,jj,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii-1,jj,kk,nx,ny));
+		val3 = vtkscaf->GetTuple1(PNTIND(ii-2,jj,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii+1,jj,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(PNTIND(ii-1,jj,kk,nx,ny), xyz1);
+
+		deri[0] = (-val + 8*val1 - 8*val2 + val3)/6./(xyz[0] - xyz1[0]); // dqdx
+	}
+					
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj <= 1) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj+2,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj+1,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj+1,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk,nx,ny)  , xyz1);
+		
+		deri[1] = (-val + 4*val1 - 3*val2)/2./(xyz[1] - xyz1[1]); // dqdy
+	} else if (jj >= ny-2) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj-1,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj-2,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk,nx,ny)  , xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj-1,kk,nx,ny), xyz1);
+
+		deri[1] = (3*val - 4*val1 + val2)/2./(xyz[1] - xyz1[1]); // dqdy
+	} else {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj+2,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj+1,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj-1,kk,nx,ny));
+		val3 = vtkscaf->GetTuple1(PNTIND(ii,jj-2,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj+1,kk,nx,ny), xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj-1,kk,nx,ny), xyz1);
+
+		deri[1] = (-val + 8*val1 - 8*val2 + val3)/6./(xyz[1] - xyz1[1]); // dqdy
+	}
+	
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk <= 1) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+2,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+1,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk+1,nx,ny), xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk,nx,ny)  , xyz1);
+		
+		deri[2] = (-val + 4*val1 - 3*val2)/2./(xyz[2] - xyz1[2]); // dqdz
+	} else if (kk >= nz-2) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-1,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-2,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk,nx,ny)  , xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk-1,nx,ny), xyz1);
+
+		deri[1] = (3*val - 4*val1 + val2)/2./(xyz[2] - xyz1[2]); // dqdz
+	} else {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+2,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+1,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-1,nx,ny));
+		val3 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-2,nx,ny));
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk+1,nx,ny), xyz );
+		vtkpoints->GetTuple(PNTIND(ii,jj,kk-1,nx,ny), xyz1);
+
+		deri[1] = (-val + 8*val1 - 8*val2 + val3)/6./(xyz[2] - xyz1[2]); // dqdz
+	}
 }
 
 /* VTKGRAD3XY4
@@ -550,6 +724,75 @@ void vtkGrad3XY4(int ii, int jj, int kk, int nx, int ny, int nz,
 	}
 }
 
+/* VTKGRADOGS1
+
+	First order, forward Euler, approximation of the gradient for
+	a vtk scalar field using OGSTM-BFM approach.
+
+	This gradient lives in the staggered mesh. 
+
+	The input is assumed to be on the cell centered mesh. 
+
+	Output deri is in the form: [dqdx, dqdy, dqdz]
+*/
+void vtkGradOGS1(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkscaf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
+	double deri[3]) {
+
+	int ind = 0, ind1 = 0;
+	double val, val1;
+
+	// Recover e1u, e2v and e3w
+	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii == nx-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); 
+		ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+	} else {
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); 
+		ind1 = PNTIND(ii,jj,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind); val1 = vtkscaf->GetTuple1(ind1);
+	// Compute the derivatives
+	deri[0] = (val - val1)/e1u; // dqdx
+
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj == ny-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); 
+		ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+	} else {
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); 
+		ind1 = PNTIND(ii,jj,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind); val1 = vtkscaf->GetTuple1(ind1);
+	// Compute the derivatives
+	deri[1] = (val - val1)/e2v; // dqdy
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk == nz-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); 
+		ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+	} else {
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); 
+		ind1 = PNTIND(ii,jj,kk,nx,ny);
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind); val1 = vtkscaf->GetTuple1(ind1);
+	// Compute the derivatives
+	deri[2] = (val - val1)/e3w; // dqdz
+}
+
 /* VTKGRAD3OGS1
 
 	First order, forward Euler, approximation of the gradient for
@@ -559,15 +802,13 @@ void vtkGrad3XY4(int ii, int jj, int kk, int nx, int ny, int nz,
 
 	The input is assumed to be on the cell centered mesh. 
 
-	The output is returned on the cell centered mesh.
-
 	Output deri is in the form: [dudx, dudy, dudz, 
 	                             dvdx, dvdy, dvdz, 
 	                             dwdx, dwdy, dwdz]
 */
 void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[9], double deri_old[9]) {
+	double deri[9]) {
 
 	int ind = 0, ind1 = 0;
 	double val[3], val1[3];
@@ -593,10 +834,6 @@ void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[0] = (val[0] - val1[0])/e1u; // dudx
 	deri[3] = (val[1] - val1[1])/e1u; // dvdx
 	deri[6] = (val[2] - val1[2])/e1u; // dwdx
-	// Interpolate on the centered grid
-	deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
-	deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
-	deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
 
 	/*
 		DERIVATIVES WITH RESPECT TO Y
@@ -614,10 +851,6 @@ void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[1] = (val[0] - val1[0])/e2v; // dudy
 	deri[4] = (val[1] - val1[1])/e2v; // dvdy
 	deri[7] = (val[2] - val1[2])/e2v; // dwdy
-	// Interpolate on the centered grid
-	deri[1] = (ii == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
-	deri[4] = (ii == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
-	deri[7] = (ii == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
 
 	/*
 		DERIVATIVES WITH RESPECT TO Z
@@ -635,10 +868,80 @@ void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[2] = (val[0] - val1[0])/e3w; // dudz
 	deri[5] = (val[1] - val1[1])/e3w; // dvdz
 	deri[8] = (val[2] - val1[2])/e3w; // dwdz
-	// Interpolate on the centered grid
-	deri[2] = (ii == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
-	deri[5] = (ii == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
-	deri[8] = (ii == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;
+}
+
+/* VTKGRADOGS2
+
+	Second order, face centered, approximation of the gradient for
+	a vtk scalar field using OGSTM-BFM approach.
+
+	This gradient lives in the staggered mesh. 
+
+	The input is assumed to be on the cell centered mesh. 
+
+	The output is returned on the cell centered mesh.
+
+	Output deri is in the form: [dudx, dudy, dudz]
+*/
+void vtkGradOGS2(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkscaf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
+	double deri[3]) {
+
+	int ind = 0, ind1 = 0;
+	double val, val1;
+
+	// Recover e1u, e2v and e3w
+	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii == 0) {
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+	} else if (ii == nx-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+	} else {
+		ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+		e1u *= 2.;
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind);  val1 = vtkscaf->GetTuple1(ind1);
+	// Compute the derivatives with respect to x
+	deri[0] = (val - val1)/e1u; // dqdx
+
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj == 0) {
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+	} else if (jj == ny-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+	} else {
+		ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+		e2v *= 2.;
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind);  val1 = vtkscaf->GetTuple1(ind1);
+	// Compute the derivatives with respect to x
+	deri[1] = (val - val1)/e2v; // dqdy
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk == 0) {
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+	} else if (kk == nz-1) {
+		ind  = PNTIND(ii,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+	} else {
+		ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+		e3w *= 2.;
+	}
+	// Recover values from vtkArrays
+	val = vtkscaf->GetTuple1(ind);  val1 = vtkscaf->GetTuple1(ind1);
+	// Compute the derivatives with respect to x
+	deri[2] = (val - val1)/e3w;  // dqdz
 }
 
 /* VTKGRAD3OGS2
@@ -660,7 +963,7 @@ void vtkGrad3OGS1(int ii, int jj, int kk, int nx, int ny, int nz,
 */
 void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[9], double deri_old[9]) {
+	double deri[9]) {
 
 	int ind = 0, ind1 = 0;
 	double val[3], val1[3];
@@ -687,10 +990,6 @@ void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[0] = (val[0] - val1[0])/e1u; // dudx
 	deri[3] = (val[1] - val1[1])/e1u; // dvdx
 	deri[6] = (val[2] - val1[2])/e1u; // dwdx
-	// Interpolate on the centered grid
-	deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
-	deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
-	deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
 
 	/*
 		DERIVATIVES WITH RESPECT TO Y
@@ -709,10 +1008,6 @@ void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[1] = (val[0] - val1[0])/e2v; // dudy
 	deri[4] = (val[1] - val1[1])/e2v; // dvdy
 	deri[7] = (val[2] - val1[2])/e2v; // dwdy
-	// Interpolate on the centered grid
-	deri[1] = (ii == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
-	deri[4] = (ii == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
-	deri[7] = (ii == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
 
 	/*
 		DERIVATIVES WITH RESPECT TO Z
@@ -731,10 +1026,103 @@ void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 	deri[2] = (val[0] - val1[0])/e3w;  // dudz
 	deri[5] = (val[1] - val1[1])/e3w;  // dvdz
 	deri[8] = (val[2] - val1[2])/e3w;  // dwdz
-	// Interpolate on the centered grid
-	deri[2] = (ii == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
-	deri[5] = (ii == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
-	deri[8] = (ii == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;
+}
+
+/* VTKGRADOGS4
+
+	Fourth order, face centered, approximation of the gradient for
+	a vtk scalar field using OGSTM-BFM approach.
+
+	This gradient lives in the staggered mesh. 
+
+	The input is assumed to be on the cell centered mesh. 
+
+	This gradient method is experimental
+
+	Output deri is in the form: [dudx, dudy, dudz]
+*/
+void vtkGradOGS4(int ii, int jj, int kk, int nx, int ny, int nz,
+	vtkFloatArray *vtkscaf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
+	double deri[3]) {
+
+	double val, val1, val2, val3;
+
+	// Recover e1u, e2v and e3w
+	double e1u = vtke1u->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+	double e2v = vtke2v->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+	double e3w = vtke3w->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+
+	/*
+		DERIVATIVES WITH RESPECT TO X
+	*/
+	if (ii <= 1) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii+2,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii+1,jj,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		
+		deri[0] = (-val + 4*val1 - 3*val2)/2./e1u;  // dqdx
+	} else if (ii >= nx-2) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii-1,jj,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii-2,jj,kk,nx,ny));
+
+		deri[0] = (3*val - 4*val1 + val2)/2./e1u; // dqdx
+	} else {
+		val  = vtkscaf->GetTuple1(PNTIND(ii+2,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii+1,jj,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii-1,jj,kk,nx,ny));
+		val3 = vtkscaf->GetTuple1(PNTIND(ii-2,jj,kk,nx,ny));
+
+		deri[0] = (-val + 8*val1 - 8*val2 + val3)/12./e1u; // dqdx
+	}
+					
+	/*
+		DERIVATIVES WITH RESPECT TO Y
+	*/
+	if (jj <= 1) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj+2,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj+1,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		
+		deri[1] = (-val + 4*val1 - 3*val2)/2./e2v; // dqdy
+	} else if (jj >= ny-2) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj-1,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj-2,kk,nx,ny));
+
+		deri[1] = (3*val - 4*val1 + val2)/2./e2v; // dqdy
+	} else {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj+2,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj+1,kk,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj-1,kk,nx,ny));
+		val3 = vtkscaf->GetTuple1(PNTIND(ii,jj-2,kk,nx,ny));
+
+		deri[1] = (-val + 8*val1 - 8*val2 + val3)/12./e2v; // dqdy
+	}
+
+	/*
+		DERIVATIVES WITH RESPECT TO Z
+	*/
+	if (kk <= 1) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+2,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+1,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		
+		deri[2] = (-val + 4*val1 - 3*val2)/2./e3w; // dqdz
+	} else if (kk >= nz-2) {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-1,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-2,nx,ny));
+
+		deri[1] = (3*val - 4*val1 + val2)/2./e3w; // dqdz
+	} else {
+		val  = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+2,nx,ny));
+		val1 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk+1,nx,ny));
+		val2 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-1,nx,ny));
+		val3 = vtkscaf->GetTuple1(PNTIND(ii,jj,kk-2,nx,ny));
+
+		deri[1] = (-val + 8*val1 - 8*val2 + val3)/12./e3w; // dqdz
+	}
 }
 
 /* VTKGRAD3OGS4
@@ -756,7 +1144,7 @@ void vtkGrad3OGS2(int ii, int jj, int kk, int nx, int ny, int nz,
 */
 void vtkGrad3OGS4(int ii, int jj, int kk, int nx, int ny, int nz,
 	vtkFloatArray *vtkvecf, vtkFloatArray *vtke1u, vtkFloatArray *vtke2v, vtkFloatArray *vtke3w, 
-	double deri[9], double deri_old[9]) {
+	double deri[9]) {
 
 	double val[3], val1[3], val2[3], val3[3];
 
@@ -794,10 +1182,6 @@ void vtkGrad3OGS4(int ii, int jj, int kk, int nx, int ny, int nz,
 		deri[3] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/12./e1u; // dvdx
 		deri[6] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/12./e1u; // dwdx
 	}
-	// Interpolate on the centered grid
-	deri[0] = (ii == 0) ? deri[0] : (deri[0] + deri_old[0])/2.;
-	deri[3] = (ii == 0) ? deri[3] : (deri[3] + deri_old[3])/2.;
-	deri[6] = (ii == 0) ? deri[6] : (deri[6] + deri_old[6])/2.;
 					
 	/*
 		DERIVATIVES WITH RESPECT TO Y
@@ -828,10 +1212,6 @@ void vtkGrad3OGS4(int ii, int jj, int kk, int nx, int ny, int nz,
 		deri[4] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/12./e2v; // dvdy
 		deri[7] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/12./e2v; // dwdy
 	}
-	// Interpolate on the centered grid
-	deri[1] = (ii == 0) ? deri[1] : (deri[1] + deri_old[1])/2.;
-	deri[4] = (ii == 0) ? deri[4] : (deri[4] + deri_old[4])/2.;
-	deri[7] = (ii == 0) ? deri[7] : (deri[7] + deri_old[7])/2.;
 
 	/*
 		DERIVATIVES WITH RESPECT TO Z
@@ -862,8 +1242,4 @@ void vtkGrad3OGS4(int ii, int jj, int kk, int nx, int ny, int nz,
 		deri[4] = (-val[1] + 8*val1[1] - 8*val2[1] + val3[1])/12./e3w; // dvdz
 		deri[7] = (-val[2] + 8*val1[2] - 8*val2[2] + val3[2])/12./e3w; // dwdz
 	}
-	// Interpolate on the centered grid
-	deri[2] = (ii == 0) ? deri[2] : (deri[2] + deri_old[2])/2.;
-	deri[5] = (ii == 0) ? deri[5] : (deri[5] + deri_old[5])/2.;
-	deri[8] = (ii == 0) ? deri[8] : (deri[8] + deri_old[8])/2.;
 }
