@@ -75,16 +75,16 @@ vtkFloatArray *createVTKscaf(const char *name, int nx, int ny, int nz, double *a
 	vtkFloatArray *vtkArray = vtkFloatArray::New();
 	vtkArray->SetName(name);
 	vtkArray->SetNumberOfComponents(1); // Scalar field
-	vtkArray->SetNumberOfTuples((nx-1)*(ny-1)*(nz-1));
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
 	vtkArray->Fill(0.); // Preallocate vtkArray to zero
 
 	// Fill the vtkArray with the values of the array
 	if (array != NULL) {
-		for (int kk = 0; kk < nz-1; kk++) {
-			for (int jj = 0; jj < ny-1; jj++) {
-				for (int ii = 0; ii < nx-1; ii++) {
-					vtkArray->SetTuple1(CLLIND(ii,jj,kk,nx,ny),
-						array[CLLIND(ii,jj,kk,nx,ny)]);
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple1(PNTIND(ii,jj,kk,nx,ny),
+						array[PNTIND(ii,jj,kk,nx,ny)]);
 				}
 			}
 		}
@@ -133,16 +133,16 @@ vtkFloatArray *createVTKscaffrom2d(const char *name, int nx, int ny, int nz, dou
 	vtkFloatArray *vtkArray = vtkFloatArray::New();
 	vtkArray->SetName(name);
 	vtkArray->SetNumberOfComponents(1); // Scalar field
-	vtkArray->SetNumberOfTuples((nx-1)*(ny-1)*(nz-1));
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
 	vtkArray->Fill(0.); // Preallocate vtkArray to zero
 
 	// Fill the vtkArray with the values of the array
 	if (array != NULL) {
-		for (int kk = 0; kk < nz-1; kk++) {
-			for (int jj = 0; jj < ny-1; jj++) {
-				for (int ii = 0; ii < nx-1; ii++) {
-					vtkArray->SetTuple1(CLLIND(ii,jj,kk,nx,ny),
-						array[CLLIND(ii,jj,0,nx,ny)]);
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple1(PNTIND(ii,jj,kk,nx,ny),
+						array[PNTIND(ii,jj,0,nx,ny)]);
 				}
 			}
 		}
@@ -213,6 +213,281 @@ vtkFloatArray *createVTKvecf3(const char *name, int n, double *a1, double *a2, d
 			vtkArray->SetTuple3(ii,a1[ii],a2[ii],a3[ii]);
 	}
 
+	return vtkArray;
+}
+
+/* CREATEVTKTENF4
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf4(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3, double *a4) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(4); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple4(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,kk,nx,ny)],
+						a2[PNTIND(ii,jj,kk,nx,ny)],
+						a3[PNTIND(ii,jj,kk,nx,ny)],
+						a4[PNTIND(ii,jj,kk,nx,ny)]);
+				}
+			}
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF4
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf4(const char *name, int n, 
+	double *a1, double *a2, double *a3, double *a4) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(4); // Scalar field
+	vtkArray->SetNumberOfTuples(n);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int ii = 0; ii < n; ii++) {
+			vtkArray->SetTuple4(ii,a1[ii],a2[ii],a3[ii],a4[ii]);
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF4FROM2D
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf4from2D(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3, double *a4) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(4); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple4(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,0,nx,ny)],
+						a2[PNTIND(ii,jj,0,nx,ny)],
+						a3[PNTIND(ii,jj,0,nx,ny)],
+						a4[PNTIND(ii,jj,0,nx,ny)]);
+				}
+			}
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF6
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf6(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3, double *a4, double *a5, double *a6) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(6); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple6(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,kk,nx,ny)],
+						a2[PNTIND(ii,jj,kk,nx,ny)],
+						a3[PNTIND(ii,jj,kk,nx,ny)],
+						a4[PNTIND(ii,jj,kk,nx,ny)],
+						a5[PNTIND(ii,jj,kk,nx,ny)],
+						a6[PNTIND(ii,jj,kk,nx,ny)]);
+				}
+			}
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF6
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf6(const char *name, int n, 
+	double *a1, double *a2, double *a3, double *a4, double *a5, double *a6) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(6); // Scalar field
+	vtkArray->SetNumberOfTuples(n);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int ii = 0; ii < n; ii++) {
+			vtkArray->SetTuple6(ii,a1[ii],a2[ii],a3[ii],a4[ii],a5[ii],a6[ii]);
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF6FROM2D
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf6from2D(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3, double *a4, double *a5, double *a6) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(6); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple6(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,0,nx,ny)],
+						a2[PNTIND(ii,jj,0,nx,ny)],
+						a3[PNTIND(ii,jj,0,nx,ny)],
+						a4[PNTIND(ii,jj,0,nx,ny)],
+						a5[PNTIND(ii,jj,0,nx,ny)],
+						a6[PNTIND(ii,jj,0,nx,ny)]);
+				}
+			}
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF9
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf9(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3, 
+	double *a4, double *a5, double *a6,
+	double *a7, double *a8, double *a9) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(9); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple6(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,kk,nx,ny)],
+						a2[PNTIND(ii,jj,kk,nx,ny)],
+						a3[PNTIND(ii,jj,kk,nx,ny)],
+						a4[PNTIND(ii,jj,kk,nx,ny)],
+						a5[PNTIND(ii,jj,kk,nx,ny)],
+						a6[PNTIND(ii,jj,kk,nx,ny)],
+						a7[PNTIND(ii,jj,kk,nx,ny)],
+						a8[PNTIND(ii,jj,kk,nx,ny)],
+						a9[PNTIND(ii,jj,kk,nx,ny)]);
+				}
+			}
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF9
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf9(const char *name, int n, 
+	double *a1, double *a2, double *a3, 
+	double *a4, double *a5, double *a6,
+	double *a7, double *a8, double *a9) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(9); // Scalar field
+	vtkArray->SetNumberOfTuples(n);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int ii = 0; ii < n; ii++) {
+			vtkArray->SetTuple6(ii,a1[ii],a2[ii],a3[ii],a4[ii],a5[ii],a6[ii],a7[ii],a8[ii],a9[ii]);
+		}
+	}
+	return vtkArray;
+}
+
+/* CREATEVTKTENF9FROM2D
+	
+	Creates a vtkFloatArray for a tensor field given the array name, its dimensions
+	in x, y, z coordinates and an additional array to fill.
+*/
+vtkFloatArray *createVTKtenf9from2D(const char *name, int nx, int ny, int nz, 
+	double *a1, double *a2, double *a3, 
+	double *a4, double *a5, double *a6,
+	double *a7, double *a8, double *a9) {
+	// Create float array
+	vtkFloatArray *vtkArray = vtkFloatArray::New();
+	vtkArray->SetName(name);
+	vtkArray->SetNumberOfComponents(9); // Scalar field
+	vtkArray->SetNumberOfTuples(nx*ny*nz);
+	vtkArray->Fill(0.); // Preallocate vtkArray to zero
+
+	// Fill the vtkArray with the values of the array
+	if (a1 != NULL) {
+		for (int kk = 0; kk < nz; kk++) {
+			for (int jj = 0; jj < ny; jj++) {
+				for (int ii = 0; ii < nx; ii++) {
+					vtkArray->SetTuple6(PNTIND(ii,jj,kk,nx,ny),
+						a1[PNTIND(ii,jj,0,nx,ny)],
+						a2[PNTIND(ii,jj,0,nx,ny)],
+						a3[PNTIND(ii,jj,0,nx,ny)],
+						a4[PNTIND(ii,jj,0,nx,ny)],
+						a5[PNTIND(ii,jj,0,nx,ny)],
+						a6[PNTIND(ii,jj,0,nx,ny)],
+						a7[PNTIND(ii,jj,0,nx,ny)],
+						a8[PNTIND(ii,jj,0,nx,ny)],
+						a9[PNTIND(ii,jj,0,nx,ny)]);
+				}
+			}
+		}
+	}
 	return vtkArray;
 }
 
