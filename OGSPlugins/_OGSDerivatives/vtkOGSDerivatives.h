@@ -32,6 +32,24 @@ public:
   vtkGetMacro(grad_type, int);
 
   // Description:
+  // Computation of the divergence
+  vtkGetMacro(ComputeDivergence, int);
+  vtkSetMacro(ComputeDivergence, int);
+  vtkBooleanMacro(ComputeDivergence, int);
+
+  // Description:
+  // Computation of the curl
+  vtkGetMacro(ComputeCurl, int);
+  vtkSetMacro(ComputeCurl, int);
+  vtkBooleanMacro(ComputeCurl, int);
+
+  // Description:
+  // Computation of the Q-criterion
+  vtkGetMacro(ComputeQ, int);
+  vtkSetMacro(ComputeQ, int);
+  vtkBooleanMacro(ComputeQ, int);
+
+  // Description:
   // Get the name of the velocity field
   vtkSetStringMacro(field);
 
@@ -49,7 +67,7 @@ private:
   void operator=(const vtkOGSDerivatives&) = delete;
 
   char *field;
-  int grad_type;
+  int grad_type, ComputeDivergence, ComputeCurl, ComputeQ;
 };
 
 #endif

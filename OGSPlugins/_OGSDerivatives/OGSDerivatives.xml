@@ -45,6 +45,48 @@
        </Documentation>
      </StringVectorProperty>
 
+     <!-- Computation of Divergence -->
+     <IntVectorProperty name="ComputeDivergence"
+                        label="Compute Divergence"
+                        command="SetComputeDivergence"
+                        number_of_elements="1"
+                        default_values="0"
+                        panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Activate the computation of the divergence.
+          Only works for vector arrays.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Computation of Curl -->
+     <IntVectorProperty name="ComputeCurl"
+                        label="Compute Curl"
+                        command="SetComputeCurl"
+                        number_of_elements="1"
+                        default_values="0"
+                        panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Activate the computation of the curl.
+          Only works for vector arrays.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Computation of Q -->
+     <IntVectorProperty name="ComputeQ"
+                        label="Compute Q-criterion"
+                        command="SetComputeQ"
+                        number_of_elements="1"
+                        default_values="0"
+                        panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Activate the computation of the Q-criterion.
+          Only works for vector arrays.
+        </Documentation>
+     </IntVectorProperty>
+
      <!-- Gradient computation method -->
      <IntVectorProperty name="grad_type"
                         label="Gradient method: "
