@@ -173,6 +173,7 @@ int vtkOGSComputeQCriterion::RequestData(
 				// Compute Q-criterion
 				double Q = -0.5*(deri[0]*deri[0] + deri[4]*deri[4] + deri[8]*deri[8])
 						-deri[1]*deri[3]-deri[2]*deri[6]-deri[5]*deri[7];
+				Q *= -2;
 				// Compute the mean
 				Q_mean      += Q*e1[0]*e2[0];
 				sum_weights += e1[0]*e2[0];
