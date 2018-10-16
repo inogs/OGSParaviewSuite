@@ -14,8 +14,11 @@
         animateable="0"
         command="SetFileName"
         number_of_elements="1"
-        panel_visibility="never">
+        panel_visibility="always">
         <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="ogs" file_description="OGS NetCDF reader" />
+        </Hints>
         <Documentation>
           This property specifies the file name for the OGS reader.
         </Documentation>
