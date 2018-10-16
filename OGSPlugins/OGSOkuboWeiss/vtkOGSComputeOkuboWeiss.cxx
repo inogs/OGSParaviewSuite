@@ -170,9 +170,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 					deri_old+6,deri+6,vtke1,vtke2,vtke3,deri+6);		
 			}
 			// Rates of strain and stress
-			double Sn = (deri[1] - deri[3]); // dudy - dvdx
-			double Ss = (deri[4] + deri[0]); // dvdy + dudx
-			double W  = (deri[4] - deri[0]); // dvdy - dudx
+			double Sn = (deri[0] - deri[4]); // dudx - dvdy
+			double Ss = (deri[3] + deri[1]); // dvdx + dudy
+			double W  = (deri[3] - deri[1]); // dvdx - dudy
 			// Compute Okubo-Weiss
 			double OW = Sn*Sn + Ss*Ss - W*W;
 			// Compute the mean
