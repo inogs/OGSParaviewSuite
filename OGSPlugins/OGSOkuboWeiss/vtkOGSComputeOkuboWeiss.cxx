@@ -75,6 +75,17 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	int ny = input->GetYCoordinates()->GetNumberOfTuples();
 	int nz = input->GetZCoordinates()->GetNumberOfTuples();
 
+	// Recover a mask
+	// This is useful to perform a true average and srd on the Okubo-Weiss
+	// Either the basins or the coast mask will work
+	vtkFloatArray *vtkMask = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("coast mask"));
+	if (!vtkMask)
+		vtkMask = vtkFloatArray::SafeDownCast(
+		input->GetCellData()->GetArray("basins mask"));
+	if (!vtkMask)
+		vtkWarningMacro("Cannot find a working mask!\nResults might be affected.");
+
 	// Recover weights
 	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
 		input->GetCellData()->GetArray("e1"));
@@ -107,6 +118,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	// Loop on the 2D surface mesh (k == 0) and compute the Okubo-Weiss parameter
 	for (int jj = 0; jj < ny-1; jj++) {
 		for (int ii = 0; ii < nx-1; ii++) {
+			// Check the mask, skip the point if we are out of the mask
+			if (vtkMask && vtkMask->GetTuple1(CLLIND(ii,jj,0,nx,ny)) < 0)
+				continue;
 			// Store the previous derivative
 			if (this->grad_type > 1) {
 				for (int dd = 0; dd < 9; dd++) 
@@ -176,6 +190,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	// Now we work out the standard deviation
 	for(int jj = 0; jj < ny-1; jj++){
 		for (int ii = 0; ii < nx-1; ii++) {
+			// Check the mask, skip the point if we are out of the mask
+			if (vtkMask && vtkMask->GetTuple1(CLLIND(ii,jj,0,nx,ny)) < 0)
+				continue;
 			double e1[4], e2[4];
 			vtke1->GetTuple(CLLIND(ii,jj,0,nx,ny),e1);
 			vtke2->GetTuple(CLLIND(ii,jj,0,nx,ny),e2);
@@ -190,6 +207,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	// the surface
 	for(int jj = 0; jj < ny-1; jj++){
 		for (int ii = 0; ii < nx-1; ii++) {
+			// Check the mask, skip the point if we are out of the mask
+			if (vtkMask && vtkMask->GetTuple1(CLLIND(ii,jj,0,nx,ny)) < 0)
+				continue;
 			double OW  = vtkOW->GetTuple1(CLLIND(ii,jj,0,nx,ny));
 			// Vorticity-dominated flow
 			if (OW < -OW_std)
