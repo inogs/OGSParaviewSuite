@@ -7,9 +7,8 @@
      <Documentation
         long_help="This filter lets the user compute the Q-criterion."
         short_help="Compute the Q-criterion.">
-        This filter requires a rectilinear grid and computes the Q-criterion using
-        the surface velocity, which is copied down at the successive layers. A second and a fourth
-        order algorithms can be used to compute the derivatives.
+        This filter requires a rectilinear grid and computes the Q-criterion. 
+        A second and a fourth order algorithms can be used to compute the derivatives.
      </Documentation>
      <InputProperty
         name="Input"
@@ -25,12 +24,12 @@
 
       <!-- BEGIN EXPOSED PROPERTIES -->
 
-      <!-- Okubo-Weiss coefficent value -->
+      <!-- Q coefficent value -->
       <DoubleVectorProperty name="coef"
                             label="Filter coefficient: "
                             command="Setcoef"
                             animateable="1"
-                            default_values="0.2"
+                            default_values="0.02"
                             number_of_elements="1">
         <DoubleRangeDomain name="range" min="0.0" max="2.0" />
         <Documentation>
