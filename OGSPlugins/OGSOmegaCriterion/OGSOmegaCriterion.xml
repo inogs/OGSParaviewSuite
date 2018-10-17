@@ -1,13 +1,13 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="filters">
 
-   <SourceProxy name="OGSComputeQCriterion" 
-                class="vtkOGSComputeQCriterion" 
-                label="OGS Compute Q-Criterion">
+   <SourceProxy name="OGSComputeOmegaCriterion" 
+                class="vtkOGSComputeOmegaCriterion" 
+                label="OGS Compute Omega Criterion">
      <Documentation
-        long_help="This filter lets the user compute the Q-criterion."
-        short_help="Compute the Q-criterion.">
-        This filter requires a rectilinear grid and computes the Q-criterion. 
+        long_help="This filter lets the user compute the Omega criterion."
+        short_help="Compute the Omega criterion.">
+        This filter requires a rectilinear grid and computes the Omega criterion. 
         A second and a fourth order algorithms can be used to compute the derivatives.
      </Documentation>
      <InputProperty
@@ -24,18 +24,18 @@
 
       <!-- BEGIN EXPOSED PROPERTIES -->
 
-      <!-- Q coefficent value -->
-      <DoubleVectorProperty name="coef"
+      <!-- Okubo-Weiss coefficent value -->
+      <!--<DoubleVectorProperty name="coef"
                             label="Filter coefficient: "
                             command="Setcoef"
                             animateable="1"
-                            default_values="0.02"
+                            default_values="0.2"
                             number_of_elements="1">
         <DoubleRangeDomain name="range" min="0.0" max="2.0" />
         <Documentation>
           Filter coefficient as Q0 = coef*std_dev(Q)
         </Documentation>
-      </DoubleVectorProperty>
+      </DoubleVectorProperty> -->
 
       <!-- Velocity field -->
       <StringVectorProperty name="field"
@@ -56,6 +56,19 @@
           Name of the velocity variable.
         </Documentation>
       </StringVectorProperty>
+
+      <!-- Epsilon -->
+      <DoubleVectorProperty name="epsi"
+                            label="Epsilon: "
+                            command="Setepsi"
+                            animateable="1"
+                            default_values="0.001"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Small positive number used to avoid division per zero
+        </Documentation>
+      </DoubleVectorProperty>
 
       <!-- Gradient computation method -->
       <IntVectorProperty name="grad_type"

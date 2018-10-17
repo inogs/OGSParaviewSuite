@@ -1,13 +1,13 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="filters">
 
-   <SourceProxy name="OGSComputeQCriterion" 
-                class="vtkOGSComputeQCriterion" 
-                label="OGS Compute Q-Criterion">
+   <SourceProxy name="OGSComputeLambda2Criterion" 
+                class="vtkOGSComputeLambda2Criterion" 
+                label="OGS Compute Lambda2 Criterion">
      <Documentation
-        long_help="This filter lets the user compute the Q-criterion."
-        short_help="Compute the Q-criterion.">
-        This filter requires a rectilinear grid and computes the Q-criterion. 
+        long_help="This filter lets the user compute the Lambda2 criterion."
+        short_help="Compute the Lambda2 criterion.">
+        This filter requires a rectilinear grid and computes the Lambda2 criterion. 
         A second and a fourth order algorithms can be used to compute the derivatives.
      </Documentation>
      <InputProperty
@@ -25,7 +25,7 @@
       <!-- BEGIN EXPOSED PROPERTIES -->
 
       <!-- Q coefficent value -->
-      <DoubleVectorProperty name="coef"
+      <!--<DoubleVectorProperty name="coef"
                             label="Filter coefficient: "
                             command="Setcoef"
                             animateable="1"
@@ -35,7 +35,7 @@
         <Documentation>
           Filter coefficient as Q0 = coef*std_dev(Q)
         </Documentation>
-      </DoubleVectorProperty>
+      </DoubleVectorProperty>-->
 
       <!-- Velocity field -->
       <StringVectorProperty name="field"
