@@ -304,9 +304,16 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		and cannot be deactivated.
 
 	*/
-	vtkStringArray *strf = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
-	this->Mesh->GetFieldData()->AddArray(strf);
-	strf->Delete();
+	vtkStringArray *vtkdate = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
+	this->Mesh->GetFieldData()->AddArray(vtkdate);
+	vtkdate->Delete();
+	// Store all the timesteps in a vector
+	vtkStringArray *vtkdatevec = VTK::createVTKstrf("Datevec",NULL);
+	vtkdatevec->SetNumberOfTuples(this->timeStepInfo.ntsteps);
+	for (int ii = 0; ii < this->timeStepInfo.ntsteps; ii++)
+		vtkdatevec->SetValue(ii,this->timeStepInfo.datetime[ii]);
+	this->Mesh->GetFieldData()->AddArray(vtkdatevec);
+	vtkdatevec->Delete();	
 
 	// Deallocate meshmask components
 	if (this->RMeshMask) { 
