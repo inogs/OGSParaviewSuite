@@ -1,0 +1,60 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSTimeStatistics"
+                class="vtkOGSTimeStatistics" 
+                label="OGS Time Statistics">
+     <Documentation
+        long_help="This plugin computes time statistics on a dataset."
+        short_help="Computes time statistics on a dataset.">
+        This filter computes time statistics given a section of the mesh,
+        basin, coast or the whole mediterranean sea.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Aggregated variables -->
+<!--     <StringVectorProperty name="VarInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Var" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="VarStatus"
+                            command="SetVarArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="VarInfo"
+                            label="Aggregated Variables">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="VarInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of all the aggregated variables.
+        </Documentation>
+     </StringVectorProperty>
+-->
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+     </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
