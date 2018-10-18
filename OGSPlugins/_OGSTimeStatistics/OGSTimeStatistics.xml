@@ -24,36 +24,61 @@
 
      <!-- BEGIN EXPOSED PROPERTIES -->
 
-     <!-- Aggregated variables -->
-<!--     <StringVectorProperty name="VarInfo"
-                            information_only="1">
-        <ArraySelectionInformationHelper attribute_name="Var" />
+     <!-- Start and end time -->
+     <StringVectorProperty name="TimeInfo"
+                           command="GetTimeValues"
+                           information_only="1">
+       <StringArrayHelper />
      </StringVectorProperty>
 
-     <StringVectorProperty name="VarStatus"
-                            command="SetVarArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="VarInfo"
-                            label="Aggregated Variables">
-        <ArraySelectionDomain name="array_list">
+     <StringVectorProperty name="StartTime"
+                           command="SetStartTime"
+                           number_of_elements="1"
+                           label="Start Time: ">
+        <StringListDomain name="array_list">
           <RequiredProperties>
-            <Property name="VarInfo" function="ArrayList" />
+            <Property name="TimeInfo" function="ArrayList" />
           </RequiredProperties>
-        </ArraySelectionDomain>
+        </StringListDomain>
         <Documentation>
-          This property contains a list of all the aggregated variables.
+          Set the initial timestep for the time statistics.
         </Documentation>
      </StringVectorProperty>
--->
+
+     <StringVectorProperty name="EndTime"
+                           command="SetEndTime"
+                           number_of_elements="1"
+                           label="End Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the final timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                            repeatable="1"
+                            information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
 
      <!-- END EXPOSED PROPERTIES -->
 
      <Hints>
          <ShowInMenu category="OGS" />
          <RepresentationType view="RenderView" type="Surface" />
+ <!--        <WarnOnCreate title="Potentially slow operation">
+          **OGS Time Statistics** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>-->
      </Hints>
    </SourceProxy>
  </ProxyGroup>
