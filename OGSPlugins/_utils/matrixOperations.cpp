@@ -248,107 +248,129 @@ inline double math_mat_norm_fro (int m, int n, double a[]) {
 
 void math_jacobi_eigenvalue (int n, double a[], int it_max, double v[], 
   double d[], int &it_num, int &rot_num ) {
-  
-  double *bw, *zw;
 
-  bw = new double[n];
-  zw = new double[n];
+//  double c;
+//  double g;
+//  double gapq;
+//  double h;
+//  int i;
+//  int j;
+//  int k;
+//  int l;
+//  int m;
+//  int p;
+//  int q;
+//  double s;
+//  double t;
+ // double tau;
+//  double term;
+//  double termp;
+//  double termq;
+//  double theta;
+//  double thresh;
+  double w;
 
   math_mat_identity(n,v);
   math_mat_diag_get_vector(n,a,d);
 
-  for (int i = 0; i < n; i++ ) {
+  double *bw, *zw;
+  bw = new double[n];
+  zw = new double[n];
+
+  for (int i=0; i<n; i++) {
     bw[i] = d[i];
     zw[i] = 0.0;
   }
-  it_num = 0; rot_num = 0;
+
+  it_num = 0;
+  rot_num = 0;
 
   while ( it_num < it_max ) {
     it_num++;
 
     //The convergence threshold is based on the size of the elements in
     //the strict upper triangle of the matrix.
-    double thresh = 0.0;
-    for (int j = 0; j < n; j++ ) {
-      for (int i = 0; i < j; i++ ) {
+
+    double thresh = 0.;
+    for (int i=0; i<n; i++)
+      for (int j=0; j<i; j++)
         thresh += a[n*i+j] * a[n*i+j];
-      }
-    }
+
     thresh = sqrt(thresh)/(double)(4.*n);
 
-    if (thresh == 0.0) break;
+    if (thresh == 0.) break;
 
-    double gapq, termp, termq;
-    for (int p = 0; p < n; p++ ) {
-      for (int q = p + 1; q < n; q++ ) {
-        gapq  = 10.0 * fabs ( a[n*p+q] );
-        termp = gapq + fabs ( d[p] );
-        termq = gapq + fabs ( d[q] );
-        
-        //  Annihilate tiny offdiagonal elements.
-        if ( 4 < it_num && termp == fabs ( d[p] ) && termq == fabs ( d[q] ) ) {
-          a[n*p+q] = 0.0;
-        } else if ( thresh <= fabs ( a[p+q*n] ) ) {// Otherwise, apply a rotation.
-          double h    = d[q] - d[p];
-          double term = fabs ( h ) + gapq;
+    for (int p=0; p<n; p++) {
+      for (int q=p+1; q<n; q++) {
+        double gapq = 10.0 * fabs ( a[n*q+p] );
+        double termp = gapq + fabs ( d[p] );
+        double termq = gapq + fabs ( d[q] );
 
-          double t, theta;
-          if ( term == fabs ( h ) ) {
+        //Annihilate tiny offdiagonal elements.
+        if (4<it_num && termp == fabs ( d[p] ) && termq == fabs ( d[q] ) )
+          a[n*p+q] = 0.;
+        // Otherwise, apply a rotation.
+        else if ( thresh <= fabs( a[n*q+p] ) ) {
+          double h = d[q] - d[p];
+          double term = fabs(h) + gapq;
+
+          double t;
+          if ( term == fabs(h) )
             t = a[p+q*n] / h;
-          } else {
-            theta = 0.5 * h / a[n*p+q];
-            t     = 1.0 / ( fabs ( theta ) + sqrt ( 1.0 + theta * theta ) );
-            if ( theta < 0.0 ) t = - t;
+          else {
+            double theta = 0.5*h/a[p+q*n];
+            t = 1.0 / ( fabs ( theta ) + sqrt ( 1.0 + theta * theta ) );
+            if ( theta < 0.0 ) t = -t;
           }
-          double c   = 1.0 / sqrt ( 1.0 + t * t );
-          double s   = t * c;
-          double tau = s / ( 1.0 + c );
+          double c = 1.0/sqrt(1.0 + t*t);
+          double s = t*c;
+          double tau = s/(1.0 + c);
           h = t * a[p+q*n];
 
-          // Accumulate corrections to diagonal elements.
+          //Accumulate corrections to diagonal elements.
           zw[p] = zw[p] - h;                 
           zw[q] = zw[q] + h;
-          d[p]  =  d[p] - h;
-          d[q]  =  d[q] + h;
+          d[p]  = d[p] - h;
+          d[q]  = d[q] + h;
 
-          a[n*p+q] = 0.0;
+          a[p+q*n] = 0.0;
 
-          // Rotate, using information from the upper triangle of A only.
+          //  Rotate, using information from the upper triangle of A only.
           double g;
-          for (int j = 0; j < p; j++ ) {
-            g        = a[n*j+p];
-            h        = a[n*j+q];
-            a[n*j+p] = g - s * ( h + g * tau );
-            a[n*j+q] = h + s * ( g - h * tau );
+          for (int j=0; j<p; j++) {
+            g = a[j+p*n];
+            h = a[j+q*n];
+            a[j+p*n] = g - s * ( h + g * tau );
+            a[j+q*n] = h + s * ( g - h * tau );
           }
 
-          for (int j = p + 1; j < q; j++ ) {
-            g        = a[n*p+j];
-            h        = a[n*j+q];
-            a[n*p+j] = g - s * ( h + g * tau );
-            a[n*j+q] = h + s * ( g - h * tau );
+          for (int j=p+1; j<q; j++) {
+            g = a[p+j*n];
+            h = a[j+q*n];
+            a[p+j*n] = g - s * ( h + g * tau );
+            a[j+q*n] = h + s * ( g - h * tau );
           }
 
-          for (int j = q + 1; j < n; j++ ) {
-            g        = a[n*p+j];
-            h        = a[n*q+j];
-            a[n*p+j] = g - s * ( h + g * tau );
-            a[n*q+j] = h + s * ( g - h * tau );
+          for (int j=q+1; j<n; j++) {
+            g = a[p+j*n];
+            h = a[q+j*n];
+            a[p+j*n] = g - s * ( h + g * tau );
+            a[q+j*n] = h + s * ( g - h * tau );
           }
 
-          // Accumulate information in the eigenvector matrix.
-          for (int j = 0; j < n; j++ ) {
-            g        = v[n*j+p];
-            h        = v[n*j+q];
-            v[n*j+p] = g - s * ( h + g * tau );
-            v[n*j+q] = h + s * ( g - h * tau );
+          //Accumulate information in the eigenvector matrix.
+          for (int j=0; j<n; j++) {
+            g = v[j+p*n];
+            h = v[j+q*n];
+            v[j+p*n] = g - s * ( h + g * tau );
+            v[j+q*n] = h + s * ( g - h * tau );
           }
           rot_num++;
         }
       }
     }
 
-    for (int i = 0; i < n; i++ ) {
+    for (int i=0; i<n; i++) {
       bw[i] = bw[i] + zw[i];
       d[i]  = bw[i];
       zw[i] = 0.0;
@@ -356,29 +378,28 @@ void math_jacobi_eigenvalue (int n, double a[], int it_max, double v[],
   }
 
   // Restore upper triangle of input matrix.
-  for (int j = 0; j < n; j++ ) {
-    for (int i = 0; i < j; i++ ) {
+  for (int j = 0; j < n; j++ )
+    for (int i = 0; i < j; i++ )
       a[n*i+j] = a[n*j+i];
-    }
-  }
 
-  // Ascending sort the eigenvalues and eigenvectors.
-  for (int k = 0; k < n - 1; k++ ) {
+  //  Ascending sort the eigenvalues and eigenvectors.
+  for (int k=0; k<n-1; k++) {
     int m = k;
-    for (int l = k + 1; l < n; l++ ) {
-      if ( d[l] < d[m] ) m = l;
-    }
+    for (int l=k+1; l<n; l++)
+      if ( d[l] < d[m] )
+        m = l;
 
-    if ( m != k ) {
+    if (m != k) {
       double t = d[m];
-      d[m] = d[k];
-      d[k] = t;
+      d[m]     = d[k];
+      d[k]     = t;
       for (int i = 0; i < n; i++ ) {
-        double w = v[n*i+m];
-        v[n*i+m] = v[n*i+k];
-        v[n*i+k] = w;
+        double w = v[i+m*n];
+        v[i+m*n] = v[i+k*n];
+        v[i+k*n] = w;
       }
     }
   }
-  delete [] bw, zw;
+
+  delete [] bw; delete [] zw;
 }
