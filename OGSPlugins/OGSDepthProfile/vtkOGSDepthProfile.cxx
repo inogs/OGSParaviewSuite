@@ -80,6 +80,12 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 	if (source) {
 		this->Initialize(input, source, output);
 		this->Interpolate(input, source, output);
+		// Remove some arrays
+		output->GetPointData()->RemoveArray("basins mask");
+		output->GetPointData()->RemoveArray("coast mask");
+		output->GetPointData()->RemoveArray("e1");
+		output->GetPointData()->RemoveArray("e2");
+		output->GetPointData()->RemoveArray("e3");
 	}
 
 	return 1;
