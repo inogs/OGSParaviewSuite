@@ -116,6 +116,9 @@ def RequestData():
 				# Filter some variables (Do not plot them)
 				if varname == 'basins mask':       continue
 				if varname == 'coast mask':        continue
+				if varname == 'e1':                continue
+				if varname == 'e2':                continue
+				if varname == 'e3':                continue
 				if varname == 'vtkValidPointMask': continue
 				# Decide whether to plot the variable
 				do_plot = False if len(varlist) > 0 else True

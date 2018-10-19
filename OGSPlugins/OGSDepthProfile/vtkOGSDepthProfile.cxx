@@ -22,9 +22,6 @@
 #include "vtkPointData.h"
 #include "vtkPointSet.h"
 #include "vtkDataSet.h"
-#include "vtkImageData.h"
-#include "vtkExecutive.h"
-#include "vtkSmartPointer.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkStaticCellLocator.h"
@@ -41,14 +38,10 @@ vtkOGSDepthProfile::vtkOGSDepthProfile() {
 	this->SetNumberOfInputPorts(2);
 	this->SetNumberOfOutputPorts(1);
 
-	this->MaskPoints = nullptr;
 	this->PointList  = nullptr;
 	this->CellList   = nullptr;
 
 	this->CellLocatorPrototype = nullptr;
-
-	this->ValidPointMaskArrayName = nullptr;
-	this->SetValidPointMaskArrayName("vtkValidPointMask");
 }
 
 //----------------------------------------------------------------------------
@@ -56,11 +49,7 @@ vtkOGSDepthProfile::~vtkOGSDepthProfile() {
 	delete this->PointList;
 	delete this->CellList;
 
-	this->vtkOGSDepthProfile::SetValidPointMaskArrayName(nullptr);
 	this->vtkOGSDepthProfile::SetCellLocatorPrototype(nullptr);
-
-	if (this->MaskPoints)
-		this->MaskPoints->Delete();
 }
 
 //----------------------------------------------------------------------------
@@ -84,12 +73,19 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// First, copy the input to the output as a starting point
 	output->CopyStructure(input);
+	output->GetPointData()->SetCopyAttribute(vtkDataSetAttributes::SCALARS,
+		2,vtkDataSetAttributes::INTERPOLATE);
 
 	// If there is data to interpolate, begin the interpolation
 	if (source) {
-		this->BuildFieldList(source);
-		this->InitializeForProbing(input, output);
+		this->Initialize(input, source, output);
 		this->Interpolate(input, source, output);
+		// Remove some arrays
+		output->GetPointData()->RemoveArray("basins mask");
+		output->GetPointData()->RemoveArray("coast mask");
+		output->GetPointData()->RemoveArray("e1");
+		output->GetPointData()->RemoveArray("e2");
+		output->GetPointData()->RemoveArray("e3");
 	}
 
 	return 1;
@@ -109,15 +105,6 @@ int vtkOGSDepthProfile::RequestInformation( vtkInformation *vtkNotUsed(request),
 
 	outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
 				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);
-
-	// A variation of the bug fix from John Biddiscombe.
-	// Make sure that the scalar type and number of components
-	// are propagated from the source not the input.
-	if (vtkImageData::HasScalarType(sourceInfo))
-		vtkImageData::SetScalarType(vtkImageData::GetScalarType(sourceInfo),outInfo);
-	
-	if (vtkImageData::HasNumberOfScalarComponents(sourceInfo))
-		vtkImageData::SetNumberOfScalarComponents(vtkImageData::GetNumberOfScalarComponents(sourceInfo),outInfo);
 
 	return 1;
 }
@@ -170,72 +157,44 @@ int vtkOGSDepthProfile::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSDepthProfile::BuildFieldList(vtkDataSet* source) {
-  delete this->PointList;
-  delete this->CellList;
+void vtkOGSDepthProfile::Initialize(vtkDataSet* input,vtkDataSet* source, vtkDataSet* output) {
+	
+	// Build Point List
+	delete this->PointList;
+	this->PointList = new vtkDataSetAttributes::FieldList(1);
+	this->PointList->InitializeFieldList(source->GetPointData());
 
-  this->PointList = new vtkDataSetAttributes::FieldList(1);
-  this->PointList->InitializeFieldList(source->GetPointData());
-
-  this->CellList = new vtkDataSetAttributes::FieldList(1);
-  this->CellList->InitializeFieldList(source->GetCellData());
-}
-
-void vtkOGSDepthProfile::InitializeForProbing(vtkDataSet* input,vtkDataSet* output) {
+	// Build Cell List
+	delete this->CellList;
+	this->CellList = new vtkDataSetAttributes::FieldList(1);
+	this->CellList->InitializeFieldList(source->GetCellData());
 
 	vtkIdType numPts = input->GetNumberOfPoints();
-
-	// if this is repeatedly called by the pipeline for a composite mesh,
-	// you need a new array for each block
-	// (that is you need to reinitialize the object)
-	if (this->MaskPoints)
-		this->MaskPoints->Delete();
-
-	this->MaskPoints = vtkCharArray::New();
-	this->MaskPoints->SetNumberOfComponents(1);
-	this->MaskPoints->SetNumberOfTuples(numPts);
-	this->MaskPoints->FillValue(0);
-	this->MaskPoints->SetName(this->ValidPointMaskArrayName ? 
-		this->ValidPointMaskArrayName : "vtkValidPointMask");
 
 	// Allocate storage for output PointData
 	// All input PD is passed to output as PD. Those arrays in input CD that are
 	// not present in output PD will be passed as output PD.
-	vtkPointData* outPD = output->GetPointData();
-	outPD->InterpolateAllocate((*this->PointList), numPts, numPts);
+	output->GetPointData()->InterpolateAllocate((*this->PointList), numPts, numPts);
 	// We assume we either have points or cells
-	outPD->InterpolateAllocate((*this->CellList), numPts, numPts);
+	output->GetPointData()->InterpolateAllocate((*this->CellList), numPts, numPts);
 
-	this->InitializeOutputArrays(outPD, numPts);
-	outPD->AddArray(this->MaskPoints);
-}
-
-void vtkOGSDepthProfile::InitializeOutputArrays(vtkPointData *outPD, vtkIdType numPts) {
-	for (int i = 0; i < outPD->GetNumberOfArrays(); ++i) {
-		vtkDataArray* da = outPD->GetArray(i);
-		if (da) {
-			da->SetNumberOfTuples(numPts);
-			da->Fill(0);
-		}
+	// Initialize Output Arrays
+	int nArr = output->GetPointData()->GetNumberOfArrays();
+	for (int arrId = 0; arrId < nArr; arrId++) {
+		output->GetPointData()->GetArray(arrId)->SetNumberOfTuples(numPts);
+		output->GetPointData()->GetArray(arrId)->Fill(0);
 	}
 }
 
 void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output) {
 
-	int subId;
-	double xyz[3], pcoords[3], closestPoint[3], *weights;
-
-	double tol2 = 400;
-
 	// Preallocate weights
+	double *weights;
 	weights = new double[source->GetMaxCellSize()];
 
 	// Create the cell locator object
-	vtkSmartPointer<vtkCellLocator> cellLocator = vtkSmartPointer<vtkCellLocator>::New();
-	cellLocator->SetDataSet(source);
-	cellLocator->BuildLocator();
-
-	char* maskArray = this->MaskPoints->GetPointer(0);
+	vtkCellLocator *cellLocator = vtkCellLocator::New();
+	cellLocator->SetDataSet(source); cellLocator->BuildLocator();
 
 	// Recover the number of points in the input
 	int npoints = input->GetNumberOfPoints();
@@ -248,17 +207,12 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 		this->UpdateProgress((double)(ii)/(double)(npoints));
 		abort = GetAbortExecute();
 
-		// skip points which have already been probed with success.
-		// This is helpful for multiblock dataset probing.
-		if (maskArray[ii] == static_cast<char>(1))
-			continue;
-
 		// Get the xyz coordinate of the point in the input dataset
-		input->GetPoint(ii, xyz);
+		double xyz[3]; input->GetPoint(ii, xyz);
 
 		// Find the cell that contains xyz and get it
-		vtkIdType cellId;
-		double dist2;
+		vtkIdType cellId; int subId;
+		double dist2, pcoords[3], closestPoint[3];
 		cellLocator->FindClosestPoint(xyz, closestPoint, gcell.GetPointer(),cellId,subId,dist2);
 
 		// Evaluate interpolation weights
@@ -279,16 +233,16 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 					(*this->PointList), source->GetPointData(), 0, ii, cell->PointIds, weights
 				);
 			// Interpolate cell array data
-			output->GetPointData()->InterpolatePoint(
-					(*this->CellList), source->GetCellData(), 0, ii, cell->PointIds, weights
-				);			
-			// Update mask array
-			maskArray[ii] = static_cast<char>(1);
+			for (int arrId=0; arrId < source->GetCellData()->GetNumberOfArrays(); arrId++) {
+				output->GetPointData()->CopyTuple(
+					source->GetCellData()->GetArray(arrId),
+					output->GetPointData()->GetArray(arrId),
+					cellId,ii);
+			}
 		}
 	}
-
-	this->MaskPoints->Modified();
 	delete [] weights;
+	cellLocator->Delete();
 }
 
 //----------------------------------------------------------------------------

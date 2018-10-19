@@ -4,13 +4,11 @@
                 class="vtkOGSDepthProfile" 
                 label="OGS Depth Profile">
      <Documentation
-        long_help="This filter nterpolates a line on a point or cell mesh."
+        long_help="This filter interpolates a line on a point or cell mesh."
         short_help="Interpolates a line on a point or cell mesh.">
         This filter works in a similar way to the plot over line filter. 
         It interpolates a line on a point or cell mesh and returns the 
-        interpolated variables.
-
-        Produces an output using the OGS Vertical Profile Plot.
+        interpolated variables. Produces an output using the OGS Vertical Profile Plot.
      </Documentation>
 
      <InputProperty command="SetSourceConnection"
@@ -24,8 +22,9 @@
           <DataType value="vtkCompositeDataSet" />
         </DataTypeDomain>
         <InputArrayDomain name="input_array" />
-        <Documentation>This property specifies the dataset from which to obtain
-        probe values.</Documentation>
+        <Documentation>
+          This property specifies the dataset from which to obtain probe values.
+        </Documentation>
      </InputProperty>
 
      <InputProperty command="SetInputConnection"
@@ -39,16 +38,17 @@
           <Proxy group="extended_sources"
                  name="HighResLineSource" />
         </ProxyListDomain>
-        <Documentation>This property specifies the dataset whose geometry will
-        be used in determining positions to probe.</Documentation>
+        <Documentation>
+          This property specifies the dataset whose geometry will be used in determining positions to probe.
+        </Documentation>
      </InputProperty>
-      
-      <Hints>
-        <ShowInMenu category="OGS" />
-        <View type="OGSVerticalProfilePlot" also_show_in_current_view="1" />
+
+     <Hints>
         <Plotable />
-      </Hints>
+        <ShowInMenu category="OGS" />
+        <Visibility replace_input="0" />
+        <View type="OGSVerticalProfilePlot" also_show_in_current_view="1" />
+     </Hints>
    </SourceProxy>
  </ProxyGroup>
 </ServerManagerConfiguration>
-

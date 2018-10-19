@@ -16,15 +16,10 @@
 #ifndef vtkOGSDepthProfile_h
 #define vtkOGSDepthProfile_h
 
-#include "vtkOGSDepthProfile.h"
-
 #include "vtkDataSetAlgorithm.h"
 #include "vtkDataSetAttributes.h"
 
-class vtkCharArray;
-class vtkPointData;
 class vtkAbstractCellLocator;
-class vtkStaticCellLocator;
 
 class VTK_EXPORT vtkOGSDepthProfile : public vtkDataSetAlgorithm 
 {
@@ -41,13 +36,6 @@ public:
   vtkDataObject *GetSource();
   void SetSourceConnection(vtkAlgorithmOutput* algOutput);
 
-  // Description:
-  //Returns the name of the char array added to the output with values 1 for
-  //valid points and 0 for invalid points.
-  //Set to "vtkValidPointMask" by default.
-  vtkSetStringMacro(ValidPointMaskArrayName)
-  vtkGetStringMacro(ValidPointMaskArrayName)
-
   // Description
   //Set/Get the prototype cell locator to use for probing the source dataset.
   //By default, vtkStaticCellLocator will be used.
@@ -62,30 +50,17 @@ protected:
   int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
+  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkDataSet* output);
   void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output);
-
-  void BuildFieldList(vtkDataSet* source);
-
-  virtual void InitializeForProbing(vtkDataSet *input, vtkDataSet *output);
-  virtual void InitializeOutputArrays(vtkPointData *outPD, vtkIdType numPts);
-
-  void DoProbing(vtkDataSet *input, int srcIdx, vtkDataSet *source,vtkDataSet *output);
-
-  vtkCharArray* MaskPoints;
-
-  vtkAbstractCellLocator* CellLocatorPrototype;
-
-  vtkDataSetAttributes::FieldList* CellList;
-  vtkDataSetAttributes::FieldList* PointList;
 
 private:
   vtkOGSDepthProfile(const vtkOGSDepthProfile&) = delete;
   void operator=(const vtkOGSDepthProfile&) = delete;
 
-  char *ValidPointMaskArrayName;
-
-  class vtkVectorOfArrays;
-  vtkVectorOfArrays* CellArrays;
+  vtkAbstractCellLocator* CellLocatorPrototype;
+  
+  vtkDataSetAttributes::FieldList* CellList;
+  vtkDataSetAttributes::FieldList* PointList;
 };
 
 #endif
