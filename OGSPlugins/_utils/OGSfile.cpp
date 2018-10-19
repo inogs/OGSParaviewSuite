@@ -44,7 +44,7 @@ inline char *trim(char *str) {
 /* OGS File reader
 	TODO: description
 */
-extern "C" void readOGSFile(const char *fname, char *mesh_file, char *mesh_mask,
+extern "C" int readOGSFile(const char *fname, char *mesh_file, char *mesh_mask,
 	ave_var *ave_phys, ave_var *ave_freq, ogs_time *timeStepInfo) {
 	
 	char line[BUFFSZ], wrkdir[BUFFSZ];
@@ -54,7 +54,7 @@ extern "C" void readOGSFile(const char *fname, char *mesh_file, char *mesh_mask,
 
 	// Open file for reading
 	FILE *myfile;
-	myfile = fopen(fname,"r"); if (myfile == NULL) ERROR("Cannot open file")
+	myfile = fopen(fname,"r"); if (myfile == NULL) ERROR("Cannot open file",1)
 
 	// Read file line by line
 	while(reads(line,sizeof(line),myfile)) {
@@ -138,6 +138,8 @@ extern "C" void readOGSFile(const char *fname, char *mesh_file, char *mesh_mask,
 	}
 	// Close file
 	fclose(myfile);
+
+	return 1;
 }
 
 extern "C" char *writeOGSPath(const char *str1, const char *str2, const char *token) {

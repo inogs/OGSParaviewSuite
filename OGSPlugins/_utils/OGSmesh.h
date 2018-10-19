@@ -16,11 +16,11 @@
 
 /* Function prototypes */
 
-extern "C" void writeOGSMesh(const char *fname, int nLon, int nLat, int nLev,
+extern "C" int writeOGSMesh(const char *fname, int nLon, int nLat, int nLev,
 	double *Lon2Meters, double *Lat2Meters, double *nav_lev,
 	double* basins_mask, double *coast_mask);
 
-extern "C" void readOGSMesh(const char *fname, int *nLon, int *nLat, int *nLev,
+extern "C" int readOGSMesh(const char *fname, int *nLon, int *nLat, int *nLev,
 	double **Lon2Meters, double **Lat2Meters, double **nav_lev,
 	double **basins_mask, double **coast_mask);
 

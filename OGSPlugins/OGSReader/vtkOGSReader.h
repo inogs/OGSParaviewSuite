@@ -131,6 +131,8 @@ private:
 	ave_var  ave_phys, ave_freq;
 	ogs_time timeStepInfo;
 
+	int abort;
+
 	void DeleteMesh();
 };
 
