@@ -15,8 +15,9 @@
 #ifndef vtkOGSTimeStatistics_h
 #define vtkOGSTimeStatistics_h
 
-#include "vtkStringArray.h"
 #include "vtkDataSetAlgorithm.h"
+
+class vtkStringArray;
 
 class VTK_EXPORT vtkOGSTimeStatistics : public vtkDataSetAlgorithm
 {
