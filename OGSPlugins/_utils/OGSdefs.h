@@ -28,7 +28,8 @@
 
 /* MACRO FOR ERROR */
 
-#define ERROR(errstr) {fprintf(stderr,"Error in %s line %d:\n%s\n",__FILE__,__LINE__,errstr); exit(-1);}
+//#define ERROR(errstr) {fprintf(stderr,"Error in %s line %d:\n%s\n",__FILE__,__LINE__,errstr); exit(-1);}
+#define ERROR(errstr,errid) {fprintf(stderr,"Error in %s line %d:\n%s\n",__FILE__,__LINE__,errstr); return(-errid);}
 
 /* ENUMERATIONS */
 

@@ -87,6 +87,13 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	// We just want to copy the mesh, not the variables
 	output->CopyStructure(input); 
 
+	// Copy field arrays
+	int nFArr = input->GetFieldData()->GetNumberOfArrays();
+	for (int arrId = 0; arrId < nFArr; arrId++)
+		output->GetFieldData()->AddArray(
+			vtkStringArray::SafeDownCast(input->GetFieldData()->GetAbstractArray(arrId))
+			);
+
 	this->UpdateProgress(0.);
 
 	// At this point we either have a rectilinear grid or an
@@ -149,8 +156,10 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 		input->GetCellData()->GetArray("e3"));
 	output->GetCellData()->AddArray(vtke3);
 
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)
+	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
 		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
+		return;
+	}
 
 	// We can now loop the number of active variables
 	int narrays = input->GetCellData()->GetNumberOfArrays();
@@ -216,7 +225,10 @@ void vtkOGSSpatialStats::CellStats(vtkDataSet *input, vtkDataSet *output, double
 			vtke2->GetTuple(cellId,e2);
 			// Obtain the id for the current depth
 			int zId = cellId2zId[cellId];
-			if (zId < 0) vtkErrorMacro("Error computing <cellId2zId>");
+			if (zId < 0) {
+				vtkErrorMacro("Error computing <cellId2zId>");
+				return;
+			}
 			// Store the variable per each layer
 			vPerLayer[zId].push_back(value);
 			wPerLayer[zId].push_back(e1[0]*e2[0]);
@@ -382,8 +394,10 @@ void vtkOGSSpatialStats::PointStats(vtkDataSet *input, vtkDataSet *output, doubl
 		input->GetPointData()->GetArray("e3"));
 	output->GetPointData()->AddArray(vtke3);
 
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)
+	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
 		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
+		return;
+	}
 
 	// We can now loop the number of active variables
 	int narrays = input->GetPointData()->GetNumberOfArrays();
@@ -449,7 +463,10 @@ void vtkOGSSpatialStats::PointStats(vtkDataSet *input, vtkDataSet *output, doubl
 			vtke2->GetTuple(pId,e2);
 			// Obtain the id for the current depth
 			int zId = pId2zId[pId];
-			if (zId < 0) vtkErrorMacro("Error computing <pId2zId>");
+			if (zId < 0) {
+				vtkErrorMacro("Error computing <pId2zId>");
+				return;
+			}
 			// Store the variable per each layer
 			vPerLayer[zId].push_back(value);
 			wPerLayer[zId].push_back(e1[0]*e2[0]);

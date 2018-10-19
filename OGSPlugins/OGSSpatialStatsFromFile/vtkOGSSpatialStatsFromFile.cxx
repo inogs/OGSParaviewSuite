@@ -90,7 +90,14 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
 	// We just want to copy the mesh, not the variables
-	output->CopyStructure(input); 
+	output->CopyStructure(input);
+
+	// Copy field arrays
+	int nFArr = input->GetFieldData()->GetNumberOfArrays();
+	for (int arrId = 0; arrId < nFArr; arrId++)
+		output->GetFieldData()->AddArray(
+			vtkStringArray::SafeDownCast(input->GetFieldData()->GetAbstractArray(arrId))
+			);
 
 	this->UpdateProgress(0.);
 

@@ -585,7 +585,8 @@ vtkStringArray *createVTKstrf(const char *name,const char *data) {
 	vtkArray->SetNumberOfTuples(1);
 
 	// Set the value
-	vtkArray->SetValue(0,data);
+	if (data != NULL) 
+		vtkArray->SetValue(0,data);
 
 	return vtkArray;
 }

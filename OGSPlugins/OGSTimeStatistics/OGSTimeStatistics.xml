@@ -1,0 +1,85 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSTimeStatistics"
+                class="vtkOGSTimeStatistics" 
+                label="OGS Time Statistics">
+     <Documentation
+        long_help="This plugin computes time statistics on a dataset."
+        short_help="Computes time statistics on a dataset.">
+        This filter computes time statistics given a section of the mesh,
+        basin, coast or the whole mediterranean sea.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Start and end time -->
+     <StringVectorProperty name="TimeInfo"
+                           command="GetTimeValues"
+                           information_only="1">
+       <StringArrayHelper />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="StartTime"
+                           command="SetStartTime"
+                           number_of_elements="1"
+                           label="Start Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the initial timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty name="EndTime"
+                           command="SetEndTime"
+                           number_of_elements="1"
+                           label="End Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the final timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                            repeatable="1"
+                            information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+         <WarnOnCreate title="WARNING Potentially slow operation!">
+          **OGS Time Statistics** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>
+     </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>

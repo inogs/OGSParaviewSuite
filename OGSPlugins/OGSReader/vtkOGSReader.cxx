@@ -77,6 +77,7 @@ vtkOGSReader::vtkOGSReader() {
 	this->CoastsMask    = 1;
 	this->RMeshMask     = 1;
 	this->DepthScale    = 1000.;
+	this->abort         = 0;
 
 	this->Mesh = vtkRectilinearGrid::New();
 
@@ -122,7 +123,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	  	}
 	#endif
 
-	vtkDebugMacro("Opening file: " << this->FileName);
+	if (this->abort) return 0;
 
   	// get the info object
 	vtkInformation* outInfo = outputVector->GetInformationObject(0);
@@ -168,11 +169,23 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	int nLon, nLat, nLev;
 	double *Lon2Meters, *Lat2Meters, *nav_lev, *basins_mask, *coast_mask;
 
-	OGS::readOGSMesh(this->meshfile,
+	int retval = OGS::readOGSMesh(this->meshfile,
 					 &nLon, &nLat, &nLev,
 					 &Lon2Meters, &Lat2Meters, &nav_lev,
 					 &basins_mask, &coast_mask
 					 );
+	if (retval == -1) {
+		vtkErrorMacro("Cannot open <"<<this->meshfile<<">!\nAborting.");
+		return 0;
+	}
+	if (retval == -2) {
+		vtkErrorMacro("Cannot read <"<<this->meshfile<<">!\nAborting.");
+		return 0;
+	}
+	if (retval == -3) {
+		vtkErrorMacro("Problems allocating memory!\nAborting.");
+		return 0;
+	}
 
 	this->UpdateProgress(0.05);
 
@@ -207,9 +220,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	// They must be forcefully loaded to project the velocity
 	// e1
 	double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
+	if (e1t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1t>!Aborting!"); return 0;}
 	double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
+	if (e1u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1u>!Aborting!"); return 0;}
 	double *e1v = NetCDF::readNetCDF(this->meshmask,"e1v",1*(nLon-1)*(nLat-1));
+	if (e1v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1v>!Aborting!"); return 0;}
 	double *e1f = NetCDF::readNetCDF(this->meshmask,"e1f",1*(nLon-1)*(nLat-1));
+	if (e1f	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1f>!Aborting!"); return 0;}
 	
 	vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,
 		e1t,e1u,e1v,e1f);
@@ -218,9 +235,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	// e2
 	double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
+	if (e2t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2t>!Aborting!"); return 0;}
 	double *e2u = NetCDF::readNetCDF(this->meshmask,"e2u",1*(nLon-1)*(nLat-1));
+	if (e2u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2u>!Aborting!"); return 0;}
 	double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
+	if (e2v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2v>!Aborting!"); return 0;}
 	double *e2f = NetCDF::readNetCDF(this->meshmask,"e2f",1*(nLon-1)*(nLat-1));
+	if (e2f	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2f>!Aborting!"); return 0;}
 	
 	vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,
 		e2t,e2u,e2v,e2f);
@@ -229,9 +250,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	// e3
 	double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",(nLev-1)*(nLon-1)*(nLat-1));
+	if (e3t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3t_0>!Aborting!"); return 0;}
 	double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",(nLev-1)*(nLon-1)*(nLat-1));
+	if (e3u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3u_0>!Aborting!"); return 0;}
 	double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",(nLev-1)*(nLon-1)*(nLat-1));
+	if (e3v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3v_0>!Aborting!"); return 0;}
 	double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",(nLev-1)*(nLon-1)*(nLat-1));
+	if (e3w	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3w_0>!Aborting!"); return 0;}
 	
 	vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
 		e3t,e3u,e3v,e3w);
@@ -259,6 +284,9 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",(nLon-1)*(nLat-1)*(nLev-1)),
 					   *v = NetCDF::readNetCDF(varpath,"vomecrty",(nLon-1)*(nLat-1)*(nLev-1)),
 					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",(nLon-1)*(nLat-1)*(nLev-1));
+				if (u == NULL) {vtkErrorMacro("Cannot read NetCDF <vozocrtx>!Aborting!"); return 0;}
+				if (v == NULL) {vtkErrorMacro("Cannot read NetCDF <vomecrty>!Aborting!"); return 0;}
+				if (w == NULL) {vtkErrorMacro("Cannot read NetCDF <vovecrtz>!Aborting!"); return 0;}
 				vtkFloatArray *vtkarray = 
 					VTK::createVTKvecf3(varname,nLon-1,nLat-1,nLev-1,u,v,w,vtke1,vtke2,vtke3);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
@@ -266,6 +294,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			}
 			else {
 				double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
+				if (array == NULL) {vtkErrorMacro("Cannot read NetCDF <"<<cdfname<<">!Aborting!"); return 0;}
 				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(array);
@@ -289,6 +318,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(varname)) {
 			double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
+			if (array == NULL) {vtkErrorMacro("Cannot read NetCDF <"<<cdfname<<">!Aborting!"); return 0;}
 			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 			this->Mesh->GetCellData()->AddArray(vtkarray);
 			vtkarray->Delete(); free(array);
@@ -304,9 +334,16 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		and cannot be deactivated.
 
 	*/
-	vtkStringArray *strf = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
-	this->Mesh->GetFieldData()->AddArray(strf);
-	strf->Delete();
+	vtkStringArray *vtkdate = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
+	this->Mesh->GetFieldData()->AddArray(vtkdate);
+	vtkdate->Delete();
+	// Store all the timesteps in a vector
+	vtkStringArray *vtkdatevec = VTK::createVTKstrf("Datevec",NULL);
+	vtkdatevec->SetNumberOfTuples(this->timeStepInfo.ntsteps);
+	for (int ii = 0; ii < this->timeStepInfo.ntsteps; ii++)
+		vtkdatevec->SetValue(ii,this->timeStepInfo.datetime[ii]);
+	this->Mesh->GetFieldData()->AddArray(vtkdatevec);
+	vtkdatevec->Delete();	
 
 	// Deallocate meshmask components
 	if (this->RMeshMask) { 
@@ -335,8 +372,12 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 		See OGSmesh for further details.
 	*/
-	OGS::readOGSFile(this->FileName,this->meshfile,this->meshmask,
+	int retval = OGS::readOGSFile(this->FileName,this->meshfile,this->meshmask,
 		&this->ave_phys,&this->ave_freq,&this->timeStepInfo);
+	if (retval == -1) {
+		vtkErrorMacro("Cannot read <"<<this->FileName<<">!\nAborting");
+		return 0; this->abort = 1;
+	}
 
 	/* SCAN THE PHYSICAL VARIABLES
 
