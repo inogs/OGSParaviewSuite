@@ -74,11 +74,11 @@
      <Hints>
          <ShowInMenu category="OGS" />
          <RepresentationType view="RenderView" type="Surface" />
- <!--        <WarnOnCreate title="Potentially slow operation">
+         <WarnOnCreate title="WARNING Potentially slow operation!">
           **OGS Time Statistics** filter needs to process most of the timesteps
           available in your dataset and can potentially take a long time to complete.
           Do you want to continue?
-         </WarnOnCreate>-->
+         </WarnOnCreate>
      </Hints>
    </SourceProxy>
  </ProxyGroup>
