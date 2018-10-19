@@ -77,9 +77,11 @@ int vtkOGSDerivatives::RequestData(
 	// inform the user that point arrays are not treated in this function
 	vtkFloatArray *vtkArray = vtkFloatArray::SafeDownCast(
 		input->GetCellData()->GetArray(this->field));
-	if (vtkArray == NULL)
+	if (vtkArray == NULL) {
 		vtkErrorMacro("Input array "<<this->field<<"is not a cell array."<<
 			"This function can only deal with cell arrays!");
+		return 0;
+	}
 
 	// Here we have a valid vtkArray to process. We must decide whether to act as
 	// a scalar array or a vector array.
@@ -91,9 +93,11 @@ int vtkOGSDerivatives::RequestData(
 	else if (ncomp == 3)
 		// Vector array
 		this->VectorArrayDerivatives(vtkArray,output);
-	else
+	else {
 		// I don't know what this is...
 		vtkErrorMacro("Input array "<<this->field<<"is neither a scalar or vector array!");
+		return 0;
+	}
 
 	// Copy the input grid
 	this->UpdateProgress(1.);
@@ -115,8 +119,10 @@ void vtkOGSDerivatives::ScalarArrayDerivatives(vtkFloatArray *vtkArray, vtkRecti
 	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
 		mesh->GetCellData()->GetArray("e3"));
 
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)
+	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
 		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
+		return;
+	}
 
 	// Compute the cell centers
 	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell Centers",mesh);
@@ -212,8 +218,10 @@ void vtkOGSDerivatives::VectorArrayDerivatives(vtkFloatArray *vtkArray, vtkRecti
 	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
 		mesh->GetCellData()->GetArray("e3"));
 
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)
+	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
 		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
+		return;
+	}
 
 	// Compute the cell centers
 	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell Centers",mesh);

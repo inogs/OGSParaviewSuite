@@ -94,8 +94,10 @@ int vtkOGSComputeOmegaCriterion::RequestData(
 	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
 		input->GetCellData()->GetArray("e3"));
 
-	if (this->grad_type > 1 && (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL))
+	if (this->grad_type > 1 && (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)) {
 		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
+		return 0;
+	}
 
 	// Recover velocity vector
 	vtkFloatArray *vtkVeloc = vtkFloatArray::SafeDownCast(
