@@ -17,8 +17,10 @@
 #define vtkOGSHovmoeller_h
 
 #include "vtkDataSetAlgorithm.h"
+#include "vtkTableAlgorithm.h"
 #include "vtkDataSetAttributes.h"
 
+class vtkTable;
 class vtkStringArray;
 class vtkAbstractCellLocator;
 
@@ -56,8 +58,8 @@ protected:
   int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
-  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkDataSet* output);
-  void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output);
+//  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
+  void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTable *output);
 
   vtkStringArray *TimeValues;
 

@@ -20,10 +20,12 @@
 #include "vtkCharArray.h"
 #include "vtkGenericCell.h"
 #include "vtkPointData.h"
+#include "vtkRectilinearGrid.h"
+#include "vtkFloatArray.h"
 #include "vtkStringArray.h"
 #include "vtkPointSet.h"
 #include "vtkDataSet.h"
-#include "vtkImageData.h"
+#include "vtkTable.h"
 #include "vtkExecutive.h"
 #include "vtkSmartPointer.h"
 #include "vtkInformation.h"
@@ -31,6 +33,12 @@
 #include "vtkStaticCellLocator.h"
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+
+namespace VTK
+{
+// Include the VTK Operations
+#include "../_utils/vtkOperations.cpp"
+}
 
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
@@ -65,34 +73,91 @@ vtkOGSHovmoeller::~vtkOGSHovmoeller() {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSHovmoeller::RequestData(vtkInformation *vtkNotUsed(request), 
+int vtkOGSHovmoeller::RequestData(vtkInformation *request, 
 	vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
-/*
+
 	// get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
-	// get the input and output
 	// input contains the interpolating line information (number of points, etc)
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
 	// Source contains the data where to interpolate from
 	vtkDataSet *source = vtkDataSet::SafeDownCast(
 		sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
-	vtkDataSet *output = vtkDataSet::SafeDownCast(
+	// Output is a vtkTable with the interpolated data per each timestep
+	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
+	/*if (!output) {
+		output = vtkTable::New();
+		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
+		this->GetOutputPortInformation(0)->Set(
+			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
+	}*/
 
-	// First, copy the input to the output as a starting point
-	output->CopyStructure(input);
-
-	// If there is data to interpolate, begin the interpolation
-	if (source) {
-		this->BuildFieldList(source);
-		this->InitializeForProbing(input, output);
-		this->Interpolate(input, source, output);
+	// Check that we can perform the Hovmoeller plot
+	if (this->start_time > this->end_time) {
+		vtkErrorMacro("Start time <"<<this->TimeValues->GetValue(this->start_time)<<
+			"> is bigger than the end time <"<<this->TimeValues->GetValue(this->end_time)<<
+			">.\nPlease input an end time that is bigger than the start time!");
+		return 0;
 	}
-*/
+	if (this->start_time == this->end_time) {
+		vtkErrorMacro("Start time <"<<this->TimeValues->GetValue(this->start_time)<<
+			"> is equal to the end time <"<<this->TimeValues->GetValue(this->end_time)<<
+			">.\nIt doesn't make sense to perform temporal statistics!");
+		return 0;
+	}
+	if (this->abort) return 0;
+
+	// Write the coordinates as a column on the table
+	// This action is only performed at the beginning
+	if (this->current_time == this->start_time) {
+		int npoints = input->GetNumberOfPoints();
+		vtkFloatArray *vtkDepth = VTK::createVTKscaf("depth",npoints,NULL);
+		for (int pId = 0; pId < npoints; pId++) {
+			double xyz[3]; input->GetPoint(pId,xyz);
+			vtkDepth->SetTuple1(pId,xyz[2]/1000.); //TODO: hardcoded mult factor
+		}
+		output->AddColumn(vtkDepth);
+	}
+
+	// Now we should be able to perform statistics.
+	// The current time should be mapped to the start time,
+	// which is smaller than the end time.
+
+	this->Interpolate(input,source,output);
+
+/*	if (this->current_time == this->start_time) 
+		// This is the first iteration, we should initialize the
+		// statistics.
+		printf("cc\n");
+		this->InitializeStatistics(input,output);
+	else
+		// We should accumulate to the statistics
+		printf("kk\n");
+		this->AccumulateStatistics(input,output);*/
+
+	// Proceed to the next timestep
+	this->current_time++;
+
+	// Do we have more work to do or can we stop?
+	if (this->current_time > this->end_time){
+		// We are finished
+//		this->FinalizeStatistics(input,output);
+		request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+		this->current_time = 0;
+	} else {
+		// There is still more to do
+		request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+	}
+
+	// Update progress and leave
+	this->UpdateProgress(1.);
+
+
 	return 1;
 }
 
@@ -105,11 +170,20 @@ int vtkOGSHovmoeller::RequestInformation( vtkInformation *vtkNotUsed(request),
 	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
 	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
 
-	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	// Define output as a vtk table
+	vtkTable *output = vtkTable::SafeDownCast(
+		outInfo->Get(vtkDataObject::DATA_OBJECT()));
+	if (!output) {
+		output = vtkTable::New();
+		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
+		this->GetOutputPortInformation(0)->Set(
+			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
+	}
+/*	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_RANGE());
 
 	outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);
+				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);*/
 
   	vtkDataSet *source = vtkDataSet::SafeDownCast(
 		sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -141,10 +215,27 @@ int vtkOGSHovmoeller::RequestInformation( vtkInformation *vtkNotUsed(request),
 	return 1;
 }
 
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
+	vtkInformationVector **inputVector, vtkInformationVector *vtkNotUsed(outputVector)) {
+
+	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+
+	// The RequestData method will tell the pipeline executive to iterate the
+	// upstream pipeline to get each time step in order.  The executive in turn
+	// will call this method to get the extent request for each iteration (in this
+	// case the time step).
+	double *inTimes = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	if (inTimes)
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[this->current_time]);
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+/*int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 	vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
-/*
+
 	// get the info objects
 	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
 	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
@@ -185,79 +276,49 @@ int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()), 6);
 	}
 
-	return 1;*/
-}
+	return 1;
+}*/
 
 //----------------------------------------------------------------------------
-/*void vtkOGSHovmoeller::BuildFieldList(vtkDataSet* source) {
-  delete this->PointList;
-  delete this->CellList;
+void vtkOGSHovmoeller::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
 
-  this->PointList = new vtkDataSetAttributes::FieldList(1);
-  this->PointList->InitializeFieldList(source->GetPointData());
+	// Build Point List
+	delete this->PointList;
+	this->PointList = new vtkDataSetAttributes::FieldList(1);
+	this->PointList->InitializeFieldList(source->GetPointData());
 
-  this->CellList = new vtkDataSetAttributes::FieldList(1);
-  this->CellList->InitializeFieldList(source->GetCellData());
-}
+	// Build Cell List
+	delete this->CellList;
+	this->CellList = new vtkDataSetAttributes::FieldList(1);
+	this->CellList->InitializeFieldList(source->GetCellData());
 
-void vtkOGSHovmoeller::InitializeForProbing(vtkDataSet* input,vtkDataSet* output) {
+	// Preallocate weights
+	double *weights;
+	weights = new double[source->GetMaxCellSize()];
 
-	vtkIdType numPts = input->GetNumberOfPoints();
+	// Create the cell locator object
+	vtkCellLocator *cellLocator = vtkCellLocator::New();
+	cellLocator->SetDataSet(source); cellLocator->BuildLocator();
 
-	// if this is repeatedly called by the pipeline for a composite mesh,
-	// you need a new array for each block
-	// (that is you need to reinitialize the object)
-	if (this->MaskPoints)
-		this->MaskPoints->Delete();
+	// Recover the number of points in the input
+	int npoints = input->GetNumberOfPoints();
 
-	this->MaskPoints = vtkCharArray::New();
-	this->MaskPoints->SetNumberOfComponents(1);
-	this->MaskPoints->SetNumberOfTuples(numPts);
-	this->MaskPoints->FillValue(0);
-	this->MaskPoints->SetName(this->ValidPointMaskArrayName ? 
-		this->ValidPointMaskArrayName : "vtkValidPointMask");
+	// Create auxiliary point data
+	vtkPointData *auxPD = vtkPointData::New();
 
 	// Allocate storage for output PointData
 	// All input PD is passed to output as PD. Those arrays in input CD that are
 	// not present in output PD will be passed as output PD.
-	vtkPointData* outPD = output->GetPointData();
-	outPD->InterpolateAllocate((*this->PointList), numPts, numPts);
+	auxPD->InterpolateAllocate((*this->PointList), npoints, npoints);
 	// We assume we either have points or cells
-	outPD->InterpolateAllocate((*this->CellList), numPts, numPts);
+	auxPD->InterpolateAllocate((*this->CellList), npoints, npoints);
 
-	this->InitializeOutputArrays(outPD, numPts);
-	outPD->AddArray(this->MaskPoints);
-}
-
-void vtkOGSHovmoeller::InitializeOutputArrays(vtkPointData *outPD, vtkIdType numPts) {
-	for (int i = 0; i < outPD->GetNumberOfArrays(); ++i) {
-		vtkDataArray* da = outPD->GetArray(i);
-		if (da) {
-			da->SetNumberOfTuples(numPts);
-			da->Fill(0);
-		}
+	// Initialize Output Arrays
+	int nArr = auxPD->GetNumberOfArrays();
+	for (int arrId = 0; arrId < nArr; arrId++) {
+		auxPD->GetArray(arrId)->SetNumberOfTuples(npoints);
+		auxPD->GetArray(arrId)->Fill(0);
 	}
-}
-
-void vtkOGSHovmoeller::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output) {
-
-	int subId;
-	double xyz[3], pcoords[3], closestPoint[3], *weights;
-
-	double tol2 = 400;
-
-	// Preallocate weights
-	weights = new double[source->GetMaxCellSize()];
-
-	// Create the cell locator object
-	vtkSmartPointer<vtkCellLocator> cellLocator = vtkSmartPointer<vtkCellLocator>::New();
-	cellLocator->SetDataSet(source);
-	cellLocator->BuildLocator();
-
-	char* maskArray = this->MaskPoints->GetPointer(0);
-
-	// Recover the number of points in the input
-	int npoints = input->GetNumberOfPoints();
 
 	// Loop the number of points
 	vtkNew<vtkGenericCell> gcell;
@@ -267,17 +328,12 @@ void vtkOGSHovmoeller::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDat
 		this->UpdateProgress((double)(ii)/(double)(npoints));
 		abort = GetAbortExecute();
 
-		// skip points which have already been probed with success.
-		// This is helpful for multiblock dataset probing.
-		if (maskArray[ii] == static_cast<char>(1))
-			continue;
-
 		// Get the xyz coordinate of the point in the input dataset
-		input->GetPoint(ii, xyz);
+		double xyz[3]; input->GetPoint(ii, xyz);
 
 		// Find the cell that contains xyz and get it
-		vtkIdType cellId;
-		double dist2;
+		vtkIdType cellId; int subId;
+		double dist2, pcoords[3], closestPoint[3];
 		cellLocator->FindClosestPoint(xyz, closestPoint, gcell.GetPointer(),cellId,subId,dist2);
 
 		// Evaluate interpolation weights
@@ -294,22 +350,29 @@ void vtkOGSHovmoeller::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDat
 		// Check if the cell has been found
 		if (cell) {
 			// Interpolate point array data
-			output->GetPointData()->InterpolatePoint(
+			auxPD->InterpolatePoint(
 					(*this->PointList), source->GetPointData(), 0, ii, cell->PointIds, weights
 				);
 			// Interpolate cell array data
-			output->GetPointData()->InterpolatePoint(
-					(*this->CellList), source->GetCellData(), 0, ii, cell->PointIds, weights
-				);			
-			// Update mask array
-			maskArray[ii] = static_cast<char>(1);
+			for (int arrId=0; arrId < source->GetCellData()->GetNumberOfArrays(); arrId++) {
+				auxPD->CopyTuple(
+					source->GetCellData()->GetArray(arrId),
+					auxPD->GetArray(arrId),
+					cellId,ii);
+			}
 		}
 	}
 
-	this->MaskPoints->Modified();
+
+
+//auxPD->Print(std::cout);
+
+
 	delete [] weights;
+	cellLocator->Delete();
+	auxPD->Delete();
 }
-*/
+
 //----------------------------------------------------------------------------
 void vtkOGSHovmoeller::SetSourceConnection(vtkAlgorithmOutput* algOutput) {
 	this->SetInputConnection(1, algOutput);
