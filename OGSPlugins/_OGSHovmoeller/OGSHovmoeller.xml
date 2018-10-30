@@ -1,0 +1,107 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSHovmoeller" 
+                class="vtkOGSHovmoeller" 
+                label="OGS Hovmoeller">
+     <Documentation
+        long_help="This filter generates the data for an Hovmoeller plot"
+        short_help="Generates the data for an Hovmoeller plot.">
+        This filter works in a similar way to the plot over line filter. 
+        It interpolates a line on a point or cell mesh over time and 
+        produces an Hovmoeller plot.
+
+        Produces an output using the OGS Hovmoeller Plot.
+     </Documentation>
+
+     <InputProperty command="SetSourceConnection"
+                    name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkCompositeDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the dataset from which to obtain
+        probe values.</Documentation>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Start and end time -->
+     <StringVectorProperty name="TimeInfo"
+                           command="GetTimeValues"
+                           information_only="1">
+       <StringArrayHelper />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="StartTime"
+                           command="SetStartTime"
+                           number_of_elements="1"
+                           label="Start Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the initial timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty name="EndTime"
+                           command="SetEndTime"
+                           number_of_elements="1"
+                           label="End Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the final timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <PropertyGroup label="Time and line selection">
+                 <Property name="StartTime"/>
+                 <Property name="EndTime"/>
+     </PropertyGroup>
+
+     <!-- Interpolating line info -->
+     <InputProperty command="SetInputConnection"
+                    label="Probe Type"
+                    name="Source"
+                    panel_visibility="default">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources"
+                 name="HighResLineSource" />
+        </ProxyListDomain>
+        <Documentation>This property specifies the dataset whose geometry will
+        be used in determining positions to probe.</Documentation>
+     </InputProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <ShowInMenu category="OGS" />
+        <!--
+        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />
+        <WarnOnCreate title="WARNING Potentially slow operation!">
+          **OGS Hovmoeller** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>
+       -->
+        <Visibility replace_input="0" />
+        <Plotable />
+      </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
+
