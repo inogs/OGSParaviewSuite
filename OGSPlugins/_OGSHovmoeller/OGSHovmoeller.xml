@@ -70,6 +70,42 @@
                  <Property name="EndTime"/>
      </PropertyGroup>
 
+     <!-- Variable -->
+     <StringVectorProperty name="field"
+                           label="Variable: "
+                           command="Setfield"
+                           animateable="1"
+                           number_of_elements="1">
+        <ArrayListDomain 
+          name="array_list"
+          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the variable.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Selection of depth scale factor -->
+     <DoubleVectorProperty name="DepthScale"
+                           label="Scale factor for depth:"
+                           command="SetDepthScale"
+                           number_of_elements="1"
+                           default_values="1000."
+                           panel_visibility="advanced">
+        <Documentation>
+          Selection of the scale factor for depth.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <PropertyGroup label="Variable to plot">
+                 <Property name="field"/>
+                 <Property name="DepthScale"/>
+     </PropertyGroup>
+
      <!-- Interpolating line info -->
      <InputProperty command="SetInputConnection"
                     label="Probe Type"
@@ -90,18 +126,17 @@
       
       <Hints>
         <ShowInMenu category="OGS" />
-        <!--
-        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />
+<!--
+        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />       
+-->
         <WarnOnCreate title="WARNING Potentially slow operation!">
           **OGS Hovmoeller** filter needs to process most of the timesteps
           available in your dataset and can potentially take a long time to complete.
           Do you want to continue?
          </WarnOnCreate>
-       -->
         <Visibility replace_input="0" />
         <Plotable />
       </Hints>
    </SourceProxy>
  </ProxyGroup>
 </ServerManagerConfiguration>
-

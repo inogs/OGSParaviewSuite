@@ -50,6 +50,15 @@ public:
 
   vtkStringArray *GetTimeValues();
 
+  // Description:
+  // Get the name of the variable field
+  vtkSetStringMacro(field);
+
+  // Description:
+  // Lets the user select a multiplier factor for the depth
+  vtkGetMacro(DepthScale, double);
+  vtkSetMacro(DepthScale, double);
+
 protected:
   vtkOGSHovmoeller();
   ~vtkOGSHovmoeller() override;
@@ -74,6 +83,9 @@ private:
 
   int current_time, start_time, end_time;
   int abort;
+
+  char *field;
+  double DepthScale;
 };
 
 #endif

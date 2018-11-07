@@ -52,6 +52,7 @@ vtkOGSHovmoeller::vtkOGSHovmoeller() {
 
 	this->PointList  = nullptr;
 	this->CellList   = nullptr;
+	this->field      = nullptr;
 
 	this->CellLocatorPrototype = nullptr;
 
@@ -60,6 +61,7 @@ vtkOGSHovmoeller::vtkOGSHovmoeller() {
 	this->start_time   = 0;
 	this->end_time     = 0;
 	this->current_time = 0;
+	this->DepthScale   = 1000.;
 
 	this->abort = 0;
 }
@@ -90,12 +92,12 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	// Output is a vtkTable with the interpolated data per each timestep
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
-	/*if (!output) {
+	if (!output) {
 		output = vtkTable::New();
 		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
 		this->GetOutputPortInformation(0)->Set(
 			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
-	}*/
+	}
 
 	// Check that we can perform the Hovmoeller plot
 	if (this->start_time > this->end_time) {
@@ -119,7 +121,7 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 		vtkFloatArray *vtkDepth = VTK::createVTKscaf("depth",npoints,NULL);
 		for (int pId = 0; pId < npoints; pId++) {
 			double xyz[3]; input->GetPoint(pId,xyz);
-			vtkDepth->SetTuple1(pId,xyz[2]/1000.); //TODO: hardcoded mult factor
+			vtkDepth->SetTuple1(pId,xyz[2]/this->DepthScale);
 		}
 		output->AddColumn(vtkDepth);
 	}
@@ -130,23 +132,12 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 
 	this->Interpolate(input,source,output);
 
-/*	if (this->current_time == this->start_time) 
-		// This is the first iteration, we should initialize the
-		// statistics.
-		printf("cc\n");
-		this->InitializeStatistics(input,output);
-	else
-		// We should accumulate to the statistics
-		printf("kk\n");
-		this->AccumulateStatistics(input,output);*/
-
 	// Proceed to the next timestep
 	this->current_time++;
 
 	// Do we have more work to do or can we stop?
 	if (this->current_time > this->end_time){
 		// We are finished
-//		this->FinalizeStatistics(input,output);
 		request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
 		this->current_time = 0;
 	} else {
@@ -156,7 +147,6 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 
 	// Update progress and leave
 	this->UpdateProgress(1.);
-
 
 	return 1;
 }
@@ -179,11 +169,6 @@ int vtkOGSHovmoeller::RequestInformation( vtkInformation *vtkNotUsed(request),
 		this->GetOutputPortInformation(0)->Set(
 			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
 	}
-/*	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-	outInfo->CopyEntry(sourceInfo,vtkStreamingDemandDrivenPipeline::TIME_RANGE());
-
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-				inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()),6);*/
 
   	vtkDataSet *source = vtkDataSet::SafeDownCast(
 		sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -219,65 +204,19 @@ int vtkOGSHovmoeller::RequestInformation( vtkInformation *vtkNotUsed(request),
 int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 	vtkInformationVector **inputVector, vtkInformationVector *vtkNotUsed(outputVector)) {
 
-	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
+	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
 
 	// The RequestData method will tell the pipeline executive to iterate the
 	// upstream pipeline to get each time step in order.  The executive in turn
 	// will call this method to get the extent request for each iteration (in this
 	// case the time step).
-	double *inTimes = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	double *inTimes = sourceInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 	if (inTimes)
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[this->current_time]);
+		sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[this->current_time]);
 
 	return 1;
 }
-
-//----------------------------------------------------------------------------
-/*int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
-	vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
-
-	// get the info objects
-	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
-	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
-	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
-
-	int usePiece = 0;
-
-	// What ever happened to CopyUpdateExtent in vtkDataObject?
-	// Copying both piece and extent could be bad.  Setting the piece
-	// of a structured data set will affect the extent.
-	vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
-	if (output &&
-		(!strcmp(output->GetClassName(), "vtkUnstructuredGrid") ||
-			!strcmp(output->GetClassName(), "vtkPolyData")))
-		usePiece = 1;
-
-	inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
-
-	sourceInfo->Remove(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT());
-	if (sourceInfo->Has(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()))
-		sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-			sourceInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()), 6);
-
-	// SpatialMatch does not exist in this implementation
-	sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), 0);
-	sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), 1);
-	sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 0);
-
-	if (usePiece) {
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()));
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()));
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
-	} else {
-		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-			outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()), 6);
-	}
-
-	return 1;
-}*/
 
 //----------------------------------------------------------------------------
 void vtkOGSHovmoeller::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
@@ -363,11 +302,17 @@ void vtkOGSHovmoeller::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTab
 		}
 	}
 
+	// We can now write the variable in the table
+  	vtkStringArray *vtkdate = vtkStringArray::SafeDownCast(
+  		source->GetFieldData()->GetAbstractArray("Date"));
 
+	vtkFloatArray *vtkVar =vtkFloatArray::SafeDownCast(
+		auxPD->GetArray(this->field));
+	vtkVar->SetName(vtkdate->GetValue(0).c_str());
 
-//auxPD->Print(std::cout);
+	output->AddColumn(vtkVar);
 
-
+	// Delete and deallocate
 	delete [] weights;
 	cellLocator->Delete();
 	auxPD->Delete();
