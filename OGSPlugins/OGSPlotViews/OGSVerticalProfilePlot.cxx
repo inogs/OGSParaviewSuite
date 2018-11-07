@@ -14,7 +14,7 @@
 =========================================================================*/
 
 #include "OGSVerticalProfilePlot.h"
-#include "vtkSMPythonViewProxy.h"
+#include "vtkSMOGSVerticalProfilePlotProxy.h"
 
 //-----------------------------------------------------------------------------
 OGSVerticalProfilePlot::OGSVerticalProfilePlot(const QString& group, 
@@ -23,7 +23,7 @@ OGSVerticalProfilePlot::OGSVerticalProfilePlot(const QString& group,
                                                pqServer* server, 
                                                QObject* parent)
       : pqPythonView(OGSVerticalProfilePlot::OGSVerticalProfilePlotType(), group, name, 
-         vtkSMPythonViewProxy::SafeDownCast(renModule), server, parent)
+         vtkSMOGSVerticalProfilePlotProxy::SafeDownCast(renModule), server, parent)
 
 {
 }
