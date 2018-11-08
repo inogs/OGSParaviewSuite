@@ -45,4 +45,4 @@ private:
 
 };
 
-#endif // _MantaView_h
+#endif
