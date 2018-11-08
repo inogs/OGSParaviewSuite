@@ -26,6 +26,12 @@ INCLUDE_DIRECTORIES(${PARAVIEW_GUI_INCLUDE_DIRS})
 QT5_WRAP_CPP(MOC_SRCS OGSVerticalProfilePlot.h OGSHovmoellerPlot.h)
 
 ADD_PQPROXY(VIEW_IFACE VIEW_IFACE_SRCS
+    TYPE OGSVerticalProfilePlot
+    XML_GROUP views
+    XML_NAME OGSVerticalProfilePlot
+    )
+
+ADD_PQPROXY(VIEW_IFACE VIEW_IFACE_SRCS
     TYPE OGSHovmoellerPlot
     XML_GROUP views
     XML_NAME OGSHovmoellerPlot
