@@ -14,6 +14,8 @@
 
 #include "vtkOGSHovmoeller.h"
 
+#include "vtkDataObject.h"
+#include "vtkDataObjectTypes.h"
 #include "vtkCell.h"
 #include "vtkCellData.h"
 #include "vtkCellLocator.h"
@@ -92,12 +94,12 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	// Output is a vtkTable with the interpolated data per each timestep
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
-	if (!output) {
+	/*if (!output) {
 		output = vtkTable::New();
 		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
 		this->GetOutputPortInformation(0)->Set(
 			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
-	}
+	}*/
 
 	// Check that we can perform the Hovmoeller plot
 	if (this->start_time > this->end_time) {
@@ -161,14 +163,14 @@ int vtkOGSHovmoeller::RequestInformation( vtkInformation *vtkNotUsed(request),
 	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
 
 	// Define output as a vtk table
-	vtkTable *output = vtkTable::SafeDownCast(
+	/*vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 	if (!output) {
 		output = vtkTable::New();
 		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
 		this->GetOutputPortInformation(0)->Set(
 			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
-	}
+	}*/
 
   	vtkDataSet *source = vtkDataSet::SafeDownCast(
 		sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -215,6 +217,38 @@ int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 	if (inTimes)
 		sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[this->current_time]);
 
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSHovmoeller::RequestDataObject(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** inputVector, vtkInformationVector* outputVector) {
+
+	const char* outTypeStr = vtkDataObjectTypes::GetClassNameFromTypeId(VTK_TABLE);
+
+	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+	vtkDataObject* output   = outInfo->Get(vtkDataObject::DATA_OBJECT());
+
+	if (!output || !output->IsA(outTypeStr)) {
+		vtkDataObject* newOutput = vtkDataObjectTypes::NewDataObject(VTK_TABLE);
+		if (!newOutput) {
+			vtkErrorMacro("Could not create chosen output data type: " << outTypeStr);
+			return 0;
+		}
+		outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
+		this->GetOutputPortInformation(0)->Set(
+			vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
+		newOutput->Delete();
+	}
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSHovmoeller::FillOutputPortInformation(
+	int vtkNotUsed(port), vtkInformation* info) {
+
+	info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
 	return 1;
 }
 
