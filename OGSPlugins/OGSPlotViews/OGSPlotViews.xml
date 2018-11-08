@@ -637,6 +637,127 @@
               </DoubleVectorProperty>
 
         </OGSVerticalProfilePlotProxy>
+
+        <OGSHovmoellerPlotProxy name="OGSHovmoellerPlot" 
+                                     class="vtkOGSHovmoellerPlot"
+                                     label="OGS Hovmoeller Plot"
+                                     processes="client|dataserver|renderserver"
+                                     base_proxygroup="internal_views"
+                                     base_proxyname="ViewBase"
+                                     representation_name="PythonRepresentation">
+
+               <!-- EXPOSED PROPERTIES TO MODIFY THE PLOT -->
+
+               <!-- Save figure properties -->
+               <IntVectorProperty name="savefigure"
+                                  initial_string="savefigure"
+                                  label="Save Figure"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Indicate whether or not to save the plot
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <StringVectorProperty animateable="0"
+                                     command="SetParameter"
+                                     name="filename"
+                                     initial_string="filename"
+                                     label="File Name"
+                                     default_values=""
+                                     number_of_elements="1">
+                   <FileListDomain name="files" />
+                   <Documentation>
+                      This property sets the name of the output file to save
+                   </Documentation>
+                   <Hints>
+                      <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                        <Property name="savefigure" function="boolean" />
+                      </PropertyWidgetDecorator>
+                      <FileChooser extensions="png" file_description="High quality PNG"/>
+                      <FileChooser extensions="pdf" file_description="Vectorized PDF"/>
+                      <FileChooser extensions="eps" file_description="Vectorized EPS"/>
+                      <AcceptAnyFile/>    
+                   </Hints>
+               </StringVectorProperty>
+
+               <DoubleVectorProperty name="outdpi"
+                                     initial_string="outdpi"
+                                     label="Output dpi "
+                                     command="SetParameter"
+                                     default_values="300"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the dpi (depth per inch) of the output figure
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="savefigure" function="boolean" />
+                   </PropertyWidgetDecorator>        
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <PropertyGroup label="Save Fiure">
+                 <Property name="savefigure"/>
+                 <Property name="filename"/>
+                 <Property name="outdpi"/>
+               </PropertyGroup>
+
+               <!-- PLOT PYTHON CODE -->
+
+               <StringVectorProperty command="SetScript"
+                                     name="Script"
+                                     default_values=""
+                                     number_of_elements="1"
+                                     panel_visibility="advanced">
+                 <Hints>
+                   <Widget type="multi_line" syntax="python"/>
+                 </Hints>
+                 <Documentation>This property contains the text of a Python program used
+                 to generate a plot. Use the TAB key to end editing and generate the
+                 plot.</Documentation>
+               </StringVectorProperty>
+
+               <!-- OTHER EXPOSED PROPERTIES -->
+
+               <IntVectorProperty command="GetNumberOfVisibleDataObjects"
+                                  name="NumberOfVisibleDataObjects"
+                                  number_of_elements="1"
+                                  default_values="1"
+                                  information_only="1"
+                                  panel_visibility="never">
+           <SimpleIntInformationHelper/>
+               </IntVectorProperty>
+              <IntVectorProperty command="SetForceUseCache"
+                                 default_values="0"
+                                 is_internal="1"
+                                 name="ForceUseCache"
+                                 number_of_elements="1">
+                <BooleanDomain name="bool" />
+                <Documentation>Typically UseCache and CacheKey are updated by the View
+                and representations cache based on what the view tells it. However in
+                some cases we may want to force a representation to cache irrespective
+                of the view (e.g. comparative views). In which case these ivars can up
+                set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+                Instead, ForcedCacheKey is used.</Documentation>
+              </IntVectorProperty>
+              <DoubleVectorProperty command="SetForcedCacheKey"
+                                    default_values="none"
+                                    is_internal="1"
+                                    name="ForcedCacheKey"
+                                    number_of_elements="1">
+                <DoubleRangeDomain name="range" />
+                <Documentation>Typically UseCache and CacheKey are updated by the View
+                and representations cache based on what the view tells it. However in
+                some cases we may want to force a representation to cache irrespective
+                of the view (e.g. comparative views). In which case these ivars can up
+                set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+                Instead, ForcedCacheKey is used.</Documentation>
+              </DoubleVectorProperty>
+
+        </OGSHovmoellerPlotProxy>
     </ProxyGroup>
     <!-- here is your other stuff -->
 </ServerManagerConfiguration>
