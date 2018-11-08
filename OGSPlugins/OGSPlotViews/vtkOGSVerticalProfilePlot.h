@@ -1,7 +1,14 @@
 /*=========================================================================
 
-  Program:   ParaView
+  Program:   OGSPlotViews
   Module:    vtkOGSVerticalProfilePlot.h
+
+  Copyright (c) 2018 Arnau Miro, OGS
+  All rights reserved.
+
+     This software is distributed WITHOUT ANY WARRANTY; without even
+     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+     PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 

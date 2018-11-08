@@ -1,7 +1,14 @@
 /*=========================================================================
 
-  Program:   ParaView
+  Program:   OGSPlotViews
   Module:    vtkOGSVerticalProfilePlot.cxx
+
+  Copyright (c) 2018 Arnau Miro, OGS
+  All rights reserved.
+
+     This software is distributed WITHOUT ANY WARRANTY; without even
+     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+     PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 
@@ -20,8 +27,7 @@ vtkStandardNewMacro(vtkOGSVerticalProfilePlot);
 //----------------------------------------------------------------------------
 vtkOGSVerticalProfilePlot::vtkOGSVerticalProfilePlot() {
 	this->Script    = NULL;
-	this->Variables = NULL;
-	
+	this->Variables = NULL;	
 }
 
 vtkOGSVerticalProfilePlot::~vtkOGSVerticalProfilePlot() {
@@ -33,23 +39,19 @@ vtkOGSVerticalProfilePlot::~vtkOGSVerticalProfilePlot() {
 void vtkOGSVerticalProfilePlot::Update() {
 	// Enable all arrays for plotting
 	this->Superclass::EnableAllAttributeArrays();
-
 	// First we iterate over the parameters map to create the variable = value pairs
 	char aux1[1024]; strcpy(aux1,"");
 	std::map<std::string,std::string>::iterator it;
-    for (it = this->mapParam.begin(); it != mapParam.end(); it++)
-    	sprintf(aux1,"%s%s = %s\n",aux1,it->first.c_str(),it->second.c_str());
-
+	for (it = this->mapParam.begin(); it != mapParam.end(); it++)
+		sprintf(aux1,"%s%s = %s\n",aux1,it->first.c_str(),it->second.c_str());
 	// Second we create an auxiliary string where to store the plot variables
 	char aux2[512];
 	sprintf(aux2,"variables = '''%s'''",this->Variables);
-
 	// We prepend both strings to the python script
 	std::ostringstream buf;
 	buf << aux1 << "\n" << aux2 << "\n" << this->Script;
 	// Update the Script property of the Superclass with the newly generated script
 	this->Superclass::SetScript(buf.str().c_str());
-
 	// Finally call the update method of the superclass
 	this->Superclass::Update();
 }
