@@ -24,19 +24,6 @@
 
       <!-- BEGIN EXPOSED PROPERTIES -->
 
-      <!-- Okubo-Weiss coefficent value -->
-      <!--<DoubleVectorProperty name="coef"
-                            label="Filter coefficient: "
-                            command="Setcoef"
-                            animateable="1"
-                            default_values="0.2"
-                            number_of_elements="1">
-        <DoubleRangeDomain name="range" min="0.0" max="2.0" />
-        <Documentation>
-          Filter coefficient as Q0 = coef*std_dev(Q)
-        </Documentation>
-      </DoubleVectorProperty> -->
-
       <!-- Velocity field -->
       <StringVectorProperty name="field"
                             label="Variable: "

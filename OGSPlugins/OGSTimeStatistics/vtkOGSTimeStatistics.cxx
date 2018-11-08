@@ -150,17 +150,17 @@ int vtkOGSTimeStatistics::RequestInformation(vtkInformation* vtkNotUsed(request)
 int vtkOGSTimeStatistics::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 	vtkInformationVector **inputVector, vtkInformationVector *vtkNotUsed(outputVector)) {
 
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 
-  // The RequestData method will tell the pipeline executive to iterate the
-  // upstream pipeline to get each time step in order.  The executive in turn
-  // will call this method to get the extent request for each iteration (in this
-  // case the time step).
-  double *inTimes = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  if (inTimes)
-  	inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[this->current_time]);
+	// The RequestData method will tell the pipeline executive to iterate the
+	// upstream pipeline to get each time step in order.  The executive in turn
+	// will call this method to get the extent request for each iteration (in this
+	// case the time step).
+	double *inTimes = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	if (inTimes)
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[this->current_time]);
 
-  return 1;
+	return 1;
 }
 
 //----------------------------------------------------------------------------
