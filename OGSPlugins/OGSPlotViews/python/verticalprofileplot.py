@@ -31,6 +31,9 @@ def RequestData():
 		# Vertical plot
 		if view_type == "vtkOGSVerticalProfilePlot":
 			return render_verticalplot(view, width, height)
+		# Hovmoeller plot
+		if view_type == "vtkOGSHovmoellerPlot":
+			return render_hovmoellerplot(view, width, height)
 		return None
 	def smooth(a,WSZ):
 		'''
