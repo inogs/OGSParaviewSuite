@@ -126,9 +126,7 @@
       
       <Hints>
         <ShowInMenu category="OGS" />
-<!--
         <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />       
--->
         <WarnOnCreate title="WARNING Potentially slow operation!">
           **OGS Hovmoeller** filter needs to process most of the timesteps
           available in your dataset and can potentially take a long time to complete.
