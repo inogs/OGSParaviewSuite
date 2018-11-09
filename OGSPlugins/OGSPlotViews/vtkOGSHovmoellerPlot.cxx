@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   OGSPlotViews
-  Module:    vtkOGSVerticalProfilePlot.cxx
+  Module:    vtkOGSHovmoellerPlot.cxx
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -20,23 +20,23 @@
 #include <string>
 #include <iterator>
 
-#include "vtkOGSVerticalProfilePlot.h"
+#include "vtkOGSHovmoellerPlot.h"
 
-vtkStandardNewMacro(vtkOGSVerticalProfilePlot);
+vtkStandardNewMacro(vtkOGSHovmoellerPlot);
 
 //----------------------------------------------------------------------------
-vtkOGSVerticalProfilePlot::vtkOGSVerticalProfilePlot() {
+vtkOGSHovmoellerPlot::vtkOGSHovmoellerPlot() {
 	this->Script    = NULL;
 	this->Variables = NULL;	
 }
 
-vtkOGSVerticalProfilePlot::~vtkOGSVerticalProfilePlot() {
+vtkOGSHovmoellerPlot::~vtkOGSHovmoellerPlot() {
 	this->SetScript(NULL);
 	this->SetVariables(NULL);
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSVerticalProfilePlot::Update() {
+void vtkOGSHovmoellerPlot::Update() {
 	// Enable all arrays for plotting
 	this->Superclass::EnableAllAttributeArrays();
 	// First we iterate over the parameters map to create the variable = value pairs
@@ -57,7 +57,7 @@ void vtkOGSVerticalProfilePlot::Update() {
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSVerticalProfilePlot::SetParameterInternal(const char* raw_name, const char* raw_value) {
+void vtkOGSHovmoellerPlot::SetParameterInternal(const char* raw_name, const char* raw_value) {
 	const std::string name = raw_name ? raw_name : "";
 	const std::string value = raw_value ? raw_value : "";
 
@@ -76,28 +76,28 @@ void vtkOGSVerticalProfilePlot::SetParameterInternal(const char* raw_name, const
 	this->Modified();
 }
 
-void vtkOGSVerticalProfilePlot::SetParameter(const char* raw_name, const char* value) {
+void vtkOGSHovmoellerPlot::SetParameter(const char* raw_name, const char* value) {
 	std::ostringstream buf;
 
 	buf << "r'" << value << "'";
 	this->SetParameterInternal(raw_name, buf.str().c_str());
 }
 
-void vtkOGSVerticalProfilePlot::SetParameter(const char* raw_name, int value)
+void vtkOGSHovmoellerPlot::SetParameter(const char* raw_name, int value)
 {
   std::ostringstream buf;
   buf << value;
   this->SetParameterInternal(raw_name, buf.str().c_str());
 }
 
-void vtkOGSVerticalProfilePlot::SetParameter(const char* raw_name, double value)
+void vtkOGSHovmoellerPlot::SetParameter(const char* raw_name, double value)
 {
   std::ostringstream buf;
   buf << value;
   this->SetParameterInternal(raw_name, buf.str().c_str());
 }
 
-void vtkOGSVerticalProfilePlot::SetParameter(
+void vtkOGSHovmoellerPlot::SetParameter(
   const char* raw_name, double value1, double value2, double value3)
 {
   std::ostringstream buf;
@@ -105,7 +105,7 @@ void vtkOGSVerticalProfilePlot::SetParameter(
   this->SetParameterInternal(raw_name, buf.str().c_str());
 }
 
-void vtkOGSVerticalProfilePlot::SetParameter(const char* raw_name, double value1, double value2)
+void vtkOGSHovmoellerPlot::SetParameter(const char* raw_name, double value1, double value2)
 {
   std::ostringstream buf;
   buf << "[" << value1 << ", " << value2 << "]";

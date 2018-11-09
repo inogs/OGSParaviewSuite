@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   OGSPlotViews
-  Module:    OGSVerticalProfilePlot.h
+  Module:    OGSHovmoellerPlot.h
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -12,36 +12,36 @@
 
 =========================================================================*/
 
-#ifndef _OGSVerticalProfilePlot_h
-#define _OGSVerticalProfilePlot_h
+#ifndef _OGSHovmoellerPlot_h
+#define _OGSHovmoellerPlot_h
 
 #include "pqSMProxy.h"
 #include "pqView.h"
 #include "pqPythonView.h"
 
-class OGSVerticalProfilePlot : public pqPythonView
+class OGSHovmoellerPlot : public pqPythonView
 {
   Q_OBJECT
   typedef pqPythonView Superclass;
 public:
-  static QString OGSVerticalProfilePlotType() { return "OGSVerticalProfilePlot"; }
+  static QString OGSHovmoellerPlotType() { return "OGSHovmoellerPlot"; }
 
   /// constructor takes a bunch of init stuff and must have this signature to
   /// satisfy pqView
 
-  OGSVerticalProfilePlot(const QString& group, 
-                         const QString& name,
-                         vtkSMProxy* renModule, 
-                         pqServer* server, 
-                         QObject* parent = NULL
-                        );
-  ~OGSVerticalProfilePlot();
+  OGSHovmoellerPlot(const QString& group, 
+                    const QString& name,
+                    vtkSMProxy* renModule, 
+                    pqServer* server, 
+                    QObject* parent = NULL
+                   );
+  ~OGSHovmoellerPlot();
 
 protected:
 
 private:
-  OGSVerticalProfilePlot(const OGSVerticalProfilePlot&); // Not implemented.
-  void operator=(const OGSVerticalProfilePlot&); // Not implemented.
+  OGSHovmoellerPlot(const OGSHovmoellerPlot&); // Not implemented.
+  void operator=(const OGSHovmoellerPlot&); // Not implemented.
 
 };
 

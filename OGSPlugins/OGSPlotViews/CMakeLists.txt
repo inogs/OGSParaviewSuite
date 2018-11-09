@@ -23,7 +23,7 @@ endif()
 
 INCLUDE_DIRECTORIES(${PARAVIEW_GUI_INCLUDE_DIRS})
 #INCLUDE (ParaViewQt5)
-QT5_WRAP_CPP(MOC_SRCS OGSVerticalProfilePlot.h)
+QT5_WRAP_CPP(MOC_SRCS OGSVerticalProfilePlot.h OGSHovmoellerPlot.h)
 
 ADD_PQPROXY(VIEW_IFACE VIEW_IFACE_SRCS
     TYPE OGSVerticalProfilePlot
@@ -31,14 +31,20 @@ ADD_PQPROXY(VIEW_IFACE VIEW_IFACE_SRCS
     XML_NAME OGSVerticalProfilePlot
     )
 
+ADD_PQPROXY(VIEW_IFACE VIEW_IFACE_SRCS
+    TYPE OGSHovmoellerPlot
+    XML_GROUP views
+    XML_NAME OGSHovmoellerPlot
+    )
+
 ADD_PARAVIEW_PLUGIN(OGSPlotViews "1.0"
   SERVER_MANAGER_XML OGSPlotViews.xml
-  SERVER_MANAGER_SOURCES vtkOGSVerticalProfilePlot.cxx
+  SERVER_MANAGER_SOURCES vtkSMOGSVerticalProfilePlotProxy.cxx  vtkOGSVerticalProfilePlot.cxx vtkSMOGSHovmoellerPlotProxy.cxx vtkOGSHovmoellerPlot.cxx
   REQUIRED_ON_SERVER
   GUI_INTERFACES
     ${IFACES} ${VIEW_IFACE}
   GUI_SOURCES
     ${IFACE_SRCS} ${VIEW_IFACE_SRCS} ${UI_SRCS}
     ${MOC_SRCS}
-    OGSVerticalProfilePlot.cxx
+    OGSVerticalProfilePlot.cxx OGSHovmoellerPlot.cxx
   )

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   OGSPlotViews
-  Module:    vtkOGSVerticalProfilePlot.h
+  Module:    vtkOGSHovmoellerPlot.h
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -12,19 +12,19 @@
 
 =========================================================================*/
 
-#ifndef vtkOGSVerticalProfilePlot_h
-#define vtkOGSVerticalProfilePlot_h
+#ifndef vtkOGSHovmoellerPlot_h
+#define vtkOGSHovmoellerPlot_h
 
 #include "vtkDataSet.h"
 #include "vtkPythonView.h"
 
 #include <map>
 
-class vtkOGSVerticalProfilePlot : public vtkPythonView
+class vtkOGSHovmoellerPlot : public vtkPythonView
 {
 public:
-  static vtkOGSVerticalProfilePlot* New();
-  vtkTypeMacro(vtkOGSVerticalProfilePlot, vtkPythonView);
+  static vtkOGSHovmoellerPlot* New();
+  vtkTypeMacro(vtkOGSHovmoellerPlot, vtkPythonView);
 
   /*
     Get/Set the Python script.
@@ -56,12 +56,12 @@ public:
   void Update() VTK_OVERRIDE;
 
 protected:
-  vtkOGSVerticalProfilePlot();
-  ~vtkOGSVerticalProfilePlot() override;
+  vtkOGSHovmoellerPlot();
+  ~vtkOGSHovmoellerPlot() override;
 
 private:
-  vtkOGSVerticalProfilePlot(const vtkOGSVerticalProfilePlot&) =delete;
-  void operator=(const vtkOGSVerticalProfilePlot&) =delete;
+  vtkOGSHovmoellerPlot(const vtkOGSHovmoellerPlot&) =delete;
+  void operator=(const vtkOGSHovmoellerPlot&) =delete;
 
   char *Script, *Variables;
   std::map<std::string, std::string> mapParam;

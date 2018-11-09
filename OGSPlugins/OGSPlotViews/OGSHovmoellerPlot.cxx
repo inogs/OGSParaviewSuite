@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   OGSPlotViews
-  Module:    OGSVerticalProfilePlot.cxx
+  Module:    OGSHovmoellerPlot.cxx
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -12,22 +12,22 @@
 
 =========================================================================*/
 
-#include "OGSVerticalProfilePlot.h"
-#include "vtkSMOGSVerticalProfilePlotProxy.h"
+#include "OGSHovmoellerPlot.h"
+#include "vtkSMOGSHovmoellerPlotProxy.h"
 
 //-----------------------------------------------------------------------------
-OGSVerticalProfilePlot::OGSVerticalProfilePlot(const QString& group, 
+OGSHovmoellerPlot::OGSHovmoellerPlot(const QString& group, 
                                                const QString& name,
                                                vtkSMProxy* renModule, 
                                                pqServer* server, 
                                                QObject* parent)
-      : pqPythonView(OGSVerticalProfilePlot::OGSVerticalProfilePlotType(), group, name, 
-         vtkSMOGSVerticalProfilePlotProxy::SafeDownCast(renModule), server, parent)
+      : pqPythonView(OGSHovmoellerPlot::OGSHovmoellerPlotType(), group, name, 
+         vtkSMOGSHovmoellerPlotProxy::SafeDownCast(renModule), server, parent)
 
 {
 }
 
 //-----------------------------------------------------------------------------
-OGSVerticalProfilePlot::~OGSVerticalProfilePlot()
+OGSHovmoellerPlot::~OGSHovmoellerPlot()
 {
 }

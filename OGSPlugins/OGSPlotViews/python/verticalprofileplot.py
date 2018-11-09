@@ -12,63 +12,58 @@ OutputDataType = 'vtkUnstructuredGrid'
 ExtraXml = ''
 
 Properties = dict(
-	plot_title      = '',
-	plot_title_font = 18,
-	plot_title_bold = 0,
-	plot_title_ital = 0,
-	plot_title_alig = 1,
-	x_label         = '',
-	x_font          = 12,
-	x_bold          = 0,
-	x_ital          = 0,
-	x_logscale      = 0,
-	x_customrange   = 0,
-	x_min           = 0.,
-	x_max           = 0.,
-	y_label         = '',
-	y_font          = 12,
-	y_bold          = 0,
-	y_ital          = 0,
-	y_logscale      = 0,
-	y_customrange   = 0,
-	y_min           = 0.,
-	y_max           = 0.,
-	y_fact          = 1000.,
-	minorticks      = 0,
-	show_grid       = 0,
-	show_legend     = 0,
-	filterzeros     = 0,
-	legend_location = 0,
-	legend_font     = 0,
-	legend_bold     = 0,
-	legend_ital     = 0
 	);
 
 def RequestData():
-	def smooth(a,WSZ):
-		# a: NumPy 1-D array containing the data to be smoothed
-		# WSZ: smoothing window size needs, which must be odd number,
-		# as in the original MATLAB implementation
-		import numpy as np
-		out0 = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    
-		r = np.arange(1,WSZ-1,2)
-		start = np.cumsum(a[:WSZ-1])[::2]/r
-		stop = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]
-		return np.concatenate((  start , out0, stop  ))
 	def setup_data(view):
+		'''
+		This function sets up the data to be plotted.
+		'''
 		view.EnableAllAttributeArrays()
-	def render(view, width, height):
+	def render(view,width,height):
+		'''
+		This function decides the type of plot according 
+		to the view type.
+
+		Needs to be updated every time a plot view is created.
+		'''
+		view_type = view.GetClassName()
+		# Vertical plot
+		if view_type == "vtkOGSVerticalProfilePlot":
+			return render_verticalplot(view, width, height)
+		# Hovmoeller plot
+		if view_type == "vtkOGSHovmoellerPlot":
+			return render_hovmoellerplot(view, width, height)
+		return None
+	def smooth(a,WSZ):
+		'''
+		Smoothes a 1-D numpy array.
+		
+		WSZ: smoothing window size needs, which must be odd number,
+		as in the original MATLAB implementation.
+		'''
+		import numpy as np
+		out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    
+		r     = np.arange(1,WSZ-1,2)
+		start = np.cumsum(a[:WSZ-1])[::2]/r
+		stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]
+		return np.concatenate((  start , out0, stop  ))
+	def render_verticalplot(view, width, height):
+		'''
+		Performs vertical plots from data.
+		'''
 		from paraview import python_view
 		from matplotlib import pyplot as plt
-		figure = python_view.matplotlib_figure(width, height)
+		
 		import vtk, numpy as np
 		from vtk.util import numpy_support as npvtk
-		from scipy.interpolate import spline
 
-		if plot_xkcd:
-			plt.xkcd()
-		else:
-			plt.rcdefaults()
+		# Create matplotlib figure
+		figure = python_view.matplotlib_figure(width, height)
+
+		# Use xkcd
+		if plot_xkcd: plt.xkcd() 
+		else:         plt.rcdefaults()
 
 		# Set up the plot view
 		ax = figure.add_subplot(1,1,1)
