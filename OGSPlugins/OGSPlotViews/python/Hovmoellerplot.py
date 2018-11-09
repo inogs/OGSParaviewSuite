@@ -54,6 +54,7 @@ def RequestData():
 		'''
 		from paraview import python_view
 		from matplotlib import pyplot as plt
+		from matplotlib.ticker import MaxNLocator
 		
 		import vtk, numpy as np
 		from vtk.util import numpy_support as npvtk
@@ -111,7 +112,7 @@ def RequestData():
 			# Else we have a data column
 			xIds.append( cId )
 			# Use datetime to format the date
-			date = dt.strptime(column.GetName(),"%Y%m%d-%H_%M_%S")
+			date = dt.strptime(column.GetName(),"%Y%m%d-%H:%M:%S")
 			xNames.append( date.strftime(x_tick_form) )
 			# Filter zeros and stack the column
 			var = npvtk.vtk_to_numpy(column)
@@ -119,6 +120,8 @@ def RequestData():
 			# Algorithm to smooth data
 			if smoothdata: var = smooth(var,smoothorder)
 			col_stack.append( var )
+
+		z = np.column_stack(col_stack)
 
 		# Colormap selection
 		cm = plt.cm.coolwarm
@@ -133,8 +136,12 @@ def RequestData():
 		if sel_colormap == 8: cm = plt.cm.inferno
 
 		# Plot and colorbar
-		ctf = ax.contourf(xIds,depth,np.column_stack(col_stack),cmap=cm)
-		if draw_colorbar: figure.colorbar(ctf)
+		z_min = np.nanmin(z)
+		z_max = np.nanmax(z)
+		ctf = ax.contourf(xIds,depth,z,cmap=cm,levels=np.linspace(z_min,z_max,256))
+		if draw_colorbar: 
+			cbar = figure.colorbar(ctf)
+			cbar.set_ticks(np.linspace(z_min,z_max,10))
 
 		# Set x axis
 		ax.set_xticks(xIds)
@@ -148,6 +155,9 @@ def RequestData():
 
 		# Save figure
 		if savefigure and filename:
+			# Fix ugly white lines in PDF
+			for c in ctf.collections: c.set_edgecolor("face")
+			# Save figure
 			figure.savefig(filename,dpi=outdpi,bbox_inches='tight')
 
 		return python_view.figure_to_image(figure)
