@@ -111,7 +111,7 @@ def RequestData():
 			# Else we have a data column
 			xIds.append( cId )
 			# Use datetime to format the date
-			date = dt.strptime(column.GetName(),"%Y%m%d-%H_%M_%S")
+			date = dt.strptime(column.GetName(),"%Y%m%d-%H:%M:%S")
 			xNames.append( date.strftime(x_tick_form) )
 			# Filter zeros and stack the column
 			var = npvtk.vtk_to_numpy(column)
