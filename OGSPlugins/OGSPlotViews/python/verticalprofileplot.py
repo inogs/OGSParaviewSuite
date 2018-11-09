@@ -57,7 +57,6 @@ def RequestData():
 		
 		import vtk, numpy as np
 		from vtk.util import numpy_support as npvtk
-		from scipy.interpolate import spline
 
 		# Create matplotlib figure
 		figure = python_view.matplotlib_figure(width, height)
