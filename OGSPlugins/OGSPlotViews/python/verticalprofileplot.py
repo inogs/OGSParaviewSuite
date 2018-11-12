@@ -62,39 +62,39 @@ def RequestData():
 		figure = python_view.matplotlib_figure(width, height)
 
 		# Use xkcd
-		if plot_xkcd: plt.xkcd() 
+		if pplot_xkcd: plt.xkcd() 
 		else:         plt.rcdefaults()
 
 		# Set up the plot view
 		ax = figure.add_subplot(1,1,1)
 		# Title properties
 		title_loc = 'center'
-		if plot_title_alig == 0:
+		if pplot_title_alig == 0:
 			title_loc = 'left'
-		if plot_title_alig == 2:
+		if pplot_title_alig == 2:
 			title_loc = 'right'
-		ax.set_title(plot_title,
-			fontsize=plot_title_font,
-			fontweight='bold'    if plot_title_bold else None,
-			style='italic'  if plot_title_ital else None,
+		ax.set_title(pplot_title,
+			fontsize=pplot_title_font,
+			fontweight='bold'    if pplot_title_bold else None,
+			style='italic'  if pplot_title_ital else None,
 			loc=title_loc)
 		# X Axes properties
-		ax.set_xlabel(x_label,
-			fontsize=x_font,
-			fontweight='bold' if x_bold else None,
-			style='italic' if x_ital else None)
-		if x_logscale: ax.set_xscale('log')
-		if x_customrange: ax.set_xlim((x_min,x_max))
+		ax.set_xlabel(px_label,
+			fontsize=px_font,
+			fontweight='bold' if px_bold else None,
+			style='italic' if px_ital else None)
+		if px_logscale: ax.set_xscale('log')
+		if px_customrange: ax.set_xlim((px_min,px_max))
 		# Y Axes properties
-		ax.set_ylabel(y_label,
-			fontsize=y_font,
-			fontweight='bold' if y_bold else None,
-			style='italic' if y_ital else None)
-		if y_logscale: ax.set_yscale('log')
-		if y_customrange: ax.set_ylim((y_min,y_max))
+		ax.set_ylabel(py_label,
+			fontsize=py_font,
+			fontweight='bold' if py_bold else None,
+			style='italic' if py_ital else None)
+		if py_logscale: ax.set_yscale('log')
+		if py_customrange: ax.set_ylim((py_min,py_max))
 
-		if minorticks: ax.minorticks_on()
-		if show_grid: ax.grid()
+		if pminorticks: ax.minorticks_on()
+		if pshow_grid: ax.grid()
 
 		# Generate variable lists
 		objlist = [s.split(';')[1] for s in variables.split('\n')] if not variables == '' else []
@@ -130,9 +130,9 @@ def RequestData():
 				if do_plot:
 					var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))
 					# Filter zeros inside 
-					if filterzeros: var[var == 0.] = None
+					if pfilterzeros: var[var == 0.] = None
 					# Algorithm to smooth data
-					if smoothdata: var = smooth(var,smoothorder)
+					if psmoothdata: var = smooth(var,psmoothorder)
 					# Plot
 					if args == None:
 						ax.plot(var,-z,label=varname)
@@ -145,13 +145,13 @@ def RequestData():
 		ax.invert_yaxis()
 
 		# Set legend
-		if show_legend: 
-			legend_prop = dict(size=legend_font)
-			if legend_bold: legend_prop['weight'] = 'bold'
-			if legend_ital: legend_prop['style']  = 'italic'
-			ax.legend(loc=legend_location,prop=legend_prop)
+		if pshow_legend: 
+			legend_prop = dict(size=plegend_font)
+			if plegend_bold: legend_prop['weight'] = 'bold'
+			if plegend_ital: legend_prop['style']  = 'italic'
+			ax.legend(loc=plegend_location,prop=legend_prop)
 
-		if savefigure and filename:
-			figure.savefig(filename,dpi=outdpi,bbox_inches='tight')
+		if psavefigure and pfilename:
+			figure.savefig(pfilename,dpi=poutdpi,bbox_inches='tight')
 
 		return python_view.figure_to_image(figure)
