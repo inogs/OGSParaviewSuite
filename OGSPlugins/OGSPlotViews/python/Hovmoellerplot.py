@@ -67,26 +67,26 @@ def RequestData():
 		ax = figure.add_subplot(1,1,1)
 		# Title properties
 		title_loc = 'center'
-		if plot_title_alig == 0:
+		if hplot_title_alig == 0:
 			title_loc = 'left'
-		if plot_title_alig == 2:
+		if hplot_title_alig == 2:
 			title_loc = 'right'
-		ax.set_title(plot_title,
-			fontsize=plot_title_font,
-			fontweight='bold'    if plot_title_bold else None,
-			style='italic'  if plot_title_ital else None,
+		ax.set_title(hplot_title,
+			fontsize=hplot_title_font,
+			fontweight='bold'    if hplot_title_bold else None,
+			style='italic'  if hplot_title_ital else None,
 			loc=title_loc)
 		# X Axes properties
-		ax.set_xlabel(x_label,
-			fontsize=x_font,
-			fontweight='bold' if x_bold else None,
-			style='italic' if x_ital else None)
+		ax.set_xlabel(hx_label,
+			fontsize=hx_font,
+			fontweight='bold' if hx_bold else None,
+			style='italic' if hx_ital else None)
 		# Y Axes properties
-		ax.set_ylabel(y_label,
-			fontsize=y_font,
-			fontweight='bold' if y_bold else None,
-			style='italic' if y_ital else None)
-		if y_customrange: ax.set_ylim((y_min,y_max))
+		ax.set_ylabel(hy_label,
+			fontsize=hy_font,
+			fontweight='bold' if hy_bold else None,
+			style='italic' if hy_ital else None)
+		if hy_customrange: ax.set_ylim((hy_min,hy_max))
 
 		# Plot data
 		# Only get the first visible object, which should be a vtkTable
@@ -113,39 +113,42 @@ def RequestData():
 			xIds.append( cId )
 			# Use datetime to format the date
 			date = dt.strptime(column.GetName(),"%Y%m%d-%H:%M:%S")
-			xNames.append( date.strftime(x_tick_form) )
+			xNames.append( date.strftime(hx_tick_form) )
 			# Filter zeros and stack the column
 			var = npvtk.vtk_to_numpy(column)
 			var[var == 0.] = None
 			# Algorithm to smooth data
-			if smoothdata: var = smooth(var,smoothorder)
+			if hsmoothdata: var = smooth(var,hsmoothorder)
 			col_stack.append( var )
 
-		z = np.column_stack(col_stack)
+		z      = np.column_stack(col_stack)
+		xIds   = np.array(xIds)
+		xNames = np.array(xNames)
 
 		# Colormap selection
 		cm = plt.cm.coolwarm
-		if sel_colormap == 0: cm = plt.cm.jet
-		if sel_colormap == 1: cm = plt.cm.rainbow
-		if sel_colormap == 2: cm = plt.cm.hsv
-		if sel_colormap == 3: cm = plt.cm.ocean
-		if sel_colormap == 4: cm = plt.cm.terrain
-		if sel_colormap == 5: cm = plt.cm.coolwarm
-		if sel_colormap == 6: cm = plt.cm.viridis
-		if sel_colormap == 7: cm = plt.cm.plasma
-		if sel_colormap == 8: cm = plt.cm.inferno
+		if hsel_colormap == 0: cm = plt.cm.jet
+		if hsel_colormap == 1: cm = plt.cm.rainbow
+		if hsel_colormap == 2: cm = plt.cm.hsv
+		if hsel_colormap == 3: cm = plt.cm.ocean
+		if hsel_colormap == 4: cm = plt.cm.terrain
+		if hsel_colormap == 5: cm = plt.cm.coolwarm
+		if hsel_colormap == 6: cm = plt.cm.viridis
+		if hsel_colormap == 7: cm = plt.cm.plasma
+		if hsel_colormap == 8: cm = plt.cm.inferno
 
 		# Plot and colorbar
 		z_min = np.nanmin(z)
 		z_max = np.nanmax(z)
 		ctf = ax.contourf(xIds,depth,z,cmap=cm,levels=np.linspace(z_min,z_max,256))
-		if draw_colorbar: 
+		if hdraw_colorbar: 
 			cbar = figure.colorbar(ctf)
 			cbar.set_ticks(np.linspace(z_min,z_max,10))
 
 		# Set x axis
-		ax.set_xticks(xIds)
-		ax.set_xticklabels(xNames,rotation=x_rot)
+		x_ticks = xIds if xIds.shape[0] < 10 else np.linspace(xIds[0],xIds[-1],hx_nticks,dtype=np.int)
+		ax.set_xticks(x_ticks)
+		ax.set_xticklabels(xNames[x_ticks],rotation=hx_rot)
 
 		# Invert the Y axis
 		ax.invert_yaxis()
@@ -154,10 +157,10 @@ def RequestData():
 		figure.tight_layout()
 
 		# Save figure
-		if savefigure and filename:
+		if hsavefigure and hfilename:
 			# Fix ugly white lines in PDF
 			for c in ctf.collections: c.set_edgecolor("face")
 			# Save figure
-			figure.savefig(filename,dpi=outdpi,bbox_inches='tight')
+			figure.savefig(hfilename,dpi=houtdpi,bbox_inches='tight')
 
 		return python_view.figure_to_image(figure)

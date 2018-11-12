@@ -41,8 +41,8 @@
                </PropertyGroup>
 
                <!-- Title Properties-->
-               <StringVectorProperty name="plot_title"
-                                     initial_string="plot_title"
+               <StringVectorProperty name="pplot_title"
+                                     initial_string="pplot_title"
                                      label="Title "
                                      command="SetParameter"
                                      default_values=""
@@ -52,8 +52,8 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <IntVectorProperty name="plot_title_font"
-                                  initial_string="plot_title_font"
+               <IntVectorProperty name="pplot_title_font"
+                                  initial_string="pplot_title_font"
                                   command="SetParameter"
                                   default_values="14"
                                   number_of_elements="1">
@@ -62,8 +62,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_title_bold"
-                                  initial_string="plot_title_bold"
+               <IntVectorProperty name="pplot_title_bold"
+                                  initial_string="pplot_title_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -73,8 +73,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_title_ital"
-                                  initial_string="plot_title_ital"
+               <IntVectorProperty name="pplot_title_ital"
+                                  initial_string="pplot_title_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -84,8 +84,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_title_alig"
-                                  initial_string="plot_title_alig"
+               <IntVectorProperty name="pplot_title_alig"
+                                  initial_string="pplot_title_alig"
                                   command="SetParameter"
                                   default_values="1"
                                   number_of_elements="1">
@@ -97,21 +97,21 @@
                </IntVectorProperty>
 
                <PropertyGroup label="Title">
-                 <Property name="plot_title"/>
+                 <Property name="pplot_title"/>
                </PropertyGroup>
                <PropertyGroup label="Title Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="plot_title_font" function="Size"/>
-                 <Property name="plot_title_bold" function="Bold"/>
-                 <Property name="plot_title_ital" function="Italics"/>
-                 <Property name="plot_title_alig" function="Justification"/>
+                 <Property name="pplot_title_font" function="Size"/>
+                 <Property name="pplot_title_bold" function="Bold"/>
+                 <Property name="pplot_title_ital" function="Italics"/>
+                 <Property name="pplot_title_alig" function="Justification"/>
                </PropertyGroup>
 
                <!-- Legend Properties -->
-               <IntVectorProperty name="show_legend"
+               <IntVectorProperty name="pshow_legend"
                                   label="Show Legend"
-                                  initial_string="show_legend"
+                                  initial_string="pshow_legend"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -121,9 +121,9 @@
                  <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="legend_location"
+               <IntVectorProperty name="plegend_location"
                                   label="Legend Location"
-                                  initial_string="legend_location"
+                                  initial_string="plegend_location"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -142,8 +142,8 @@
                 </EnumerationDomain>
                </IntVectorProperty>
 
-               <IntVectorProperty name="legend_font"
-                                  initial_string="legend_font"
+               <IntVectorProperty name="plegend_font"
+                                  initial_string="plegend_font"
                                   command="SetParameter"
                                   default_values="12"
                                   number_of_elements="1">
@@ -152,8 +152,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="legend_bold"
-                                  initial_string="legend_bold"
+               <IntVectorProperty name="plegend_bold"
+                                  initial_string="plegend_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -163,8 +163,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="legend_ital"
-                                  initial_string="legend_ital"
+               <IntVectorProperty name="plegend_ital"
+                                  initial_string="plegend_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -175,22 +175,22 @@
                </IntVectorProperty>
 
                <PropertyGroup label="Annotation">
-                 <Property name="show_legend"/>
-                 <Property name="legend_location"/>
+                 <Property name="pshow_legend"/>
+                 <Property name="plegend_location"/>
                </PropertyGroup>
 
                <PropertyGroup label="Legend Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="legend_font" function="Size"/>
-                 <Property name="legend_bold" function="Bold"/>
-                 <Property name="legend_ital" function="Italics"/>
+                 <Property name="plegend_font" function="Size"/>
+                 <Property name="plegend_bold" function="Bold"/>
+                 <Property name="plegend_ital" function="Italics"/>
                </PropertyGroup>
 
                <!-- Axes Properties -->
-               <IntVectorProperty name="show_grid"
+               <IntVectorProperty name="pshow_grid"
                                   label="Show Grid"
-                                  initial_string="show_grid"
+                                  initial_string="pshow_grid"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -200,9 +200,9 @@
                  <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_xkcd"
+               <IntVectorProperty name="pplot_xkcd"
                                   label="Use XKCD"
-                                  initial_string="plot_xkcd"
+                                  initial_string="pplot_xkcd"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1"
@@ -214,9 +214,9 @@
                </IntVectorProperty>
 
 
-               <IntVectorProperty name="minorticks"
+               <IntVectorProperty name="pminorticks"
                                   label="Show Minor Ticks"
-                                  initial_string="minorticks"
+                                  initial_string="pminorticks"
                                   command="SetParameter"
                                   default_values="1"
                                   number_of_elements="1">
@@ -226,9 +226,9 @@
                  <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="smoothdata"
+               <IntVectorProperty name="psmoothdata"
                                   label="Smooth curves"
-                                  initial_string="smoothdata"
+                                  initial_string="psmoothdata"
                                   command="SetParameter"
                                   default_values="1"
                                   number_of_elements="1">
@@ -238,8 +238,8 @@
                  <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="smoothorder"
-                                  initial_string="smoothorder"
+               <IntVectorProperty name="psmoothorder"
+                                  initial_string="psmoothorder"
                                   label="Smooth Order"
                                   command="SetParameter"
                                   default_values="5"
@@ -250,14 +250,14 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="smoothdata" function="boolean" />
+                     <Property name="psmoothdata" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </IntVectorProperty>
 
-               <IntVectorProperty name="filterzeros"
+               <IntVectorProperty name="pfilterzeros"
                                   label="Filter Zero Values"
-                                  initial_string="filterzeros"
+                                  initial_string="pfilterzeros"
                                   command="SetParameter"
                                   default_values="1"
                                   number_of_elements="1">
@@ -268,17 +268,17 @@
                </IntVectorProperty>
 
                <PropertyGroup label="Axes">
-                 <Property name="show_grid"/>
-                 <Property name="plot_xkcd"/>
-                 <Property name="minorticks"/>
-                 <Property name="smoothdata"/>
-                 <Property name="smoothorder"/>
-                 <Property name="filterzeros"/>
+                 <Property name="pshow_grid"/>
+                 <Property name="pplot_xkcd"/>
+                 <Property name="pminorticks"/>
+                 <Property name="psmoothdata"/>
+                 <Property name="psmoothorder"/>
+                 <Property name="pfilterzeros"/>
                </PropertyGroup>
 
                <!-- X Axis Properties -->
-               <StringVectorProperty name="x_label"
-                                     initial_string="x_label"
+               <StringVectorProperty name="px_label"
+                                     initial_string="px_label"
                                      label="X Label "
                                      command="SetParameter"
                                      default_values=""
@@ -288,8 +288,8 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <IntVectorProperty name="x_font"
-                                  initial_string="x_font"
+               <IntVectorProperty name="px_font"
+                                  initial_string="px_font"
                                   command="SetParameter"
                                   default_values="12"
                                   number_of_elements="1">
@@ -298,8 +298,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_bold"
-                                  initial_string="x_bold"
+               <IntVectorProperty name="px_bold"
+                                  initial_string="px_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -309,8 +309,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_ital"
-                                  initial_string="x_ital"
+               <IntVectorProperty name="px_ital"
+                                  initial_string="px_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -320,8 +320,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_logscale"
-                                  initial_string="x_logscale"
+               <IntVectorProperty name="px_logscale"
+                                  initial_string="px_logscale"
                                   label="Logarithmic Scale"
                                   command="SetParameter"
                                   default_values="0"
@@ -332,8 +332,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_customrange"
-                                  initial_string="x_customrange"
+               <IntVectorProperty name="px_customrange"
+                                  initial_string="px_customrange"
                                   label="Custom Range X"
                                   command="SetParameter"
                                   default_values="0"
@@ -344,8 +344,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <DoubleVectorProperty name="x_min"
-                                     initial_string="x_min"
+               <DoubleVectorProperty name="px_min"
+                                     initial_string="px_min"
                                      label="Minimum Range X"
                                      command="SetParameter"
                                      default_values="0"
@@ -355,13 +355,13 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="x_customrange" function="boolean" />
+                     <Property name="px_customrange" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </DoubleVectorProperty>
 
-               <DoubleVectorProperty name="x_max"
-                                     initial_string="x_max"
+               <DoubleVectorProperty name="px_max"
+                                     initial_string="px_max"
                                      label="Maximum Range X"
                                      command="SetParameter"
                                      default_values="1"
@@ -371,33 +371,33 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="x_customrange" function="boolean" />
+                     <Property name="px_customrange" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </DoubleVectorProperty>
 
                <PropertyGroup label="X Axis">
-                 <Property name="x_label"/>
+                 <Property name="px_label"/>
                </PropertyGroup>
 
                <PropertyGroup label="X Axis Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="x_font" function="Size"/>
-                 <Property name="x_bold" function="Bold"/>
-                 <Property name="x_ital" function="Italics"/>
+                 <Property name="px_font" function="Size"/>
+                 <Property name="px_bold" function="Bold"/>
+                 <Property name="px_ital" function="Italics"/>
                </PropertyGroup>
 
                <PropertyGroup label="X Axis Range">
-                 <Property name="x_logscale"/>
-                 <Property name="x_customrange"/>
-                 <Property name="x_min"/>
-                 <Property name="x_max"/>
+                 <Property name="px_logscale"/>
+                 <Property name="px_customrange"/>
+                 <Property name="px_min"/>
+                 <Property name="px_max"/>
                </PropertyGroup>
 
                <!-- Y axis label -->
-               <StringVectorProperty name="y_label"
-                                     initial_string="y_label"
+               <StringVectorProperty name="py_label"
+                                     initial_string="py_label"
                                      label="Y Label "
                                      command="SetParameter"
                                      default_values=""
@@ -407,8 +407,8 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <IntVectorProperty name="y_font"
-                                  initial_string="y_font"
+               <IntVectorProperty name="py_font"
+                                  initial_string="py_font"
                                   command="SetParameter"
                                   default_values="12"
                                   number_of_elements="1">
@@ -417,8 +417,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_bold"
-                                  initial_string="y_bold"
+               <IntVectorProperty name="py_bold"
+                                  initial_string="py_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -428,8 +428,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_ital"
-                                  initial_string="y_ital"
+               <IntVectorProperty name="py_ital"
+                                  initial_string="py_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -439,8 +439,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_logscale"
-                                  initial_string="y_logscale"
+               <IntVectorProperty name="py_logscale"
+                                  initial_string="py_logscale"
                                   label="Logarithmic Scale"
                                   command="SetParameter"
                                   default_values="0"
@@ -451,8 +451,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_customrange"
-                                  initial_string="y_customrange"
+               <IntVectorProperty name="py_customrange"
+                                  initial_string="py_customrange"
                                   label="Custom Range Y"
                                   command="SetParameter"
                                   default_values="0"
@@ -463,8 +463,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <DoubleVectorProperty name="y_min"
-                                     initial_string="y_min"
+               <DoubleVectorProperty name="py_min"
+                                     initial_string="py_min"
                                      label="Minimum Range Y"
                                      command="SetParameter"
                                      default_values="0"
@@ -474,13 +474,13 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="y_customrange" function="boolean" />
+                     <Property name="py_customrange" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </DoubleVectorProperty>
 
-               <DoubleVectorProperty name="y_max"
-                                     initial_string="y_max"
+               <DoubleVectorProperty name="py_max"
+                                     initial_string="py_max"
                                      label="Maximum Range Y"
                                      command="SetParameter"
                                      default_values="1"
@@ -490,13 +490,13 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="y_customrange" function="boolean" />
+                     <Property name="py_customrange" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </DoubleVectorProperty>
 
-               <DoubleVectorProperty name="y_fact"
-                                     initial_string="y_fact"
+               <DoubleVectorProperty name="py_fact"
+                                     initial_string="py_fact"
                                      label="Multiplication Factor"
                                      command="SetParameter"
                                      default_values="1000"
@@ -508,28 +508,28 @@
                </DoubleVectorProperty>
 
                <PropertyGroup label="Y Axis">
-                 <Property name="y_label"/>
+                 <Property name="py_label"/>
                </PropertyGroup>
 
                <PropertyGroup label="Y Axis Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="y_font" function="Size"/>
-                 <Property name="y_bold" function="Bold"/>
-                 <Property name="y_ital" function="Italics"/>
+                 <Property name="py_font" function="Size"/>
+                 <Property name="py_bold" function="Bold"/>
+                 <Property name="py_ital" function="Italics"/>
                </PropertyGroup>
 
                <PropertyGroup label="Y Axis Range">
-                 <Property name="y_logscale"/>
-                 <Property name="y_fact"/>
-                 <Property name="y_customrange"/>
-                 <Property name="y_min"/>
-                 <Property name="y_max"/>
+                 <Property name="py_logscale"/>
+                 <Property name="py_fact"/>
+                 <Property name="py_customrange"/>
+                 <Property name="py_min"/>
+                 <Property name="py_max"/>
                </PropertyGroup>
 
                <!-- Save figure properties -->
-               <IntVectorProperty name="savefigure"
-                                  initial_string="savefigure"
+               <IntVectorProperty name="psavefigure"
+                                  initial_string="psavefigure"
                                   label="Save Figure"
                                   command="SetParameter"
                                   default_values="0"
@@ -542,8 +542,8 @@
 
                <StringVectorProperty animateable="0"
                                      command="SetParameter"
-                                     name="filename"
-                                     initial_string="filename"
+                                     name="pfilename"
+                                     initial_string="pfilename"
                                      label="File Name"
                                      default_values=""
                                      number_of_elements="1">
@@ -553,7 +553,7 @@
                    </Documentation>
                    <Hints>
                       <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                        <Property name="savefigure" function="boolean" />
+                        <Property name="psavefigure" function="boolean" />
                       </PropertyWidgetDecorator>
                       <FileChooser extensions="png" file_description="High quality PNG"/>
                       <FileChooser extensions="pdf" file_description="Vectorized PDF"/>
@@ -562,9 +562,9 @@
                    </Hints>
                </StringVectorProperty>
 
-               <DoubleVectorProperty name="outdpi"
-                                     initial_string="outdpi"
-                                     label="Output dpi "
+               <DoubleVectorProperty name="poutdpi"
+                                     initial_string="poutdpi"
+                                     label="Output DPI "
                                      command="SetParameter"
                                      default_values="300"
                                      number_of_elements="1">
@@ -579,16 +579,16 @@
                </DoubleVectorProperty>
 
                <PropertyGroup label="Save Fiure">
-                 <Property name="savefigure"/>
-                 <Property name="filename"/>
-                 <Property name="outdpi"/>
+                 <Property name="psavefigure"/>
+                 <Property name="pfilename"/>
+                 <Property name="poutdpi"/>
                </PropertyGroup>
 
                <!-- PLOT PYTHON CODE -->
 
                <StringVectorProperty command="SetScript"
                                      name="Script"
-                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_verticalplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs vertical plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#x9;from matplotlib import pyplot as plt&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Use xkcd&#xA;&#x9;if plot_xkcd: plt.xkcd() &#xA;&#x9;else:         plt.rcdefaults()&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if plot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if plot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(plot_title,&#xA;&#x9;&#x9;fontsize=plot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if plot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if plot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(x_label,&#xA;&#x9;&#x9;fontsize=x_font,&#xA;&#x9;&#x9;fontweight='bold' if x_bold else None,&#xA;&#x9;&#x9;style='italic' if x_ital else None)&#xA;&#x9;if x_logscale: ax.set_xscale('log')&#xA;&#x9;if x_customrange: ax.set_xlim((x_min,x_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(y_label,&#xA;&#x9;&#x9;fontsize=y_font,&#xA;&#x9;&#x9;fontweight='bold' if y_bold else None,&#xA;&#x9;&#x9;style='italic' if y_ital else None)&#xA;&#x9;if y_logscale: ax.set_yscale('log')&#xA;&#x9;if y_customrange: ax.set_ylim((y_min,y_max))&#xA;&#xA;&#x9;if minorticks: ax.minorticks_on()&#xA;&#x9;if show_grid: ax.grid()&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[1] for s in variables.split('\n')] if not variables == '' else []&#xA;&#x9;varlist = [s.split(';')[0] for s in variables.split('\n')] if not variables == '' else []&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;for objId in xrange(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;# Recover the depth&#xA;&#x9;&#x9;z   = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/y_fact&#xA;&#x9;&#x9;# For each variable, decide if the plot is needed&#xA;&#x9;&#x9;for varId in xrange(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         &#xA;&#x9;&#x9;&#x9;varname = view.GetAttributeArrayName(objId,vtk.vtkDataObject.POINT,varId)&#xA;&#x9;&#x9;&#x9;# Filter some variables (Do not plot them)&#xA;&#x9;&#x9;&#x9;if varname == 'basins mask':       continue&#xA;&#x9;&#x9;&#x9;if varname == 'coast mask':        continue&#xA;&#x9;&#x9;&#x9;if varname == 'e1':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e2':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e3':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'vtkValidPointMask': continue&#xA;&#x9;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;&#x9;do_plot = False if len(varlist) &gt; 0 else True&#xA;&#x9;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;&#x9;for ii in xrange(0,len(varlist)):&#xA;&#x9;&#x9;&#x9;&#x9;if &quot;%s %d&quot; % (varname,objId+1) == &quot;%s %s&quot; % (varlist[ii],objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;args = variables.split('\n')[ii].split(';')[2]&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;3):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in variables.split('\n')[ii].split(';')[3].split(','))&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;&#x9;var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros inside &#xA;&#x9;&#x9;&#x9;&#x9;if filterzeros: var[var == 0.] = None&#xA;&#x9;&#x9;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;&#x9;&#x9;if smoothdata: var = smooth(var,smoothorder)&#xA;&#x9;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,label=varname)&#xA;&#x9;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,label=varname)&#xA;&#x9;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,**kwargs)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if show_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=legend_font)&#xA;&#x9;&#x9;if legend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if legend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;ax.legend(loc=legend_location,prop=legend_prop)&#xA;&#xA;&#x9;if savefigure and filename:&#xA;&#x9;&#x9;figure.savefig(filename,dpi=outdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_verticalplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs vertical plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#x9;from matplotlib import pyplot as plt&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Use xkcd&#xA;&#x9;if pplot_xkcd: plt.xkcd() &#xA;&#x9;else:         plt.rcdefaults()&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if pplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if pplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(pplot_title,&#xA;&#x9;&#x9;fontsize=pplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if pplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if pplot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(px_label,&#xA;&#x9;&#x9;fontsize=px_font,&#xA;&#x9;&#x9;fontweight='bold' if px_bold else None,&#xA;&#x9;&#x9;style='italic' if px_ital else None)&#xA;&#x9;if px_logscale: ax.set_xscale('log')&#xA;&#x9;if px_customrange: ax.set_xlim((px_min,px_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(py_label,&#xA;&#x9;&#x9;fontsize=py_font,&#xA;&#x9;&#x9;fontweight='bold' if py_bold else None,&#xA;&#x9;&#x9;style='italic' if py_ital else None)&#xA;&#x9;if py_logscale: ax.set_yscale('log')&#xA;&#x9;if py_customrange: ax.set_ylim((py_min,py_max))&#xA;&#xA;&#x9;if pminorticks: ax.minorticks_on()&#xA;&#x9;if pshow_grid: ax.grid()&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[1] for s in variables.split('\n')] if not variables == '' else []&#xA;&#x9;varlist = [s.split(';')[0] for s in variables.split('\n')] if not variables == '' else []&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;for objId in xrange(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;# Recover the depth&#xA;&#x9;&#x9;z   = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/py_fact&#xA;&#x9;&#x9;# For each variable, decide if the plot is needed&#xA;&#x9;&#x9;for varId in xrange(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         &#xA;&#x9;&#x9;&#x9;varname = view.GetAttributeArrayName(objId,vtk.vtkDataObject.POINT,varId)&#xA;&#x9;&#x9;&#x9;# Filter some variables (Do not plot them)&#xA;&#x9;&#x9;&#x9;if varname == 'basins mask':       continue&#xA;&#x9;&#x9;&#x9;if varname == 'coast mask':        continue&#xA;&#x9;&#x9;&#x9;if varname == 'e1':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e2':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e3':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'vtkValidPointMask': continue&#xA;&#x9;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;&#x9;do_plot = False if len(varlist) &gt; 0 else True&#xA;&#x9;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;&#x9;for ii in xrange(0,len(varlist)):&#xA;&#x9;&#x9;&#x9;&#x9;if &quot;%s %d&quot; % (varname,objId+1) == &quot;%s %s&quot; % (varlist[ii],objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;args = variables.split('\n')[ii].split(';')[2]&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;3):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in variables.split('\n')[ii].split(';')[3].split(','))&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;&#x9;var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros inside &#xA;&#x9;&#x9;&#x9;&#x9;if pfilterzeros: var[var == 0.] = None&#xA;&#x9;&#x9;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;&#x9;&#x9;if psmoothdata: var = smooth(var,psmoothorder)&#xA;&#x9;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,label=varname)&#xA;&#x9;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,label=varname)&#xA;&#x9;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,**kwargs)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if pshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=plegend_font)&#xA;&#x9;&#x9;if plegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if plegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;ax.legend(loc=plegend_location,prop=legend_prop)&#xA;&#xA;&#x9;if psavefigure and pfilename:&#xA;&#x9;&#x9;figure.savefig(pfilename,dpi=poutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
                                      number_of_elements="1"
                                      panel_visibility="never">
                  <Hints>
@@ -649,8 +649,8 @@
                <!-- EXPOSED PROPERTIES TO MODIFY THE PLOT -->
 
                <!-- Title Properties-->
-               <StringVectorProperty name="plot_title"
-                                     initial_string="plot_title"
+               <StringVectorProperty name="hplot_title"
+                                     initial_string="hplot_title"
                                      label="Title "
                                      command="SetParameter"
                                      default_values=""
@@ -660,8 +660,8 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <IntVectorProperty name="plot_title_font"
-                                  initial_string="plot_title_font"
+               <IntVectorProperty name="hplot_title_font"
+                                  initial_string="hplot_title_font"
                                   command="SetParameter"
                                   default_values="14"
                                   number_of_elements="1">
@@ -670,8 +670,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_title_bold"
-                                  initial_string="plot_title_bold"
+               <IntVectorProperty name="hplot_title_bold"
+                                  initial_string="hplot_title_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -681,8 +681,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_title_ital"
-                                  initial_string="plot_title_ital"
+               <IntVectorProperty name="hplot_title_ital"
+                                  initial_string="hplot_title_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -692,8 +692,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="plot_title_alig"
-                                  initial_string="plot_title_alig"
+               <IntVectorProperty name="hplot_title_alig"
+                                  initial_string="hplot_title_alig"
                                   command="SetParameter"
                                   default_values="1"
                                   number_of_elements="1">
@@ -705,20 +705,20 @@
                </IntVectorProperty>
 
                <PropertyGroup label="Title">
-                 <Property name="plot_title"/>
+                 <Property name="hplot_title"/>
                </PropertyGroup>
                <PropertyGroup label="Title Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="plot_title_font" function="Size"/>
-                 <Property name="plot_title_bold" function="Bold"/>
-                 <Property name="plot_title_ital" function="Italics"/>
-                 <Property name="plot_title_alig" function="Justification"/>
+                 <Property name="hplot_title_font" function="Size"/>
+                 <Property name="hplot_title_bold" function="Bold"/>
+                 <Property name="hplot_title_ital" function="Italics"/>
+                 <Property name="hplot_title_alig" function="Justification"/>
                </PropertyGroup>
 
                <!-- Colormap Properties -->
-               <IntVectorProperty name="draw_colorbar"
-                                  initial_string="draw_colorbar"
+               <IntVectorProperty name="hdraw_colorbar"
+                                  initial_string="hdraw_colorbar"
                                   label="Colorbar"
                                   command="SetParameter"
                                   default_values="1"
@@ -729,9 +729,9 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="sel_colormap"
+               <IntVectorProperty name="hsel_colormap"
                                   label="Colormap"
-                                  initial_string="sel_colormap"
+                                  initial_string="hsel_colormap"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1"
@@ -749,9 +749,9 @@
                 </EnumerationDomain>
                </IntVectorProperty>
 
-               <IntVectorProperty name="smoothdata"
+               <IntVectorProperty name="hsmoothdata"
                                   label="Smooth curves"
-                                  initial_string="smoothdata"
+                                  initial_string="hsmoothdata"
                                   command="SetParameter"
                                   default_values="1"
                                   number_of_elements="1">
@@ -761,8 +761,8 @@
                  <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="smoothorder"
-                                  initial_string="smoothorder"
+               <IntVectorProperty name="hsmoothorder"
+                                  initial_string="hsmoothorder"
                                   label="Smooth Order"
                                   command="SetParameter"
                                   default_values="5"
@@ -773,21 +773,21 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="smoothdata" function="boolean" />
+                     <Property name="hsmoothdata" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </IntVectorProperty>
 
                <PropertyGroup label="Colormap">
-                 <Property name="draw_colorbar"/>
-                 <Property name="sel_colormap"/>
-                 <Property name="smoothdata"/>
-                 <Property name="smoothorder"/>
+                 <Property name="hdraw_colorbar"/>
+                 <Property name="hsel_colormap"/>
+                 <Property name="hsmoothdata"/>
+                 <Property name="hsmoothorder"/>
                </PropertyGroup>
 
                <!-- X Axis Properties -->
-               <StringVectorProperty name="x_label"
-                                     initial_string="x_label"
+               <StringVectorProperty name="hx_label"
+                                     initial_string="hx_label"
                                      label="X Label "
                                      command="SetParameter"
                                      default_values=""
@@ -797,8 +797,20 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <StringVectorProperty name="x_tick_form"
-                                     initial_string="x_tick_form"
+               <IntVectorProperty name="hx_nticks"
+                                  initial_string="hx_nticks"
+                                  label="X Number of Ticks "
+                                  command="SetParameter"
+                                  default_values="10"
+                                  number_of_elements="1"
+                                  panel_visibility="advanced">
+                 <Documentation>
+                  Number of ticks in X axis.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <StringVectorProperty name="hx_tick_form"
+                                     initial_string="hx_tick_form"
                                      label="X Tick Format "
                                      command="SetParameter"
                                      default_values="%b %Y - %H:%M"
@@ -810,8 +822,8 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <IntVectorProperty name="x_rot"
-                                  initial_string="x_rot"
+               <IntVectorProperty name="hx_rot"
+                                  initial_string="hx_rot"
                                   label="X Tick Rotation "
                                   command="SetParameter"
                                   default_values="90"
@@ -822,8 +834,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_font"
-                                  initial_string="x_font"
+               <IntVectorProperty name="hx_font"
+                                  initial_string="hx_font"
                                   command="SetParameter"
                                   default_values="12"
                                   number_of_elements="1">
@@ -832,8 +844,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_bold"
-                                  initial_string="x_bold"
+               <IntVectorProperty name="hx_bold"
+                                  initial_string="hx_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -843,8 +855,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="x_ital"
-                                  initial_string="x_ital"
+               <IntVectorProperty name="hx_ital"
+                                  initial_string="hx_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -855,21 +867,23 @@
                </IntVectorProperty>
 
                <PropertyGroup label="X Axis">
-                 <Property name="x_label"/>
-                 <Property name="x_rot"/>
+                 <Property name="hx_nticks"/>
+                 <Property name="hx_label"/>
+                 <Property name="hx_tick_form"/>
+                 <Property name="hx_rot"/>
                </PropertyGroup>
 
                <PropertyGroup label="X Axis Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="x_font" function="Size"/>
-                 <Property name="x_bold" function="Bold"/>
-                 <Property name="x_ital" function="Italics"/>
+                 <Property name="hx_font" function="Size"/>
+                 <Property name="hx_bold" function="Bold"/>
+                 <Property name="hx_ital" function="Italics"/>
                </PropertyGroup>
 
                <!-- Y axis label -->
-               <StringVectorProperty name="y_label"
-                                     initial_string="y_label"
+               <StringVectorProperty name="hy_label"
+                                     initial_string="hy_label"
                                      label="Y Label "
                                      command="SetParameter"
                                      default_values=""
@@ -879,8 +893,8 @@
                  </Documentation>
                </StringVectorProperty>
 
-               <IntVectorProperty name="y_font"
-                                  initial_string="y_font"
+               <IntVectorProperty name="hy_font"
+                                  initial_string="hy_font"
                                   command="SetParameter"
                                   default_values="12"
                                   number_of_elements="1">
@@ -889,8 +903,8 @@
                  </Documentation>
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_bold"
-                                  initial_string="y_bold"
+               <IntVectorProperty name="hy_bold"
+                                  initial_string="hy_bold"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -900,8 +914,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_ital"
-                                  initial_string="y_ital"
+               <IntVectorProperty name="hy_ital"
+                                  initial_string="hy_ital"
                                   command="SetParameter"
                                   default_values="0"
                                   number_of_elements="1">
@@ -911,8 +925,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <IntVectorProperty name="y_customrange"
-                                  initial_string="y_customrange"
+               <IntVectorProperty name="hy_customrange"
+                                  initial_string="hy_customrange"
                                   label="Custom Range Y"
                                   command="SetParameter"
                                   default_values="0"
@@ -923,8 +937,8 @@
                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
-               <DoubleVectorProperty name="y_min"
-                                     initial_string="y_min"
+               <DoubleVectorProperty name="hy_min"
+                                     initial_string="hy_min"
                                      label="Minimum Range Y"
                                      command="SetParameter"
                                      default_values="0"
@@ -934,13 +948,13 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="y_customrange" function="boolean" />
+                     <Property name="hy_customrange" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </DoubleVectorProperty>
 
-               <DoubleVectorProperty name="y_max"
-                                     initial_string="y_max"
+               <DoubleVectorProperty name="hy_max"
+                                     initial_string="hy_max"
                                      label="Maximum Range Y"
                                      command="SetParameter"
                                      default_values="1"
@@ -950,32 +964,32 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="y_customrange" function="boolean" />
+                     <Property name="hy_customrange" function="boolean" />
                    </PropertyWidgetDecorator>
                  </Hints>
                </DoubleVectorProperty>
 
                <PropertyGroup label="Y Axis">
-                 <Property name="y_label"/>
+                 <Property name="hy_label"/>
                </PropertyGroup>
 
                <PropertyGroup label="Y Axis Properties"
                               panel_widget="FontEditor"
                               panel_visibility="advanced">
-                 <Property name="y_font" function="Size"/>
-                 <Property name="y_bold" function="Bold"/>
-                 <Property name="y_ital" function="Italics"/>
+                 <Property name="hy_font" function="Size"/>
+                 <Property name="hy_bold" function="Bold"/>
+                 <Property name="hy_ital" function="Italics"/>
                </PropertyGroup>
 
                <PropertyGroup label="Y Axis Range">
-                 <Property name="y_customrange"/>
-                 <Property name="y_min"/>
-                 <Property name="y_max"/>
+                 <Property name="hy_customrange"/>
+                 <Property name="hy_min"/>
+                 <Property name="hy_max"/>
                </PropertyGroup>
 
                <!-- Save figure properties -->
-               <IntVectorProperty name="savefigure"
-                                  initial_string="savefigure"
+               <IntVectorProperty name="hsavefigure"
+                                  initial_string="hsavefigure"
                                   label="Save Figure"
                                   command="SetParameter"
                                   default_values="0"
@@ -988,8 +1002,8 @@
 
                <StringVectorProperty animateable="0"
                                      command="SetParameter"
-                                     name="filename"
-                                     initial_string="filename"
+                                     name="hfilename"
+                                     initial_string="hfilename"
                                      label="File Name"
                                      default_values=""
                                      number_of_elements="1">
@@ -999,7 +1013,7 @@
                    </Documentation>
                    <Hints>
                       <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                        <Property name="savefigure" function="boolean" />
+                        <Property name="hsavefigure" function="boolean" />
                       </PropertyWidgetDecorator>
                       <FileChooser extensions="png" file_description="High quality PNG"/>
                       <FileChooser extensions="pdf" file_description="Vectorized PDF"/>
@@ -1008,9 +1022,9 @@
                    </Hints>
                </StringVectorProperty>
 
-               <DoubleVectorProperty name="outdpi"
-                                     initial_string="outdpi"
-                                     label="Output dpi "
+               <DoubleVectorProperty name="houtdpi"
+                                     initial_string="houtdpi"
+                                     label="Output DPI "
                                      command="SetParameter"
                                      default_values="300"
                                      number_of_elements="1">
@@ -1019,22 +1033,22 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="savefigure" function="boolean" />
+                     <Property name="hsavefigure" function="boolean" />
                    </PropertyWidgetDecorator>        
                  </Hints>
                </DoubleVectorProperty>
 
                <PropertyGroup label="Save Fiure">
-                 <Property name="savefigure"/>
-                 <Property name="filename"/>
-                 <Property name="outdpi"/>
+                 <Property name="hsavefigure"/>
+                 <Property name="hfilename"/>
+                 <Property name="houtdpi"/>
                </PropertyGroup>
 
                <!-- PLOT PYTHON CODE -->
 
                <StringVectorProperty command="SetScript"
                                      name="Script"
-                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_hovmoellerplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs Hovmoeller plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#x9;from matplotlib import pyplot as plt&#xA;&#x9;from matplotlib.ticker import MaxNLocator&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if plot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if plot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(plot_title,&#xA;&#x9;&#x9;fontsize=plot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if plot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if plot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(x_label,&#xA;&#x9;&#x9;fontsize=x_font,&#xA;&#x9;&#x9;fontweight='bold' if x_bold else None,&#xA;&#x9;&#x9;style='italic' if x_ital else None)&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(y_label,&#xA;&#x9;&#x9;fontsize=y_font,&#xA;&#x9;&#x9;fontweight='bold' if y_bold else None,&#xA;&#x9;&#x9;style='italic' if y_ital else None)&#xA;&#x9;if y_customrange: ax.set_ylim((y_min,y_max))&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;# Only get the first visible object, which should be a vtkTable&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return None&#xA;&#xA;&#x9;obj = view.GetVisibleDataObjectForRendering(0)&#xA;&#x9;if not obj: return None&#xA;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): return None&#xA;&#xA;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;# Now parse the columns and build the matrix data&#xA;&#x9;col_stack = []&#xA;&#x9;xIds      = []&#xA;&#x9;xNames    = []&#xA;&#xA;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;# Deal with the depth column&#xA;&#x9;&#x9;if column.GetName() == &quot;depth&quot;:&#xA;&#x9;&#x9;&#x9;depth = -npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;&#x9;continue&#xA;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;xNames.append( date.strftime(x_tick_form) )&#xA;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;var = npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;var[var == 0.] = None&#xA;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;if smoothdata: var = smooth(var,smoothorder)&#xA;&#x9;&#x9;col_stack.append( var )&#xA;&#xA;&#x9;z = np.column_stack(col_stack)&#xA;&#xA;&#x9;# Colormap selection&#xA;&#x9;cm = plt.cm.coolwarm&#xA;&#x9;if sel_colormap == 0: cm = plt.cm.jet&#xA;&#x9;if sel_colormap == 1: cm = plt.cm.rainbow&#xA;&#x9;if sel_colormap == 2: cm = plt.cm.hsv&#xA;&#x9;if sel_colormap == 3: cm = plt.cm.ocean&#xA;&#x9;if sel_colormap == 4: cm = plt.cm.terrain&#xA;&#x9;if sel_colormap == 5: cm = plt.cm.coolwarm&#xA;&#x9;if sel_colormap == 6: cm = plt.cm.viridis&#xA;&#x9;if sel_colormap == 7: cm = plt.cm.plasma&#xA;&#x9;if sel_colormap == 8: cm = plt.cm.inferno&#xA;&#xA;&#x9;# Plot and colorbar&#xA;&#x9;z_min = np.nanmin(z)&#xA;&#x9;z_max = np.nanmax(z)&#xA;&#x9;ctf = ax.contourf(xIds,depth,z,cmap=cm,levels=np.linspace(z_min,z_max,256))&#xA;&#x9;if draw_colorbar: &#xA;&#x9;&#x9;cbar = figure.colorbar(ctf)&#xA;&#x9;&#x9;cbar.set_ticks(np.linspace(z_min,z_max,10))&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;ax.set_xticks(xIds)&#xA;&#x9;ax.set_xticklabels(xNames,rotation=x_rot)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if savefigure and filename:&#xA;&#x9;&#x9;# Fix ugly white lines in PDF&#xA;&#x9;&#x9;for c in ctf.collections: c.set_edgecolor(&quot;face&quot;)&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(filename,dpi=outdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_hovmoellerplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs Hovmoeller plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#x9;from matplotlib import pyplot as plt&#xA;&#x9;from matplotlib.ticker import MaxNLocator&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if hplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if hplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(hplot_title,&#xA;&#x9;&#x9;fontsize=hplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if hplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if hplot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(hx_label,&#xA;&#x9;&#x9;fontsize=hx_font,&#xA;&#x9;&#x9;fontweight='bold' if hx_bold else None,&#xA;&#x9;&#x9;style='italic' if hx_ital else None)&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(hy_label,&#xA;&#x9;&#x9;fontsize=hy_font,&#xA;&#x9;&#x9;fontweight='bold' if hy_bold else None,&#xA;&#x9;&#x9;style='italic' if hy_ital else None)&#xA;&#x9;if hy_customrange: ax.set_ylim((hy_min,hy_max))&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;# Only get the first visible object, which should be a vtkTable&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return None&#xA;&#xA;&#x9;obj = view.GetVisibleDataObjectForRendering(0)&#xA;&#x9;if not obj: return None&#xA;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): return None&#xA;&#xA;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;# Now parse the columns and build the matrix data&#xA;&#x9;col_stack = []&#xA;&#x9;xIds      = []&#xA;&#x9;xNames    = []&#xA;&#xA;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;# Deal with the depth column&#xA;&#x9;&#x9;if column.GetName() == &quot;depth&quot;:&#xA;&#x9;&#x9;&#x9;depth = -npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;&#x9;continue&#xA;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;xNames.append( date.strftime(hx_tick_form) )&#xA;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;var = npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;var[var == 0.] = None&#xA;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;if hsmoothdata: var = smooth(var,hsmoothorder)&#xA;&#x9;&#x9;col_stack.append( var )&#xA;&#xA;&#x9;z      = np.column_stack(col_stack)&#xA;&#x9;xIds   = np.array(xIds)&#xA;&#x9;xNames = np.array(xNames)&#xA;&#xA;&#x9;# Colormap selection&#xA;&#x9;cm = plt.cm.coolwarm&#xA;&#x9;if hsel_colormap == 0: cm = plt.cm.jet&#xA;&#x9;if hsel_colormap == 1: cm = plt.cm.rainbow&#xA;&#x9;if hsel_colormap == 2: cm = plt.cm.hsv&#xA;&#x9;if hsel_colormap == 3: cm = plt.cm.ocean&#xA;&#x9;if hsel_colormap == 4: cm = plt.cm.terrain&#xA;&#x9;if hsel_colormap == 5: cm = plt.cm.coolwarm&#xA;&#x9;if hsel_colormap == 6: cm = plt.cm.viridis&#xA;&#x9;if hsel_colormap == 7: cm = plt.cm.plasma&#xA;&#x9;if hsel_colormap == 8: cm = plt.cm.inferno&#xA;&#xA;&#x9;# Plot and colorbar&#xA;&#x9;z_min = np.nanmin(z)&#xA;&#x9;z_max = np.nanmax(z)&#xA;&#x9;ctf = ax.contourf(xIds,depth,z,cmap=cm,levels=np.linspace(z_min,z_max,256))&#xA;&#x9;if hdraw_colorbar: &#xA;&#x9;&#x9;cbar = figure.colorbar(ctf)&#xA;&#x9;&#x9;cbar.set_ticks(np.linspace(z_min,z_max,10))&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIds if xIds.shape[0] &lt; 10 else np.linspace(xIds[0],xIds[-1],hx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNames[x_ticks],rotation=hx_rot)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if hsavefigure and hfilename:&#xA;&#x9;&#x9;# Fix ugly white lines in PDF&#xA;&#x9;&#x9;for c in ctf.collections: c.set_edgecolor(&quot;face&quot;)&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(hfilename,dpi=houtdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
                                      number_of_elements="1"
                                      panel_visibility="never">
                  <Hints>
