@@ -104,7 +104,7 @@ def RequestData():
 		for objId in xrange(view.GetNumberOfVisibleDataObjects()):
 			obj = view.GetVisibleDataObjectForRendering(objId)
 			# Recover the depth
-			z   = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/y_fact
+			z   = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/py_fact
 			# For each variable, decide if the plot is needed
 			for varId in xrange(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         
 				varname = view.GetAttributeArrayName(objId,vtk.vtkDataObject.POINT,varId)
