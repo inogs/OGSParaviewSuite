@@ -104,9 +104,9 @@ void createRectilinearGrid(int nLon, int nLat, int nLev,
 
 	// Set rectilinear grid
 	rgrid->SetDimensions(nLon,nLat,nLev);
-	rgrid->SetXCoordinates(daLon);
-	rgrid->SetYCoordinates(daLat);
-	rgrid->SetZCoordinates(daLev);
+	rgrid->SetXCoordinates(daLon); daLon->Delete();
+	rgrid->SetYCoordinates(daLat); daLat->Delete();
+	rgrid->SetZCoordinates(daLev); daLev->Delete();
 }
 
 /* CREATEVTKSCAF
