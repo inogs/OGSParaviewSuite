@@ -33,12 +33,6 @@ public:
   vtkGetStringMacro(Script);
 
   /*
-    Get/Set the variables.
-  */
-  vtkSetStringMacro(Variables);
-  vtkGetStringMacro(Variables);
-
-  /*
   	Set a name-value parameter that will be available to the script
   	when it is run
   */
@@ -63,7 +57,7 @@ private:
   vtkOGSHovmoellerPlot(const vtkOGSHovmoellerPlot&) =delete;
   void operator=(const vtkOGSHovmoellerPlot&) =delete;
 
-  char *Script, *Variables;
+  char *Script;
   std::map<std::string, std::string> mapParam;
 };
 
