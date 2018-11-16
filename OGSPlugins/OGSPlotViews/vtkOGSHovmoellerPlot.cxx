@@ -27,12 +27,10 @@ vtkStandardNewMacro(vtkOGSHovmoellerPlot);
 //----------------------------------------------------------------------------
 vtkOGSHovmoellerPlot::vtkOGSHovmoellerPlot() {
 	this->Script    = NULL;
-	this->Variables = NULL;	
 }
 
 vtkOGSHovmoellerPlot::~vtkOGSHovmoellerPlot() {
 	this->SetScript(NULL);
-	this->SetVariables(NULL);
 }
 
 //----------------------------------------------------------------------------
