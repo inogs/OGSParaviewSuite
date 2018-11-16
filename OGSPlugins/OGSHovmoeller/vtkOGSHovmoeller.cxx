@@ -94,12 +94,6 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	// Output is a vtkTable with the interpolated data per each timestep
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
-	/*if (!output) {
-		output = vtkTable::New();
-		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
-		this->GetOutputPortInformation(0)->Set(
-			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
-	}*/
 
 	// Check that we can perform the Hovmoeller plot
 	if (this->start_time > this->end_time) {
@@ -162,42 +156,27 @@ int vtkOGSHovmoeller::RequestInformation( vtkInformation *vtkNotUsed(request),
 	vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(0);
 	vtkInformation *outInfo    = outputVector->GetInformationObject(0);
 
-	// Define output as a vtk table
-	/*vtkTable *output = vtkTable::SafeDownCast(
-		outInfo->Get(vtkDataObject::DATA_OBJECT()));
-	if (!output) {
-		output = vtkTable::New();
-		outInfo->Set(vtkDataObject::DATA_OBJECT(), output);
-		this->GetOutputPortInformation(0)->Set(
-			vtkDataObject::DATA_EXTENT_TYPE(), output->GetExtentType());
-	}*/
-
-  	vtkDataSet *source = vtkDataSet::SafeDownCast(
+	vtkDataSet *source = vtkDataSet::SafeDownCast(
 		sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  	// Recover datevec
-  	vtkStringArray *vtkdatevec = vtkStringArray::SafeDownCast(
-  		source->GetFieldData()->GetAbstractArray("Datevec"));
+	// Recover datevec
+	vtkStringArray *vtkdatevec = vtkStringArray::SafeDownCast(
+		source->GetFieldData()->GetAbstractArray("Datevec"));
 
-  	if (!vtkdatevec) {
-  		vtkErrorMacro("Datevec field array must be loaded!");
-  		int abort = 1;
-  		return 0;
-  	}
+	if (vtkdatevec) {
+		if (this->TimeValues) {
+			this->TimeValues->Delete(); 		
+			this->TimeValues = vtkStringArray::New();
+		}
+		// Set the time data array
+		for(int ii = 0; ii < vtkdatevec->GetNumberOfTuples(); ii++)
+			this->TimeValues->InsertNextValue(vtkdatevec->GetValue(ii));
+	}
 
-  	if (this->TimeValues) {
-  		this->TimeValues->Delete();
-  		this->TimeValues = vtkStringArray::New();
-  	}
-
-  	// Set the time data array
-  	for(int ii = 0; ii < vtkdatevec->GetNumberOfTuples(); ii++)
-  		this->TimeValues->InsertNextValue(vtkdatevec->GetValue(ii));
-
-  	// The output data of this filter has no time associated with it.  It is the
-  	// result of computations that happen over all time.
-  	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+	// The output data of this filter has no time associated with it.  It is the
+	// result of computations that happen over all time.
+	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
 
 	return 1;
 }
