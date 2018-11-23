@@ -22,5 +22,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSAnnotateDateTime "1.0"
   SERVER_MANAGER_XML OGSAnnotateDateTime.xml
+  SERVER_MANAGER_SOURCES vtkOGSAnnotateDateTime.cxx
   REQUIRED_ON_SERVER
   )

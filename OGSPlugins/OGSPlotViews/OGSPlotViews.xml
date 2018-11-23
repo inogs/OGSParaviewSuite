@@ -573,7 +573,7 @@
                  </Documentation>
                  <Hints>
                    <PropertyWidgetDecorator type="ShowWidgetDecorator">
-                     <Property name="savefigure" function="boolean" />
+                     <Property name="psavefigure" function="boolean" />
                    </PropertyWidgetDecorator>        
                  </Hints>
                </DoubleVectorProperty>
