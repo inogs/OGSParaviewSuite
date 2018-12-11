@@ -136,8 +136,8 @@ class OGSmesh(object):
 		'''
 		# Define map projection
 		mproj = Basemap(projection = self.map,
-						lat_0      = 38,   \
-						lon_0      = 14,   \
+						lat_0      = 0.,   \
+						lon_0      = 0.,   \
                         llcrnrlon  = -5.3, \
                         llcrnrlat  = 28.0, \
                         urcrnrlon  = 37,   \
