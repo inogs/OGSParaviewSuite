@@ -1,0 +1,181 @@
+<ServerManagerConfiguration>
+  <!-- Point source for Spaghetti according to our needs -->
+  <ProxyGroup name="extended_sources">
+    <SourceProxy class="vtkPointSource"
+                 label="Fixed Point Source"
+                 name="FixedPointSource">
+      <DoubleVectorProperty animateable="1"
+                            command="SetCenter"
+                            default_values="0.0 0.0 0.0"
+                            name="Center"
+                            number_of_elements="3">
+        <BoundsDomain default_mode="mid"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="DummyInput" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+      <IntVectorProperty animateable="1"
+                         command="SetNumberOfPoints"
+                         default_values="1"
+                         name="NumberOfPoints"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <IntRangeDomain min="1"
+                        name="range" />
+      </IntVectorProperty>
+      <DoubleVectorProperty animateable="1"
+                            command="SetRadius"
+                            default_values="0.0"
+                            name="Radius"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <DoubleRangeDomain min="0.0"
+                           name="range" />
+      </DoubleVectorProperty>
+      <InputProperty is_internal="1"
+                     name="DummyInput">
+        <!-- Used when this source is added to a proxy list domain. -->
+      </InputProperty>
+      <PropertyGroup label="Point Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
+      <Hints>
+        <ProxyList>
+          <Link name="DummyInput" with_property="Input" />
+        </ProxyList>
+      </Hints>
+      <!-- End PointSource -->
+    </SourceProxy>
+  </ProxyGroup>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSSpaghetti" 
+                class="vtkOGSSpaghetti" 
+                label="OGS Spaghetti">
+     <Documentation
+        long_help="This filter generates the data for a spaghetti plot"
+        short_help="Generates the data for a spaghetti plot.">
+        This filter generates data from a point and builds up in time,
+        creating a vtkTable. This point over time data is used to create
+        a spaghetti plot.
+
+        Produces an output using the OGS Spaghetti Plot.
+     </Documentation>
+
+     <InputProperty command="SetSourceConnection"
+                    name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkCompositeDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the dataset from which to obtain
+        probe values.</Documentation>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Start and end time -->
+     <StringVectorProperty name="TimeInfo"
+                           command="GetTimeValues"
+                           information_only="1">
+       <StringArrayHelper />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="StartTime"
+                           command="SetStartTime"
+                           number_of_elements="1"
+                           label="Start Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the initial timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty name="EndTime"
+                           command="SetEndTime"
+                           number_of_elements="1"
+                           label="End Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the final timestep for the time statistics.
+        </Documentation>
+     </StringVectorProperty>
+
+     <PropertyGroup label="Time and line selection">
+                 <Property name="StartTime"/>
+                 <Property name="EndTime"/>
+     </PropertyGroup>
+
+     <!-- Variable -->
+     <StringVectorProperty name="field"
+                           label="Variable: "
+                           command="Setfield"
+                           animateable="1"
+                           number_of_elements="1">
+        <ArrayListDomain 
+          name="array_list"
+          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the variable.
+        </Documentation>
+     </StringVectorProperty>
+
+     <PropertyGroup label="Variable to plot">
+                 <Property name="field"/>
+     </PropertyGroup>
+
+     <!-- Interpolating line info -->
+     <InputProperty command="SetInputConnection"
+                    label="Probe Type"
+                    name="Source"
+                    panel_visibility="default">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources"
+                 name="FixedPointSource" />
+        </ProxyListDomain>
+        <Documentation>This property specifies the dataset whose geometry will
+        be used in determining positions to probe.</Documentation>
+     </InputProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <ShowInMenu category="OGS" />
+        <View type="OGSSpaghettiPlot" also_show_in_current_view="1" /> 
+        <WarnOnCreate title="WARNING Potentially slow operation!">
+          **OGS Spaghetti** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>
+        <Visibility replace_input="0" />
+        <Plotable />
+      </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
