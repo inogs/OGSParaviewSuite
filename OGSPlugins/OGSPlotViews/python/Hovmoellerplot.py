@@ -34,6 +34,9 @@ def RequestData():
 		# Hovmoeller plot
 		if view_type == "vtkOGSHovmoellerPlot":
 			return render_hovmoellerplot(view, width, height)
+		# Spaghetti plot
+		if view_type == "vtkOGSSpaghettiPlot":
+			return render_spaghettiplot(view, width, height)
 		return None
 	def smooth(a,WSZ):
 		'''
@@ -90,11 +93,11 @@ def RequestData():
 
 		# Plot data
 		# Only get the first visible object, which should be a vtkTable
-		if not view.GetNumberOfVisibleDataObjects() > 0: return None
+		if not view.GetNumberOfVisibleDataObjects() > 0: return python_view.figure_to_image(figure)
 
 		obj = view.GetVisibleDataObjectForRendering(0)
-		if not obj: return None
-		if (obj.GetClassName() != "vtkTable"): return None
+		if not obj: return python_view.figure_to_image(figure)
+		if (obj.GetClassName() != "vtkTable"): return python_view.figure_to_image(figure)
 
 		# Here we have mande sure we are dealing with a vtkTable
 		# Now parse the columns and build the matrix data

@@ -34,6 +34,9 @@ def RequestData():
 		# Hovmoeller plot
 		if view_type == "vtkOGSHovmoellerPlot":
 			return render_hovmoellerplot(view, width, height)
+		# Spaghetti plot
+		if view_type == "vtkOGSSpaghettiPlot":
+			return render_spaghettiplot(view, width, height)
 		return None
 	def smooth(a,WSZ):
 		'''
