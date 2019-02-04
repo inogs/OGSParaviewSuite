@@ -17,7 +17,7 @@
 #include "vtkCell.h"
 #include "vtkCellData.h"
 #include "vtkCellLocator.h"
-#include "vtkCharArray.h"
+#include "vtkStringArray.h"
 #include "vtkGenericCell.h"
 #include "vtkPointData.h"
 #include "vtkPointSet.h"
@@ -71,6 +71,10 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkDataSet *output = vtkDataSet::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	// Recover metadata
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		source->GetFieldData()->GetAbstractArray("Metadata"));
+
 	// First, copy the input to the output as a starting point
 	output->CopyStructure(input);
 	output->GetPointData()->SetCopyAttribute(vtkDataSetAttributes::SCALARS,
@@ -86,6 +90,8 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 		output->GetPointData()->RemoveArray("e1");
 		output->GetPointData()->RemoveArray("e2");
 		output->GetPointData()->RemoveArray("e3");
+		// Make sure the metadata array is passed to the output
+		output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
 	return 1;
