@@ -50,15 +50,15 @@ int vtkOGSAnnotateDateTime::RequestData(vtkInformation* request,
 		inputInfo->Get(vtkDataObject::DATA_OBJECT()));
 
 	// Recover datevec
-	vtkStringArray *vtkdate = vtkStringArray::SafeDownCast(
-		input->GetFieldData()->GetAbstractArray("Date"));
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		input->GetFieldData()->GetAbstractArray("Metadata"));
 
 	// If successful, modify the entry by parsing the string
 	// using the time library
-	if (vtkdate) {
+	if (vtkmetadata) {
 		struct tm tm;
 		char buff[256];
-		strptime(vtkdate->GetValue(0).c_str(),"%Y%m%d-%H:%M:%S",&tm);
+		strptime(vtkmetadata->GetValue(0).c_str(),"%Y%m%d-%H:%M:%S",&tm);
 		strftime(buff,256,this->TimeFormat,&tm);
 		this->Superclass::SetFormat(buff);
 	}
