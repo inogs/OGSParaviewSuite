@@ -218,52 +218,52 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	// Deal with meshmask stretching arrays
 	// They must be forcefully loaded to project the velocity
+
 	// e1
 	double *e1t = NetCDF::readNetCDF(this->meshmask,"e1t",1*(nLon-1)*(nLat-1));
-	if (e1t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1t>!Aborting!"); return 0;}
+	if (e1t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1t>! Aborting!"); return 0;}
 	double *e1u = NetCDF::readNetCDF(this->meshmask,"e1u",1*(nLon-1)*(nLat-1));
-	if (e1u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1u>!Aborting!"); return 0;}
+	if (e1u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1u>! Aborting!"); return 0;}
 	double *e1v = NetCDF::readNetCDF(this->meshmask,"e1v",1*(nLon-1)*(nLat-1));
-	if (e1v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1v>!Aborting!"); return 0;}
+	if (e1v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1v>! Aborting!"); return 0;}
 	double *e1f = NetCDF::readNetCDF(this->meshmask,"e1f",1*(nLon-1)*(nLat-1));
-	if (e1f	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1f>!Aborting!"); return 0;}
+	if (e1f	== NULL) {vtkErrorMacro("Cannot read NetCDF <e1f>! Aborting!"); return 0;}
 	
-	vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,
-		e1t,e1u,e1v,e1f);
+	vtkFloatArray *vtke1 = VTK::createVTKtenf4from2D("e1",nLon-1,nLat-1,nLev-1,e1t,e1u,e1v,e1f);
 
 	free(e1t); free(e1u); free(e1v); free(e1f);
 
 	// e2
 	double *e2t = NetCDF::readNetCDF(this->meshmask,"e2t",1*(nLon-1)*(nLat-1));
-	if (e2t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2t>!Aborting!"); return 0;}
+	if (e2t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2t>! Aborting!"); return 0;}
 	double *e2u = NetCDF::readNetCDF(this->meshmask,"e2u",1*(nLon-1)*(nLat-1));
-	if (e2u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2u>!Aborting!"); return 0;}
+	if (e2u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2u>! Aborting!"); return 0;}
 	double *e2v = NetCDF::readNetCDF(this->meshmask,"e2v",1*(nLon-1)*(nLat-1));
-	if (e2v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2v>!Aborting!"); return 0;}
+	if (e2v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2v>! Aborting!"); return 0;}
 	double *e2f = NetCDF::readNetCDF(this->meshmask,"e2f",1*(nLon-1)*(nLat-1));
-	if (e2f	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2f>!Aborting!"); return 0;}
+	if (e2f	== NULL) {vtkErrorMacro("Cannot read NetCDF <e2f>! Aborting!"); return 0;}
 	
-	vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,
-		e2t,e2u,e2v,e2f);
+	vtkFloatArray *vtke2 = VTK::createVTKtenf4from2D("e2",nLon-1,nLat-1,nLev-1,e2t,e2u,e2v,e2f);
 
 	free(e2t); free(e2u); free(e2v); free(e2f);
 
 	// e3
 	double *e3t = NetCDF::readNetCDF(this->meshmask,"e3t_0",(nLev-1)*(nLon-1)*(nLat-1));
-	if (e3t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3t_0>!Aborting!"); return 0;}
+	if (e3t	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3t_0>! Aborting!"); return 0;}
 	double *e3u = NetCDF::readNetCDF(this->meshmask,"e3u_0",(nLev-1)*(nLon-1)*(nLat-1));
-	if (e3u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3u_0>!Aborting!"); return 0;}
+	if (e3u	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3u_0>! Aborting!"); return 0;}
 	double *e3v = NetCDF::readNetCDF(this->meshmask,"e3v_0",(nLev-1)*(nLon-1)*(nLat-1));
-	if (e3v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3v_0>!Aborting!"); return 0;}
+	if (e3v	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3v_0>! Aborting!"); return 0;}
 	double *e3w = NetCDF::readNetCDF(this->meshmask,"e3w_0",(nLev-1)*(nLon-1)*(nLat-1));
-	if (e3w	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3w_0>!Aborting!"); return 0;}
+	if (e3w	== NULL) {vtkErrorMacro("Cannot read NetCDF <e3w_0>! Aborting!"); return 0;}
 	
-	vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,
-		e3t,e3u,e3v,e3w);
+	vtkFloatArray *vtke3 = VTK::createVTKtenf4("e3",nLon-1,nLat-1,nLev-1,e3t,e3u,e3v,e3w);
 
 	free(e3w); free(e3t); free(e3u); free(e3v);
 
 	this->UpdateProgress(0.25);
+
+	int n_vars_loaded = 0;
 
 	/* READING THE PHYSICAL VARIABLES
 
@@ -291,6 +291,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 					VTK::createVTKvecf3(varname,nLon-1,nLat-1,nLev-1,u,v,w,vtke1,vtke2,vtke3);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(u); free(v); free(w);
+				n_vars_loaded++;
 			}
 			else {
 				double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
@@ -298,6 +299,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete(); free(array);
+				n_vars_loaded++;
 			}
 		}
 		free(varpath);
@@ -322,10 +324,77 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
 			this->Mesh->GetCellData()->AddArray(vtkarray);
 			vtkarray->Delete(); free(array);
+			n_vars_loaded++;
 		}
 		free(varpath);
 		this->UpdateProgress(0.625 + ii*(0.375/ave_freq.nvars));		
 	}
+
+	/* READING THE FORCINGS VARIABLES
+
+		Variables inside FORCINCS are read here. User can select which
+		variables to load by using a panel.
+	*/
+	// TBD
+
+	/* READING THE GENERAL VARIABLES
+		Variables inside GENERAL are read here. User can select which
+		variables to load by using a panel.
+	*/
+	// TBD
+
+	/* SET THE METADATA ARRAY
+		Set the metadata, an array that contains multiple information for
+		the performance of the OGS filters. Data:
+			0 -> Date
+			1 -> Datevec
+			2 -> Conversion factors
+			3 -> Loaded variables
+			4 -> File name
+			5 -> Meshmask
+	*/
+	std::string aux_str;
+	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",6,NULL);
+
+	// Set the current file date
+	vtkmetadata->SetValue(0,this->timeStepInfo.datetime[ii_tstep]);
+
+	// Set the datevec
+	aux_str = std::to_string(this->timeStepInfo.ntsteps) + std::string(";");
+	for (int ii = 0; ii < this->timeStepInfo.ntsteps; ii++)
+		aux_str += std::string(this->timeStepInfo.datetime[ii]) + std::string(";");
+	vtkmetadata->SetValue(1,aux_str.c_str());
+
+	// Set conversion factors
+	aux_str = std::to_string(this->DepthScale);
+	vtkmetadata->SetValue(2,aux_str.c_str());
+
+	// Set the number of variables loaded
+	aux_str = std::to_string(n_vars_loaded) + std::string(";");
+	// AVE_PHYS
+	for (int ii = 0; ii < this->ave_phys.nvars; ii++) {
+		char *varname = this->ave_phys.vars[ii].name;
+		if (this->GetAvePhysArrayStatus(varname))
+			aux_str += std::string(varname) + std::string(";");
+	}
+	// AVE_FREQ
+	for (int ii = 0; ii < this->ave_freq.nvars; ii++) {
+		char *varname = this->ave_freq.vars[ii].name;
+		if (this->GetAveFreqArrayStatus(varname))
+			aux_str += std::string(varname) + std::string(";");
+	}
+	vtkmetadata->SetValue(3,aux_str.c_str());
+
+	// Set the file name
+	vtkmetadata->SetValue(4,this->FileName);
+
+	// Set the mesh name
+	aux_str = std::string(this->meshmask) + std::string(";") + std::string(this->meshfile);
+	vtkmetadata->SetValue(5,aux_str.c_str());
+
+	// Add array to mesh
+	this->Mesh->GetFieldData()->AddArray(vtkmetadata);
+	vtkmetadata->Delete();
 
 	/* SET THE DATETIME FIELD ARRAY
 
@@ -333,17 +402,22 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		for time stepping purposes. This field contains just information
 		and cannot be deactivated.
 
+		Arnau: this option will be deprecated in favour of the metadata array
 	*/
-	vtkStringArray *vtkdate = VTK::createVTKstrf("Date",this->timeStepInfo.datetime[ii_tstep]);
+	vtkStringArray *vtkdate = VTK::createVTKstrf("Date",1,this->timeStepInfo.datetime[ii_tstep]);
 	this->Mesh->GetFieldData()->AddArray(vtkdate);
 	vtkdate->Delete();
 	// Store all the timesteps in a vector
-	vtkStringArray *vtkdatevec = VTK::createVTKstrf("Datevec",NULL);
-	vtkdatevec->SetNumberOfTuples(this->timeStepInfo.ntsteps);
+	vtkStringArray *vtkdatevec = VTK::createVTKstrf("Datevec",this->timeStepInfo.ntsteps,NULL);
+	//vtkdatevec->SetNumberOfTuples(this->timeStepInfo.ntsteps);
 	for (int ii = 0; ii < this->timeStepInfo.ntsteps; ii++)
 		vtkdatevec->SetValue(ii,this->timeStepInfo.datetime[ii]);
 	this->Mesh->GetFieldData()->AddArray(vtkdatevec);
 	vtkdatevec->Delete();	
+
+	/* 
+		FINAL TOUCHES
+	*/
 
 	// Deallocate meshmask components
 	if (this->RMeshMask) { 
