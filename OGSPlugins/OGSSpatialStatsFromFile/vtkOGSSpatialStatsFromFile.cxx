@@ -101,13 +101,12 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 
 	this->UpdateProgress(0.);
 
-	// First we need to recover the datetime inside the input
-	vtkStringArray *strf = vtkStringArray::SafeDownCast( 
-		input->GetFieldData()->GetAbstractArray("Date") );
-	const char *datetime = strf->GetValue(0);
-	// Construct the file name to open along with the path
-	char filename[256];
-	sprintf(filename,"%s/ave.%s.stat_profiles.nc",this->FolderName,datetime);
+	// First we need to recover the date from the metadata
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		input->GetFieldData()->GetAbstractArray("Metadata"));
+
+	std::string filename = std::string(this->FolderName) + 
+		std::string("/ave.") + vtkmetadata->GetValue(0) + std::string(".stat_profiles.nc");
 
 	// Next, recover the dimensions of the rectilinear grid
 	int nx = input->GetXCoordinates()->GetNumberOfTuples();
@@ -155,10 +154,10 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		if (std::string(vtke3->GetName())       == std::string(array_name)) continue;
 
 		// At this point, we can try to load the stat profile
-		double *stat_profile = NetCDF::readNetCDF(filename, array_name, nbasins*ncoasts*(nz-1)*nstat);
+		double *stat_profile = NetCDF::readNetCDF(filename.c_str(), array_name, nbasins*ncoasts*(nz-1)*nstat);
 		// If file cannot be read or variable does not exist
 		if (stat_profile == NULL) {
-			vtkWarningMacro("File <"<<filename<<"> or variable <"
+			vtkWarningMacro("File <"<<filename.c_str()<<"> or variable <"
 				<<array_name<<"> cannot be read!");
 			continue;
 		}
