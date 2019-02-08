@@ -578,15 +578,15 @@ vtkFloatArray *createVTKtenf9from2D(const char *name, int nx, int ny, int nz,
 	Creates a vtk string array given the name 
 	and data to be converted.
 */
-vtkStringArray *createVTKstrf(const char *name,const char *data) {
+vtkStringArray *createVTKstrf(const char *name, int n, const char *data) {
 	// Create string array
 	vtkStringArray *vtkArray = vtkStringArray::New();
 	vtkArray->SetName(name);
-	vtkArray->SetNumberOfTuples(1);
+	vtkArray->SetNumberOfTuples(n);
 
 	// Set the value
 	if (data != NULL) 
-		vtkArray->SetValue(0,data);
+		for (int ii = 0; ii < n; ii++) vtkArray->SetValue(ii,data);
 
 	return vtkArray;
 }
