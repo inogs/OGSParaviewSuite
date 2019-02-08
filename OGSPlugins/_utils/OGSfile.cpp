@@ -72,6 +72,7 @@ extern "C" int readOGSFile(const char *fname, char *mesh_file, char *mesh_mask,
 			iwrkdir = 1;
 		}
 		if (sec == 2 && !imesh) { // Mesh section, line contains path to the mesh file
+			strtok(line,":");
 			sprintf(mesh_file,"%s/%s",wrkdir,trim(line));
 			sprintf(mesh_mask,"%s/meshmask.nc",wrkdir);
 			imesh = 1;
