@@ -71,10 +71,6 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkDataSet *output = vtkDataSet::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-	// Recover metadata
-	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-		source->GetFieldData()->GetAbstractArray("Metadata"));
-
 	// First, copy the input to the output as a starting point
 	output->CopyStructure(input);
 	output->GetPointData()->SetCopyAttribute(vtkDataSetAttributes::SCALARS,
@@ -91,6 +87,8 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 		output->GetPointData()->RemoveArray("e2");
 		output->GetPointData()->RemoveArray("e3");
 		// Make sure the metadata array is passed to the output
+		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+			source->GetFieldData()->GetAbstractArray("Metadata"));
 		output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
