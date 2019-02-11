@@ -49,7 +49,7 @@ int vtkOGSAnnotateDateTime::RequestData(vtkInformation* request,
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
 		inputInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-	// Recover datevec
+	// Recover metadata
 	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
 		input->GetFieldData()->GetAbstractArray("Metadata"));
 
