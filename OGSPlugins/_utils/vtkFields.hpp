@@ -58,32 +58,14 @@ namespace VTKFIELD
 		Creates a field froma vtk array.
 	*/
 	template <class ARRAY, class P>
-	field::Field<P> createFieldfromVTK(ARRAY vtkarray) {
+	field::Field<P> createFieldfromVTK(ARRAY *vtkArray) {
 		// Recover dimensions from VTK
-		int n = vtkarray->GetNumberOfTuples();
+		int n = vtkArray->GetNumberOfTuples();
 		int m = vtkArray->GetNumberOfComponents();
 		// Create field
-		field::Field<P> f(n,m,vtkarray->GetPointer(0));
+		field::Field<P> f(n,m,vtkArray->GetPointer(0));
 
 		return f;
-	}
-
-
-	ARRAY *createVTKfromField(const char *name, field::Field<P> f) {
-		// Create VTK array
-		ARRAY *vtkArray = ARRAY::New();
-		vtkArray->SetName(name);
-		vtkArray->SetNumberOfComponents(f.get_m()); // Scalar field
-		vtkArray->SetNumberOfTuples(f.get_n());
-		
-		if (f.data() != NULL)
-			// Fill the vtkArray with the values of the array
-			std::memcpy(vtkArray->GetPointer(0),f.data(),f.get_sz()*sizeof(P));
-		else
-			// Preallocate vtkArray to zero
-			vtkArray->Fill(0.);
-
-		return vtkArray;
 	}
 
 	/* CREATEVTKSCAF

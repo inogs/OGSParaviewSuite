@@ -24,9 +24,10 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+
 ADD_PARAVIEW_PLUGIN(OGSReader "1.0"
   SERVER_MANAGER_XML OGSReader.xml
-  SERVER_MANAGER_SOURCES vtkOGSReader.cxx
+  SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp vtkOGSReader.cxx
   REQUIRED_ON_SERVER
   )
 

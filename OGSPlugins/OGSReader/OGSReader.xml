@@ -24,32 +24,6 @@
         </Documentation>
      </StringVectorProperty>
 
-     <!-- Selection of sub basins mask -->
-     <IntVectorProperty name="SubBasinsMask"
-                         label="Include sub-basins mask"
-                         command="SetSubBasinsMask"
-                         number_of_elements="1"
-                         default_values="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool"/>
-        <Documentation>
-          If this property is set to 0, the sub-basins mask will not be read.
-        </Documentation>
-     </IntVectorProperty>
-
-     <!-- Selection of coasts mask -->
-     <IntVectorProperty name="CoastsMask"
-                         label="Include coasts mask"
-                         command="SetCoastsMask"
-                         number_of_elements="1"
-                         default_values="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool"/>
-        <Documentation>
-          If this property is set to 0, the coasts mask will not be read.
-        </Documentation>
-     </IntVectorProperty>
-
      <!-- MeshMask e1t and e2t -->
      <IntVectorProperty name="MeshMask"
                          label="Include meshmask weights"
@@ -59,9 +33,34 @@
                          panel_visibility="advanced">
         <BooleanDomain name="bool"/>
         <Documentation>
-          If this property is set to 0, the mesh mask will not be read.
+          If this property is set to 0, the scaling factors will not be read.
         </Documentation>
      </IntVectorProperty>
+
+     <!-- Mask array info -->
+     <StringVectorProperty name="MaskInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Mask" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="MaskStatus"
+                            command="SetMaskArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="MaskInfo"
+                            label="Masks"
+                            panel_visibility="advanced">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="MaskInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the masks to read.
+        </Documentation>
+     </StringVectorProperty>
 
      <!-- Ave Freq array info-->
      <StringVectorProperty name="AveFreqInfo"
@@ -108,6 +107,55 @@
         </ArraySelectionDomain>
         <Documentation>
           This property contains a list of the physical variables to read.
+        </Documentation>
+     </StringVectorProperty>
+
+    <!-- Forcings array info-->
+     <StringVectorProperty name="ForcingInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Forcing" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="ForcingStatus"
+                            command="SetForcingArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="ForcingInfo"
+                            label="Forcing variables (FORCINGS)"
+                            panel_visibility="advanced">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="ForcingInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the forcing variables to read.
+        </Documentation>
+     </StringVectorProperty>
+
+    <!-- Generals array info-->
+     <StringVectorProperty name="GeneralInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="General" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="GeneralStatus"
+                            command="SetGeneralArrayStatus"
+                            number_of_elements="2"
+                            repeat_command="1"
+                            number_of_elements_per_command="2"
+                            element_types="2 0"
+                            information_property="GeneralInfo"
+                            label="General variables (GENERALS)">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="GeneralInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the general variables to read.
         </Documentation>
      </StringVectorProperty>
 

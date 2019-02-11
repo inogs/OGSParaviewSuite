@@ -82,4 +82,51 @@ namespace NetCDF
 		// Return
 		return out;
 	}
+
+	/* READNETCDF2F3
+
+		Reads a NetCDF4 file given the name of the file, the name of the variable
+		to be read and its size (vector field).
+
+		Stores the variable in a field structure, therefore it is safe.
+	*/
+	field::Field<double> readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, const char *vname3, const int n) {
+
+		int fid, varid1, varid2, varid3, retval;
+		double *u, *v, *w;
+
+		field::Field<double> out = field::Field<double>(n,3);
+
+		// Allocate
+		u = new double[n]; v = new double[n]; w = new double[n];
+
+		// Open file for reading
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR ) return out;
+		// Get the variable id based on its name
+		if ( nc_inq_varid(fid,vname1,&varid1) != NC_NOERR ) return out;
+		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return out;
+		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return out;
+		// Read the data
+		nc_get_var_double(fid,varid1,u);
+		nc_get_var_double(fid,varid2,v);
+		nc_get_var_double(fid,varid3,w);
+		// Close the file
+		nc_close(fid);
+
+		// Set field and eliminate the missing variables
+		for (int ii=0;ii<n;ii++) {
+			out[ii][0] = u[ii];
+			if(out[ii][0] > MAXVAL) out[ii][0] = 0.;
+			out[ii][1] = v[ii];
+
+			out[ii][2] = w[ii];
+			
+			if(out[ii][1] > MAXVAL) out[ii][1] = 0.;
+			if(out[ii][2] > MAXVAL) out[ii][2] = 0.;
+		}
+
+		// Return
+		delete [] u; delete [] v; delete [] w;
+		return out;
+	}
 }

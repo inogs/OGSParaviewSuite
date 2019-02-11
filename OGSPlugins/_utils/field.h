@@ -44,8 +44,8 @@ namespace field
 			inline ~Field()                                         { if (alloc) delete [] val; }
 
 			// Functions
-			inline void   set_dim(const int nn, const int mm)         { n = nn; m = mm; sz = (size_t)(n*m); val = new T[sz]; alloc = true;}
-			inline void   set_val(const T *v)                         { std::memcpy(val,v,sz*sizeof(T)); }
+			inline void   set_dim(const int nn, const int mm)         { n = nn; m = mm; sz = (size_t)(n*m); val = new T[sz]; alloc = true; }
+			inline void   set_val(const T *v)                         { if (alloc) std::memcpy(val,v,sz*sizeof(T)); }
 			inline void   set(const int nn, const int mm, const T *v) { set_dim(nn,mm); set_val(v); }
 			inline T     *data()                                      { return val; }
 			inline int    get_n()                                     { return n; }
