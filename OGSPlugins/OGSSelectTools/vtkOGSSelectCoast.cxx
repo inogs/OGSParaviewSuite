@@ -103,12 +103,13 @@ int vtkOGSSelectCoast::RequestData(
 	this->UpdateProgress(0.2);
 
 	// Loop and update cutting mask (Mesh loop, can be parallelized)
-	for (int ii=0; ii<mask.get_n();ii++) {
+	field::Field<FLDARRAY>::iterator it_mask, it_cut;
+	for (it_mask = mask.begin(), it_cut = cutmask.begin(); it_mask != mask.end(); ++it_mask,++it_cut) {
 		// Loop on the basins array selection
 		for (int bid=0; bid < this->GetNumberOfCoastsArrays(); bid++)
 			if ( this->GetCoastsArrayStatus(this->GetCoastsArrayName(bid)) &&
-				 std::fabs(mask[ii][0] - (double)(bid+1)) < 1.e-3 )
-				cutmask[ii][0] = 1.;
+				 std::fabs(it_mask[0] - (double)(bid+1)) < 1.e-3 ) 
+				it_cut[0] = 1.;
 	}
 
 	// Convert field to vtkArray and add it to input
