@@ -199,41 +199,6 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		this->UpdateProgress(0.25 + ii*(0.175/this->ogsdata.var_n(0)));		
 	}
 
-
-	/*for (int ii = 0; ii < this->ave_phys.nvars; ii++) {
-		char *varname = this->ave_phys.vars[ii].name;
-		char *cdfname = this->ave_phys.vars[ii].vname;
-		char *varpath = OGSold::writeOGSPath(this->ave_phys.vars[ii].path,
-			this->timeStepInfo.datetime[ii_tstep],"*");
-		// Test if the variable has been activated
-		if (this->GetAvePhysArrayStatus(varname)) {
-			// Velocity is treated separately
-			if (std::string(varname) == "Velocity") {
-				double *u = NetCDF::readNetCDF(varpath,"vozocrtx",(nLon-1)*(nLat-1)*(nLev-1)),
-					   *v = NetCDF::readNetCDF(varpath,"vomecrty",(nLon-1)*(nLat-1)*(nLev-1)),
-					   *w = NetCDF::readNetCDF(varpath,"vovecrtz",(nLon-1)*(nLat-1)*(nLev-1));
-				if (u == NULL) {vtkErrorMacro("Cannot read NetCDF <vozocrtx>!Aborting!"); return 0;}
-				if (v == NULL) {vtkErrorMacro("Cannot read NetCDF <vomecrty>!Aborting!"); return 0;}
-				if (w == NULL) {vtkErrorMacro("Cannot read NetCDF <vovecrtz>!Aborting!"); return 0;}
-				vtkFloatArray *vtkarray = 
-					VTK::createVTKvecf3(varname,nLon-1,nLat-1,nLev-1,u,v,w,vtke1,vtke2,vtke3);
-				this->Mesh->GetCellData()->AddArray(vtkarray);
-				vtkarray->Delete(); free(u); free(v); free(w);
-				n_vars_loaded++;
-			}
-			else {
-				double *array = NetCDF::readNetCDF(varpath,cdfname,(nLon-1)*(nLat-1)*(nLev-1));
-				if (array == NULL) {vtkErrorMacro("Cannot read NetCDF <"<<cdfname<<">!Aborting!"); return 0;}
-				vtkFloatArray *vtkarray = VTK::createVTKscaf(varname,nLon-1,nLat-1,nLev-1,array);
-				this->Mesh->GetCellData()->AddArray(vtkarray);
-				vtkarray->Delete(); free(array);
-				n_vars_loaded++;
-			}
-		}
-		free(varpath);
-		this->UpdateProgress(0.25 + ii*(0.175/ave_phys.nvars));		
-	}*/
-
 	/* READING THE BIOGEOCHEMICAL VARIABLES
 
 		Variables inside AVE_FREQ are read here. User can select which
