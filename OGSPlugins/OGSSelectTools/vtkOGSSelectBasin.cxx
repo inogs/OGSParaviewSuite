@@ -13,6 +13,7 @@
 =========================================================================*/
 
 #include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkCellData.h"
 #include "vtkPointData.h"
 #include "vtkDataArraySelection.h"
@@ -25,6 +26,17 @@
 #include "vtkObjectFactory.h"
 
 vtkStandardNewMacro(vtkOGSSelectBasin);
+
+//----------------------------------------------------------------------------
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDARRAY double
+#define VTKARRAY vtkDoubleArray
+
+#include "../_utils/field.h"
+#include "../_utils/vtkFields.hpp"
 
 //----------------------------------------------------------------------------
 void addSubBasins(vtkDataArraySelection *BasinsDataArraySelection) {
@@ -87,40 +99,41 @@ int vtkOGSSelectBasin::RequestData(
 	this->UpdateProgress(0.0);
 
 	// Get the basins mask
-	vtkFloatArray *basins_mask = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->mask_field));
-	int npoints = input->GetNumberOfCells();
+	VTKARRAY *vtkmask = NULL;
+	bool iscelld = true;
 
-	if (basins_mask == NULL) {
-		vtkFloatArray *basins_mask = vtkFloatArray::SafeDownCast(
-			input->GetPointData()->GetArray(this->mask_field));
-		int npoints = input->GetNumberOfPoints();		
+	vtkmask = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray(this->mask_field));
+
+	if (vtkmask == NULL) {
+		vtkmask = VTKARRAY::SafeDownCast(input->GetPointData()->GetArray(this->mask_field));
+		iscelld = false;
 	}
 
-	// Generate a new vtkFloatArray that will be used for the mask
-	vtkFloatArray *mask = vtkFloatArray::New();
-	mask->SetName("CutMask");
-	mask->SetNumberOfComponents(1);   // Scalar field
-	mask->SetNumberOfTuples(npoints);
+	// Recover basins mask as a field
+	field::Field<FLDARRAY> mask = VTKFIELD::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkmask);
+
+	// Generate a new field (initialized at zero) that will be used as cutting mask
+	field::Field<FLDARRAY> cutmask(mask.get_n(),1,0.);
 
 	this->UpdateProgress(0.2);
 
-	// Loop the mesh and set the mask
-	for (int ii = 0; ii < npoints; ii++) {
-		// Recover value from basins mask
-		double bmask_val = basins_mask->GetTuple1(ii);
-		// Initialize mask to zero
-		mask->SetTuple1(ii,0);
+	// Loop and update cutting mask (Mesh loop, can be parallelized)
+	for (int ii=0; ii<mask.get_n();ii++) {
 		// Loop on the basins array selection
-		for (int jj = 0; jj < this->GetNumberOfBasinsArrays();jj++) {
-			if (this->GetBasinsArrayStatus(this->GetBasinsArrayName(jj)) && 
-				fabs(bmask_val - (double)(jj+1)) < 1.e-3)
-				mask->SetTuple1(ii,1);
-		}
+		for (int bid=0; bid < this->GetNumberOfBasinsArrays(); bid++)
+			if ( this->GetBasinsArrayStatus(this->GetBasinsArrayName(bid)) &&
+				 std::fabs(mask[ii][0] - (double)(bid+1)) < 1.e-3 )
+				cutmask[ii][0] = 1.;
 	}
 
-	// Add array to input
-	input->GetCellData()->AddArray(mask);
+	// Convert field to vtkArray and add it to input
+	VTKARRAY *vtkcutmask;
+	vtkcutmask = VTKFIELD::createVTKfromField<VTKARRAY,FLDARRAY>("CutMask",cutmask);
+
+	if (iscelld)
+		input->GetCellData()->AddArray(vtkcutmask);
+	else
+		input->GetPointData()->AddArray(vtkcutmask);
 
 	this->UpdateProgress(0.4);
 
@@ -139,12 +152,14 @@ int vtkOGSSelectBasin::RequestData(
 	this->UpdateProgress(0.8);
 
 	// Cleanup the output by deleting the CutMask and the basins mask
-	output->GetCellData()->RemoveArray("CutMask");
-	output->GetCellData()->RemoveArray(this->mask_field);
-
-	// Cleanup
-	mask->Delete(); 
-//	coasts_mask->Delete();
+	if (iscelld) {
+		output->GetCellData()->RemoveArray("CutMask");
+		output->GetCellData()->RemoveArray(this->mask_field);
+	} else {
+		output->GetPointData()->RemoveArray("CutMask");
+		output->GetPointData()->RemoveArray(this->mask_field);		
+	}
+	vtkcutmask->Delete();
 
 	// Return
 	this->UpdateProgress(1.0);
