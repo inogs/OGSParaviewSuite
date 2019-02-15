@@ -86,6 +86,13 @@ namespace ogs
 
 			// Set/Get methods
 			inline void SetFile(const char *fname);
+			inline void SetWdir(const char *fname);
+			inline void SetMfile(const char *fname);
+			inline void Setlon2m(const int n, double *arr);
+			inline void Setlat2m(const int n, double *arr);
+			inline void Setnavlev(const int n, double *arr);
+			inline void SetMask(const int i, double *mask);
+			inline void Setncells();
 
 			inline std::string meshfile();
 			inline std::string meshmask();
@@ -118,6 +125,7 @@ namespace ogs
 			// Functions
 			int  readMainFile();
 			int  readMesh();
+			int  writeMesh();
 			void readMeshmask();
 
 			void print();
@@ -144,6 +152,9 @@ namespace ogs
 
 	// Set/Get methods
 	inline void    OGS::SetFile(const char *fname) { this->_ogsfile = std::string(fname); }
+	inline void    OGS::SetWdir(const char *fname) { this->_wrkdir = std::string(fname); }
+	inline void    OGS::SetMfile(const char *fname){ this->_meshfile = std::string(fname); }
+	inline void    OGS::Setncells()                { this->_ncells = (this->_nlon-1)*(this->_nlat-1)*(this->_nlev-1); }
 	inline std::string OGS::meshfile()             { return (this->_wrkdir + std::string("/") + this->_meshfile); }
 	inline std::string OGS::meshmask()             { return (this->_wrkdir + std::string("/") + this->_meshmask); }
 	inline int     OGS::nlon()                     { return this->_nlon; }
@@ -163,10 +174,32 @@ namespace ogs
 	inline int     OGS::var_n(int i)               { return this->_vars[i].get_nvars(); }
 	inline const char *OGS::var_name(int i, int j) { return this->_vars[i].get_name(j); }
 	inline const char *OGS::var_vname(int i, int j){ return this->_vars[i].get_vname(j); }
- 	inline int     OGS::ntsteps()                  { return this->_ntsteps; }
- 	inline const char *OGS::datetime(int i)        { return this->_datetime[i].c_str(); }
- 	inline std::string OGS::var_path(int i, int j, int t) { 
- 		return(this->_wrkdir + std::string("/") + this->var_WritePath(i,j,this->datetime(t),"*")); 
- 	}
+	inline int     OGS::ntsteps()                  { return this->_ntsteps; }
+	inline const char *OGS::datetime(int i)        { return this->_datetime[i].c_str(); }
+	inline std::string OGS::var_path(int i, int j, int t) { 
+		return(this->_wrkdir + std::string("/") + this->var_WritePath(i,j,this->datetime(t),"*"));
+	}
+	inline void    OGS::Setlon2m(const int n, double *arr) {
+		this->_nlon = n;
+		this->_lon2m.resize(n); 
+		if (arr != NULL) 
+			std::memcpy(this->_lon2m.data(),arr,n*sizeof(double));
+	}
+	inline void    OGS::Setlat2m(const int n, double *arr) {
+		this->_nlat = n;
+		this->_lat2m.resize(n); 
+		if (arr != NULL) 
+			std::memcpy(this->_lat2m.data(),arr,n*sizeof(double));
+	}
+	inline void    OGS::Setnavlev(const int n, double *arr) {
+		this->_nlev = n;
+		this->_nav_lev.resize(n); 
+		if (arr != NULL) 
+			std::memcpy(this->_nav_lev.data(),arr,n*sizeof(double));
+	}
+	inline void    OGS::SetMask(const int i, double *mask) {
+		this->_masks[i].set_dim(this->_ncells,1);
+		std::memcpy(this->_masks[i].data(),mask,this->_ncells*sizeof(double));
+	}
 }
 #endif

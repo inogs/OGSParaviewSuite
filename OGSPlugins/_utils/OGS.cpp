@@ -166,7 +166,7 @@ int OGS::readMainFile() {
 }
 
 int OGS::readMesh() {
-	// Open file for writing
+	// Open file for reading
 	FILE *myfile;
 	myfile = std::fopen(this->meshfile().c_str(),"rb"); if (myfile == NULL) ERROR2("Cannot open file.",1)
 
@@ -174,7 +174,7 @@ int OGS::readMesh() {
 	if (std::fread(&this->_nlon,INTSZ,1,myfile) != 1) ERROR2("Error reading file",2) 
 	if (std::fread(&this->_nlat,INTSZ,1,myfile) != 1) ERROR2("Error reading file",2) 
 	if (std::fread(&this->_nlev,INTSZ,1,myfile) != 1) ERROR2("Error reading file",2)
-	this->_ncells = (this->_nlon-1)*(this->_nlat-1)*(this->_nlev-1);
+	this->Setncells();
 
 	// Read the vectors
 	this->_lon2m.resize(this->_nlon,0);
@@ -189,6 +189,29 @@ int OGS::readMesh() {
 		this->_masks[ii].set_dim(this->_ncells,1);
 		if (std::fread(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR2("Error reading file",2)
 	}
+
+	std::fclose(myfile);
+	return 1;
+}
+
+int OGS::writeMesh() {
+	// Open file for writing
+	FILE *myfile;
+	myfile = std::fopen(this->meshfile().c_str(),"wb"); if (myfile == NULL) ERROR2("Cannot open file.",1)
+
+	// Write the dimensions
+	if (std::fwrite(&this->_nlon,INTSZ,1,myfile) != 1) ERROR2("Error writing file",2) 
+	if (std::fwrite(&this->_nlat,INTSZ,1,myfile) != 1) ERROR2("Error writing file",2) 
+	if (std::fwrite(&this->_nlev,INTSZ,1,myfile) != 1) ERROR2("Error writing file",2)
+
+	// Write the vectors
+	if (std::fwrite(this->_lon2m.data(),DBLSZ,this->_nlon,myfile)   != this->_nlon) ERROR2("Error writing file",2)
+	if (std::fwrite(this->_lat2m.data(),DBLSZ,this->_nlat,myfile)   != this->_nlat) ERROR2("Error writing file",2)
+	if (std::fwrite(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR2("Error writing file",2)
+
+	// Write the masks
+	for (int ii = 0; ii < 2; ii++)
+		if (std::fwrite(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR2("Error writing file",2)
 
 	std::fclose(myfile);
 	return 1;
@@ -273,6 +296,30 @@ void OGS::print() {
 			std::printf("      %d Name:       %s (%s)\n",jj,this->var_name(ii,jj),this->var_vname(ii,jj));
 	}
 
+}
+
+/* INTERFACE C FUNCTIONS FOR PYTHON LIBRARY */
+
+extern "C"
+{
+	OGS *newOGS(const char *fname, const int nlon, const int nlat, const int nlev,
+		double *lon2m, double *lat2m, double *nav_lev, double *bmask, double *cmask) {
+		// Create a new instance of the class
+		OGS *ogscls; ogscls = new OGS[1];
+		// Populate the class
+		ogscls->SetMfile(fname);
+		ogscls->SetWdir(".");
+		ogscls->Setlon2m(nlon,lon2m);
+		ogscls->Setlat2m(nlat,lat2m);
+		ogscls->Setnavlev(nlev,nav_lev);
+		ogscls->Setncells();
+		// Load the masks
+		ogscls->SetMask(0,bmask);
+		ogscls->SetMask(1,cmask);
+		// Return
+		return ogscls;
+	}
+	int OGSWriteMesh(OGS *ogscls) { return ogscls->writeMesh(); }
 }
 
 /* AUXILIARY FUNCTIONS */
