@@ -97,15 +97,21 @@ def installOGSMesh(pvpath,plugin_dir):
 	os.system(\
 		"""
 cd %s
-g++ -shared -Wl,-soname,libOGSmesh -o libOGSmesh.so -fPIC OGSmesh.cpp
+g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC OGS.cpp netcdfio.cpp
 cd -
 		""" % plugin_dir)
 	# Create a folder in the installation directory
-	install_dir = os.path.join(os.getenv("HOME"),".local","lib")
+	install_dir = os.path.join(pvpath,"lib")
 	# Copy
-	os.system("cp %s/libOGSmesh.so %s" % (plugin_dir,install_dir))
+	os.system("cp %s/libOGS.so %s" % (plugin_dir,install_dir))
 	os.system("cp %s/python/OGSmesh.py %s" % (plugin_dir,os.path.join(install_dir,"python2.7","site-packages")))
-	os.system("cp %s/python/OGS2Paraview %s" % (plugin_dir,os.path.join(pvpath,"bin")))
+	os.system("cp %s/python/OGS2Paraview.py %s" % (plugin_dir,os.path.join(install_dir,"python2.7","site-packages")))
+	os.system("cp %s/python/default.ini %s" % (plugin_dir,os.path.join(install_dir,"..","bin")))
+	os.system(\
+		"""
+ln -s %s/OGS2Paraview.py %s
+chmod +x %s/OGS2Paraview
+		""" % (os.path.join(install_dir,"python2.7","site-packages"),os.path.join(install_dir,"..","bin"),os.path.join(install_dir,"..","bin")) )
 
 #-------------------------------------------------------------------------------
 # Main
