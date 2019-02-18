@@ -166,14 +166,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				if (veloc.isempty()) { vtkErrorMacro("Cannot read NetCDF <Velocity>!Aborting!"); return 0; }
 
 				// We need to project the velocity field from a face centered grid to a cell centered grid
-				field::Face2CellProj(veloc,
-									 this->ogsdata.e1(),
-									 this->ogsdata.e2(),
-									 this->ogsdata.e3(),
-									 this->ogsdata.nlon()-1,
-									 this->ogsdata.nlat()-1,
-									 this->ogsdata.nlev()-1
-									);
+				field::UVW2T(veloc,
+							 this->ogsdata.e1(),
+							 this->ogsdata.e2(),
+							 this->ogsdata.e3(),
+							 this->ogsdata.nlon()-1,
+							 this->ogsdata.nlat()-1,
+							 this->ogsdata.nlev()-1
+							);
 
 				vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),veloc);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
