@@ -18,6 +18,7 @@
 #include "vtkPointData.h"
 #include "vtkDataArray.h"
 #include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
@@ -32,10 +33,16 @@ namespace xml = pugi;
 
 vtkStandardNewMacro(vtkOGSVariableAggregator);
 
-class vtkOGSVariableAggregator::vtkVectorOfArrays :
-  public std::vector<vtkFloatArray*>
-{
-};
+//----------------------------------------------------------------------------
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDARRAY double
+#define VTKARRAY vtkDoubleArray
+
+#include "../_utils/field.h"
+#include "../_utils/vtkFields.hpp"
 
 //----------------------------------------------------------------------------
 void addVar(vtkDataArraySelection *AggrVar, std::map<std::string, std::string> *Var2Aggr) {
@@ -98,16 +105,12 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 	for(int varId=0; varId<this->GetNumberOfVarArrays(); varId++) {
 		// Check if the variable has been enabled
 		if ( !this->GetVarArrayStatus(this->GetVarArrayName(varId)) ) continue;
-		// Create a new vtkFloatArray to store the new variable
-		vtkFloatArray *vtkArray = vtkFloatArray::New();
-		vtkArray->SetName(this->GetVarArrayName(varId));
-		vtkArray->SetNumberOfComponents(1); // Scalar field
+
 		// Obtain the variables to aggregate
+		VTKARRAY *vtkArray = NULL;
 		std::string vararray = this->AggrVar[this->GetVarArrayName(varId)];
-		int celldata = 1;
-		int current,previous=0;
-		vtkVectorOfArrays *AgrVarArray;
-		AgrVarArray = new vtkVectorOfArrays;
+		int celldata = 1, current = 0, previous = 0;
+		std::vector<field::Field<FLDARRAY>> arrayVector;
 		do {
 			// Find an occurence of the delimiter and split the string
 			current = vararray.find(';',previous);
@@ -115,32 +118,43 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 			if (varname == "") continue;
 			// Now varname contains the name of the variable to load
 			// Try to load the array as cell data
-			vtkDataArray *array;
-			array = input->GetCellData()->GetArray(varname.c_str());
-			if (!array) {// Then array might be point data
-				array    = input->GetPointData()->GetArray(varname.c_str());
+			vtkArray = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray(varname.c_str()));
+			// Then array might be point data
+			if (!vtkArray) { 
+				vtkArray = VTKARRAY::SafeDownCast(input->GetPointData()->GetArray(varname.c_str()));
 				celldata = 0;
 			}
-			if (!array) { // We couldn't find the array
+			// We couldn't find the array
+			if (!vtkArray) { 
 				vtkErrorMacro("Could not find variable <" << varname <<">");
 				return 0;
 			}
 			// Array should exist at this point, store it
-			AgrVarArray->push_back( vtkFloatArray::SafeDownCast(array) );
+			arrayVector.push_back( VTKFIELD::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray) );
+			// Check we are dealing with scalar arrays
+			if (arrayVector.back().get_m() != 1) {
+				vtkErrorMacro("Variable <" << varname << "> is not a scalar array. Cannot proceed.");
+				return 0;				
+			}
 			previous = current + 1;
 		}while(current != std::string::npos);
+
 		// Here we have the array to aggregate and the arrays to aggregate from
-		// Get the size of the mesh
-		size_t meshsize = AgrVarArray->at(0)->GetNumberOfTuples();
-		vtkArray->SetNumberOfTuples(meshsize);
-		// Loop the mesh and create the new variable
-		for (int ii=0; ii<meshsize; ii++) {
-			double aux = 0.;
-			vtkVectorOfArrays::iterator iter;
-			for (iter=AgrVarArray->begin(); iter != AgrVarArray->end(); iter++)
-				aux += (*iter)->GetTuple1(ii);
-			vtkArray->SetTuple1(ii,aux);
+		// then create a new Field to store the new variable
+		field::Field<FLDARRAY> arrayNew(arrayVector[0]);
+		
+		// Loop the vectors and create the new variable (parallelization MPI)
+		field::Field<FLDARRAY>::iterator arrIter, auxIter;
+		std::vector<field::Field<FLDARRAY>>::iterator vecIter;
+		for (vecIter = arrayVector.begin()+1; vecIter != arrayVector.end(); ++vecIter) {
+			// Loop the mesh (parallelization OPENMP)
+			for (arrIter = arrayNew.begin(), auxIter = (*vecIter).begin(); 
+				 arrIter != arrayNew.end(); ++arrIter, ++auxIter) {
+				arrIter[0] += auxIter[0];
+			}
 		}
+		// Convert to vtkArray
+		vtkArray = VTKFIELD::createVTKfromField<VTKARRAY,FLDARRAY>(this->GetVarArrayName(varId),arrayNew);
 		// Add the new variable to the input
 		if (celldata)
 			output->GetCellData()->AddArray(vtkArray);
@@ -150,7 +164,6 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		this->UpdateProgress(1./(double)(this->GetNumberOfVarArrays())*varId);
 		// Delete
 		vtkArray->Delete();
-		delete AgrVarArray;
 	}
 
 	/*

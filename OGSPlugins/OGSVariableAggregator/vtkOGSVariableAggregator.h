@@ -67,11 +67,7 @@ private:
   void ParseXML();
   void SetAggrVarsText();
 
-
-  class vtkVectorOfArrays;
-
   int deleteVars;
-
   char *FileName, *XMLText;
 };
 
