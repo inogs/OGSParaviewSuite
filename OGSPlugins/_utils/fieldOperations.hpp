@@ -24,14 +24,14 @@
 namespace field
 {
 
-	/* FACE2CELLPROJ
+	/* UVW2T
 
 		Projection of a face centered array to a cell centered array. Useful
 		for the velocity field or when computing gradients.
 
 	*/
 	template<class T>
-	void Face2CellProj_ijk(int ii, int jj, int kk, int nx, int ny, 
+	void UVW2T_ijk(int ii, int jj, int kk, int nx, int ny, 
 		Field<T> &f, Field<T> &e1, Field <T> &e2, Field <T> &e3, T *out) {
 
 		T w1, w2, w3;
@@ -62,7 +62,7 @@ namespace field
 			out[2] = 0.5*(f[PNTIND(ii,jj,kk-1,nx,ny)][2] + f[PNTIND(ii,jj,kk,nx,ny)][2]);
 	}
 	template<class T>
-	void Face2CellProj(Field<T> &f, Field<T> e1, Field <T> e2, Field <T> e3, int nx, int ny, int nz) {
+	void UVW2T(Field<T> &f, Field<T> e1, Field <T> e2, Field <T> e3, int nx, int ny, int nz) {
 
 		T *out; out = new T[f.get_sz()];
 
