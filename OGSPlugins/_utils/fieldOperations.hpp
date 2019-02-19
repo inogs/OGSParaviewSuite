@@ -70,8 +70,7 @@ namespace field
 		for (int kk = 0; kk < nz; kk++) {
 			for (int jj = 0; jj < ny; jj++) { 
 				for (int ii = 0; ii < nx; ii++) {
-					Face2CellProj_ijk(ii,jj,kk,nx,ny,f,e1,e2,e3,
-						out + f.get_m()*PNTIND(ii,jj,kk,nx,ny));
+					UVW2T_ijk(ii,jj,kk,nx,ny,f,e1,e2,e3,out + f.get_m()*PNTIND(ii,jj,kk,nx,ny));
 				} 
 			}
 		}
