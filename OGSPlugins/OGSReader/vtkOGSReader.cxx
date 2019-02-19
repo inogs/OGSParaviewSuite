@@ -29,10 +29,7 @@
 
 #include "vtkObjectFactory.h"
 
-#include <cstdlib>
-#include <cstdio>
 #include <string>
-#include <cstring>
 
 #include <vtksys/SystemTools.hxx>
 

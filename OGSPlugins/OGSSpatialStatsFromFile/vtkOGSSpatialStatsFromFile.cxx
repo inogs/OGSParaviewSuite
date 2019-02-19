@@ -29,11 +29,10 @@
 #include "vtkObjectFactory.h"
 
 #include <string>
-#include <algorithm>
-#include <map>
 
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
+//----------------------------------------------------------------------------
 /*
 	Macro to set the array precision 
 */
@@ -143,7 +142,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	int nstat   = this->GetNumberOfStatArrays();
 
 	for (int varId = 0; varId < narrays; varId++) {
-		// Recover the array and the array nam
+		// Recover the array and the array name
 		field::Field<FLDARRAY> array;
 		vtkArray = VTKARRAY::SafeDownCast( 
 			input->GetCellData()->GetArray(varId) );
