@@ -95,7 +95,7 @@ int vtkOGSSelectCoast::RequestData(
 	}
 
 	// Recover basins mask as a field
-	field::Field<FLDARRAY> mask = VTKFIELD::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkmask);
+	field::Field<FLDARRAY> mask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkmask);
 
 	// Generate a new field (initialized at zero) that will be used as cutting mask
 	field::Field<FLDARRAY> cutmask(mask.get_n(),1,0.);
@@ -114,7 +114,7 @@ int vtkOGSSelectCoast::RequestData(
 
 	// Convert field to vtkArray and add it to input
 	VTKARRAY *vtkcutmask;
-	vtkcutmask = VTKFIELD::createVTKfromField<VTKARRAY,FLDARRAY>("CutMask",cutmask);
+	vtkcutmask = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("CutMask",cutmask);
 
 	if (iscelld)
 		input->GetCellData()->AddArray(vtkcutmask);

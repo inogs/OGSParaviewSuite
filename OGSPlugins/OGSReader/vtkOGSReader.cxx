@@ -175,7 +175,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 							 this->ogsdata.nlev()-1
 							);
 
-				vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),veloc);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),veloc);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -187,7 +187,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 															   );
 				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">!Aborting!"); return 0; }
 				
-				vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),f);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -214,7 +214,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 															   );
 				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(1,ii)<<">!Aborting!"); return 0; }
 				
-				vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(1,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(1,ii),f);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -239,7 +239,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 															   );
 				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(2,ii)<<">!Aborting!"); return 0; }
 				
-				vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(2,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(2,ii),f);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -263,7 +263,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 															   );
 				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(3,ii)<<">!Aborting!"); return 0; }
 				
-				vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(3,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(3,ii),f);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -285,7 +285,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			5 -> Meshmask
 	*/
 	std::string aux_str;
-	vtkStringArray *vtkmetadata = VTKFIELD::createVTKstrf("Metadata",6,NULL);
+	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",6,NULL);
 
 	// Set the current file date
 	vtkmetadata->SetValue(0,this->ogsdata.datetime(ii_tstep));
@@ -398,7 +398,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		dimensions are (0,0,0).
 
 	*/
-	VTKFIELD::createRectilinearGrid(this->ogsdata.nlon(),
+	VTK::createRectilinearGrid(this->ogsdata.nlon(),
 									this->ogsdata.nlat(),
 									this->ogsdata.nlev(),
 									this->ogsdata.lon2meters(),
@@ -423,7 +423,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 	VTKARRAY *vtkarray;
 
 	if (this->GetMaskArrayStatus("Sub-basins")) {
-		vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>("basins mask",this->ogsdata.mask(0));
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("basins mask",this->ogsdata.mask(0));
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	} else {
@@ -432,7 +432,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 	// Continental shelf mask ("coast mask")
 	if (this->GetMaskArrayStatus("Continental shelf")) {
-		vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>("coast mask",this->ogsdata.mask(1));
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("coast mask",this->ogsdata.mask(1));
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	} else {
@@ -452,15 +452,15 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 	if (this->RMeshMask) {
 		// e1
-		vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>("e1",this->ogsdata.e1());
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e1",this->ogsdata.e1());
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 		// e2
-		vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>("e2",this->ogsdata.e2());
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e2",this->ogsdata.e2());
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 		// e3
-		vtkarray = VTKFIELD::createVTKfromField<VTKARRAY,double>("e3",this->ogsdata.e3());
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e3",this->ogsdata.e3());
 		this->Mesh->GetCellData()->AddArray(vtkarray);
 		vtkarray->Delete();
 	} else {

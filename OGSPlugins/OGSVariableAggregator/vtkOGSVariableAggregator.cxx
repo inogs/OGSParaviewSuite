@@ -130,7 +130,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 				return 0;
 			}
 			// Array should exist at this point, store it
-			arrayVector.push_back( VTKFIELD::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray) );
+			arrayVector.push_back( VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray) );
 			// Check we are dealing with scalar arrays
 			if (arrayVector.back().get_m() != 1) {
 				vtkErrorMacro("Variable <" << varname << "> is not a scalar array. Cannot proceed.");
@@ -154,7 +154,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 			}
 		}
 		// Convert to vtkArray
-		vtkArray = VTKFIELD::createVTKfromField<VTKARRAY,FLDARRAY>(this->GetVarArrayName(varId),arrayNew);
+		vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->GetVarArrayName(varId),arrayNew);
 		// Add the new variable to the input
 		if (celldata)
 			output->GetCellData()->AddArray(vtkArray);

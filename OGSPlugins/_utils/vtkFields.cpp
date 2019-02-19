@@ -20,7 +20,7 @@
 
 #include "vtkFields.hpp"
 
-namespace VTKFIELD
+namespace VTK
 {
 
 	/* CREATEVTKSTRF
