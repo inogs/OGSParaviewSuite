@@ -15,6 +15,7 @@
 #include "vtkCell.h"
 #include "vtkPoints.h"
 #include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkStringArray.h"
 #include "vtkCellData.h"
 #include "vtkFieldData.h"
@@ -31,21 +32,19 @@
 #include <algorithm>
 #include <map>
 
-
-namespace NetCDF
-{
-// Include NetCDF IO
-#include "../_utils/netcdfio.cpp"
-}
-
-namespace VTK
-{
-// Include the VTK Operations
-#include "../_utils/vtkOperations.cpp"
-}
-
-
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDARRAY double
+#define VTKARRAY vtkDoubleArray
+
+#define STTIND(bId,cId,kk,sId,ns,nz,nc) ( (ns)*(nz)*(nc)*(bId) + (ns)*(nz)*(cId) + (ns)*(kk) + (sId) )
+
+#include "../_utils/field.h"
+#include "../_utils/vtkFields.hpp"
+#include "../_utils/netcdfio.hpp"
 
 //----------------------------------------------------------------------------
 vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
@@ -71,9 +70,9 @@ vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
 vtkOGSSpatialStatsFromFile::~vtkOGSSpatialStatsFromFile() {
 	this->StatDataArraySelection->Delete();
 
-	this->SetFolderName(0);
-	this->Setbmask_field(0);
-	this->Setcmask_field(0);
+	this->SetFolderName(NULL);
+	this->Setbmask_field(NULL);
+	this->Setcmask_field(NULL);
 }
 
 //----------------------------------------------------------------------------
@@ -92,123 +91,119 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	// We just want to copy the mesh, not the variables
 	output->CopyStructure(input);
 
-	// Copy field arrays
-	int nFArr = input->GetFieldData()->GetNumberOfArrays();
-	for (int arrId = 0; arrId < nFArr; arrId++)
-		output->GetFieldData()->AddArray(
-			vtkStringArray::SafeDownCast(input->GetFieldData()->GetAbstractArray(arrId))
-			);
+	// Copy Metadata array
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		input->GetFieldData()->GetAbstractArray("Metadata"));
+	output->GetFieldData()->AddArray(vtkmetadata);
 
 	this->UpdateProgress(0.);
 
 	// First we need to recover the date from the metadata
-	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-		input->GetFieldData()->GetAbstractArray("Metadata"));
-
 	std::string filename = std::string(this->FolderName) + 
-		std::string("/ave.") + vtkmetadata->GetValue(0) + std::string(".stat_profiles.nc");
+		                   std::string("/ave.") + 
+		                   vtkmetadata->GetValue(0) + 
+		                   std::string(".stat_profiles.nc");
 
 	// Next, recover the dimensions of the rectilinear grid
 	int nx = input->GetXCoordinates()->GetNumberOfTuples();
 	int ny = input->GetYCoordinates()->GetNumberOfTuples();
 	int nz = input->GetZCoordinates()->GetNumberOfTuples();
 
-	// Also recover the basins and coasts mask
+	// Recover the basins and coasts mask
 	// and add them to the output
-	vtkFloatArray *basins_mask = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->bmask_field));
-	output->GetCellData()->AddArray(basins_mask);
-	int nbasins = 21;
-	vtkFloatArray *coasts_mask = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->cmask_field));
-	output->GetCellData()->AddArray(coasts_mask);
-	int ncoasts = 3;
+	VTKARRAY *vtkArray;
+	int nbasins = 21, ncoasts = 3;
+	field::Field<FLDARRAY> bmask, cmask;
+	// Basins mask
+	vtkArray = VTKARRAY::SafeDownCast( 
+		input->GetCellData()->GetArray(this->bmask_field) );
+	output->GetCellData()->AddArray(vtkArray);
+	bmask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
+	// Coast mask
+	vtkArray = VTKARRAY::SafeDownCast( 
+		input->GetCellData()->GetArray(this->cmask_field) );
+	output->GetCellData()->AddArray(vtkArray);
+	cmask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
 
-	// Also copy e1t and e2t
-	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e1"));
-	output->GetCellData()->AddArray(vtke1);
-	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e2"));
-	output->GetCellData()->AddArray(vtke2);
-	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray("e3"));
-	output->GetCellData()->AddArray(vtke3);
+	// Copy e1, e2 and e3
+	vtkArray = VTKARRAY::SafeDownCast( 
+		input->GetCellData()->GetArray("e1") );
+	output->GetCellData()->AddArray(vtkArray);
+	vtkArray = VTKARRAY::SafeDownCast( 
+		input->GetCellData()->GetArray("e2") );
+	output->GetCellData()->AddArray(vtkArray);
+		vtkArray = VTKARRAY::SafeDownCast( 
+		input->GetCellData()->GetArray("e3") );
+	output->GetCellData()->AddArray(vtkArray);
 
 	// Loop the number of variables
 	// For each variable, we will see if a post processing exists and
 	// then we will loop the mesh and create the statistics.
 	int narrays = input->GetCellData()->GetNumberOfArrays();
 	int nstat   = this->GetNumberOfStatArrays();
-	for (int varId = 0; varId < narrays; varId++) {
-		// Recover the array and the array name
-		vtkFloatArray *vtkVarArray = vtkFloatArray::SafeDownCast(
-			input->GetCellData()->GetArray(varId));
-		char *array_name = vtkVarArray->GetName();
 
-		// Do not work with the basins, coasts mask, e1t or e2t
-		if (std::string(basins_mask->GetName()) == std::string(array_name)) continue;
-		if (std::string(coasts_mask->GetName()) == std::string(array_name)) continue;
-		if (std::string(vtke1->GetName())       == std::string(array_name)) continue;
-		if (std::string(vtke2->GetName())       == std::string(array_name)) continue;
-		if (std::string(vtke3->GetName())       == std::string(array_name)) continue;
+	for (int varId = 0; varId < narrays; varId++) {
+		// Recover the array and the array nam
+		field::Field<FLDARRAY> array;
+		vtkArray = VTKARRAY::SafeDownCast( 
+			input->GetCellData()->GetArray(varId) );
+		array = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
+		std::string arrName = vtkArray->GetName();
+
+		// Do not work with the basins, coasts mask, e1, e2 or e3
+		if (std::string(this->bmask_field) == arrName) continue;
+		if (std::string(this->cmask_field) == arrName) continue;
+		if (std::string("e1")              == arrName) continue;
+		if (std::string("e2")              == arrName) continue;
+		if (std::string("e3")              == arrName) continue;
 
 		// At this point, we can try to load the stat profile
-		double *stat_profile = NetCDF::readNetCDF(filename.c_str(), array_name, nbasins*ncoasts*(nz-1)*nstat);
+		field::Field<FLDARRAY> statProfile;
+		statProfile = NetCDF::readNetCDF2F(filename.c_str(),arrName.c_str(),nbasins*ncoasts*(nz-1)*nstat);
+
 		// If file cannot be read or variable does not exist
-		if (stat_profile == NULL) {
+		if (statProfile.isempty()) {
 			vtkWarningMacro("File <"<<filename.c_str()<<"> or variable <"
-				<<array_name<<"> cannot be read!");
+				<<arrName.c_str()<<"> cannot be read!");
 			continue;
 		}
 
 		// At this point we do have the statistics per basin, coast and depth level
-		// of a single variable. We must initialize a vector of vtkFloatArrays where
-		// the statistics will be stored during the loop.
-		std::map<std::string, vtkFloatArray*> mapStatArray;
-
-		for (int statId = 0; statId < nstat; statId++) {
-			const char *statName = this->GetStatArrayName(statId);
+		// of a single variable. Loop the number of statistics.
+		// Parallelization MPI
+		for (int statId = 0; statId < nstat; ++statId) {
+			// Recover stat name
+			std::string statName = this->GetStatArrayName(statId);
+			
 			// Skip those arrays who have not been enabled
-			if (!this->GetStatArrayStatus(statName))
+			if (!this->GetStatArrayStatus(statName.c_str()))
 				continue;
-			// Statistical variable name
-			char statVarName[256];
-			sprintf(statVarName,"%s, %s",array_name,statName);
-			// Define a new vtkFloatArray
-			vtkFloatArray *vtkStatVar = VTK::createVTKscaf(statVarName,nx-1,ny-1,nz-1,NULL);
-			// Store the array in the map
-			mapStatArray.insert(std::make_pair(std::string(statName),vtkStatVar));
-		}
-
-		// We are now ready to loop the mesh and set the variables accordingly
-		for (int kk = 0; kk < nz-1; kk++) {
-			for (int jj = 0; jj < ny-1; jj++) {
-				for (int ii = 0; ii < nx-1; ii++) {
-					// Which basin and which coast are we?
-					int basinId = (int)( basins_mask->GetTuple1(CLLIND(ii,jj,kk,nx,ny)) ) - 1;
-					int coastId = this->per_coast ? 
-						(int)( coasts_mask->GetTuple1(CLLIND(ii,jj,kk,nx,ny)) ) - 1 : 2;
-					// Loop all the requested statistics using an iterator
-					std::map<std::string,vtkFloatArray*>::iterator iter;
-					for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-						// Which statistic are we computing?
-						int statId = this->GetStatArrayIndex(iter->first.c_str());
-						// Recover value from the stat profile
-						double value = stat_profile[STTIND(basinId,coastId,kk,statId,nstat,nz-1,ncoasts)];
-						// Set the value
-						iter->second->SetTuple1(CLLIND(ii,jj,kk,nx,ny),value);
+			
+			// Generate variable name
+			statName = arrName + std::string(", ") + statName;
+			
+			// Loop the mesh and generate the array
+			field::Field<FLDARRAY> statArray(array.get_n(),array.get_m());
+			// Parallelization OPENMP
+			for (int kk = 0; kk < nz-1; kk++) {
+				for (int jj = 0; jj < ny-1; jj++) {
+					for (int ii = 0; ii < nx-1; ii++) {
+						// Position acording x,y,z
+						int pos = CLLIND(ii,jj,kk,nx,ny);
+						// In which basin and which coast are we?
+						int bId = (int)( bmask[pos][0] ) - 1;
+						int cId = this->per_coast ? cmask[pos][0] - 1 : 2;
+						// Set the value (generally cId < 0 when bId < 0)
+						statArray[pos][0] = (bId < 0) ? 0. : statProfile[STTIND(bId,cId,kk,statId,nstat,nz-1,ncoasts)][0];
 					}
 				}
 			}
-		}
 
-		// Now that we computed the arrays, we can set them in the output
-		// and deallocate memory
-		std::map<std::string,vtkFloatArray*>::iterator iter;
-		for (iter = mapStatArray.begin(); iter != mapStatArray.end(); iter++) {
-			output->GetCellData()->AddArray(iter->second);
-			iter->second->Delete();
+			// Set variable in the mesh and deallocate if needed
+			VTKARRAY *vtkstatArray;
+			vtkstatArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(statName.c_str(),statArray);
+			output->GetCellData()->AddArray(vtkstatArray);
+			vtkstatArray->Delete();
 		}
 
 		this->UpdateProgress(0.+1./(double)(narrays)*(double)(varId));
