@@ -28,7 +28,7 @@
 #define CLLIND(ii,jj,kk,nx,ny)          ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
 #define PNTIND(ii,jj,kk,nx,ny)          ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 
-namespace VTKFIELD
+namespace VTK
 {
 
 	/* CREATEVTKFROMFIELD
