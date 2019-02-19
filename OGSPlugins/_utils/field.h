@@ -38,7 +38,7 @@ namespace field
 
 		public:
 			// Constructors and destructors
-			inline Field()                                          { alloc = false; }
+			inline Field()                                          { alloc = false; n = 0; m = 0; sz = 0; }
 			inline Field(const int nn, const int mm)                { alloc = false; set_dim(nn,mm); }
 			inline Field(const int nn, const int mm, const T  v)    { alloc = false; set(nn,mm,v); }
 			inline Field(const int nn, const int mm, const T *v)    { alloc = false; set(nn,mm,v); }
@@ -55,7 +55,7 @@ namespace field
 			inline int    get_n()                                     { return n; }
 			inline int    get_m()                                     { return m; }
 			inline size_t get_sz()                                    { return sz; }
-			inline bool   isempty()                                   { return val == NULL;}
+			inline bool   isempty()                                   { return n == 0; }
 
 			// Operators
 			inline T         *operator[](int i)                   { return val + m*i; }

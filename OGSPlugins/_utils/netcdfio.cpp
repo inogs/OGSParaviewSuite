@@ -32,7 +32,7 @@ namespace NetCDF
 	*/
 	double *readNetCDF(const char *fname, const char *varname, const int n) {
 
-		int fid, varid, retval;
+		int fid, varid;
 		double *out;
 
 		// Allocate output variable
@@ -64,14 +64,15 @@ namespace NetCDF
 	*/
 	field::Field<double> readNetCDF2F(const char *fname, const char *varname, const int n) {
 
-		int fid, varid, retval;
-		field::Field<double> out = field::Field<double>(n,1);
+		int fid, varid;
+		field::Field<double> out;
 
 		// Open file for reading
 		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR ) return out;
 		// Get the variable id based on its name
 		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return out;
 		// Read the data
+		out.set_dim(n,1);
 		nc_get_var_double(fid,varid,out.data());
 		// Close the file
 		nc_close(fid);
@@ -92,10 +93,10 @@ namespace NetCDF
 	*/
 	field::Field<double> readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, const char *vname3, const int n) {
 
-		int fid, varid1, varid2, varid3, retval;
+		int fid, varid1, varid2, varid3;
 		double *u, *v, *w;
 
-		field::Field<double> out = field::Field<double>(n,3);
+		field::Field<double> out;
 
 		// Allocate
 		u = new double[n]; v = new double[n]; w = new double[n];
@@ -107,6 +108,7 @@ namespace NetCDF
 		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return out;
 		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return out;
 		// Read the data
+		out.set_dim(n,3);
 		nc_get_var_double(fid,varid1,u);
 		nc_get_var_double(fid,varid2,v);
 		nc_get_var_double(fid,varid3,w);
