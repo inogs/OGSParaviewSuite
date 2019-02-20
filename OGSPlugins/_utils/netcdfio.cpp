@@ -77,7 +77,7 @@ namespace NetCDF
 		// Close the file
 		nc_close(fid);
 		// Eliminate the missing variables
-		for (int ii=0;ii<n;ii++)
+		for (int ii=0; ii<n; ++ii)
 			if(out[ii][0] > MAXVAL) out[ii][0] = 0.;
 
 		// Return
@@ -116,15 +116,10 @@ namespace NetCDF
 		nc_close(fid);
 
 		// Set field and eliminate the missing variables
-		for (int ii=0;ii<n;ii++) {
-			out[ii][0] = u[ii];
-			if(out[ii][0] > MAXVAL) out[ii][0] = 0.;
-			out[ii][1] = v[ii];
-
-			out[ii][2] = w[ii];
-			
-			if(out[ii][1] > MAXVAL) out[ii][1] = 0.;
-			if(out[ii][2] > MAXVAL) out[ii][2] = 0.;
+		for (int ii=0; ii<n; ++ii) {
+			out[ii][0] = u[ii]; if(out[ii][0] > MAXVAL) out[ii][0] = 0.;
+			out[ii][1] = v[ii]; if(out[ii][1] > MAXVAL) out[ii][1] = 0.;
+			out[ii][2] = w[ii]; if(out[ii][2] > MAXVAL) out[ii][2] = 0.;
 		}
 
 		// Return

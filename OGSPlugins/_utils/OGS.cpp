@@ -47,7 +47,7 @@ int OGS::readMainFile() {
 
 	// Open file for reading
 	FILE *myfile;
-	myfile = std::fopen(this->_ogsfile.c_str(),"r"); if (myfile == NULL) ERROR2("Cannot open file",1)
+	myfile = std::fopen(this->_ogsfile.c_str(),"r"); if (myfile == NULL) ERROR("Cannot open file",1)
 
 	// Read file line by line
 	while(reads(line,sizeof(line),myfile)) {
@@ -168,26 +168,26 @@ int OGS::readMainFile() {
 int OGS::readMesh() {
 	// Open file for reading
 	FILE *myfile;
-	myfile = std::fopen(this->meshfile().c_str(),"rb"); if (myfile == NULL) ERROR2("Cannot open file.",1)
+	myfile = std::fopen(this->meshfile().c_str(),"rb"); if (myfile == NULL) ERROR("Cannot open file.",1)
 
 	// Read the dimensions
-	if (std::fread(&this->_nlon,INTSZ,1,myfile) != 1) ERROR2("Error reading file",2) 
-	if (std::fread(&this->_nlat,INTSZ,1,myfile) != 1) ERROR2("Error reading file",2) 
-	if (std::fread(&this->_nlev,INTSZ,1,myfile) != 1) ERROR2("Error reading file",2)
+	if (std::fread(&this->_nlon,INTSZ,1,myfile) != 1) ERROR("Error reading file",2) 
+	if (std::fread(&this->_nlat,INTSZ,1,myfile) != 1) ERROR("Error reading file",2) 
+	if (std::fread(&this->_nlev,INTSZ,1,myfile) != 1) ERROR("Error reading file",2)
 	this->Setncells();
 
 	// Read the vectors
 	this->_lon2m.resize(this->_nlon,0);
-	if (std::fread(this->_lon2m.data(),DBLSZ,this->_nlon,myfile)   != this->_nlon) ERROR2("Error reading file",2)
+	if (std::fread(this->_lon2m.data(),DBLSZ,this->_nlon,myfile)   != this->_nlon) ERROR("Error reading file",2)
 	this->_lat2m.resize(this->_nlat,0);
-	if (std::fread(this->_lat2m.data(),DBLSZ,this->_nlat,myfile)   != this->_nlat) ERROR2("Error reading file",2)
+	if (std::fread(this->_lat2m.data(),DBLSZ,this->_nlat,myfile)   != this->_nlat) ERROR("Error reading file",2)
 	this->_nav_lev.resize(this->_nlev,0);	
-	if (std::fread(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR2("Error reading file",2)
+	if (std::fread(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR("Error reading file",2)
 
 	// Read the masks
 	for (int ii = 0; ii < 2; ii++) {
 		this->_masks[ii].set_dim(this->_ncells,1);
-		if (std::fread(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR2("Error reading file",2)
+		if (std::fread(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR("Error reading file",2)
 	}
 
 	std::fclose(myfile);
@@ -197,21 +197,21 @@ int OGS::readMesh() {
 int OGS::writeMesh() {
 	// Open file for writing
 	FILE *myfile;
-	myfile = std::fopen(this->meshfile().c_str(),"wb"); if (myfile == NULL) ERROR2("Cannot open file.",1)
+	myfile = std::fopen(this->meshfile().c_str(),"wb"); if (myfile == NULL) ERROR("Cannot open file.",1)
 
 	// Write the dimensions
-	if (std::fwrite(&this->_nlon,INTSZ,1,myfile) != 1) ERROR2("Error writing file",2) 
-	if (std::fwrite(&this->_nlat,INTSZ,1,myfile) != 1) ERROR2("Error writing file",2) 
-	if (std::fwrite(&this->_nlev,INTSZ,1,myfile) != 1) ERROR2("Error writing file",2)
+	if (std::fwrite(&this->_nlon,INTSZ,1,myfile) != 1) ERROR("Error writing file",2) 
+	if (std::fwrite(&this->_nlat,INTSZ,1,myfile) != 1) ERROR("Error writing file",2) 
+	if (std::fwrite(&this->_nlev,INTSZ,1,myfile) != 1) ERROR("Error writing file",2)
 
 	// Write the vectors
-	if (std::fwrite(this->_lon2m.data(),DBLSZ,this->_nlon,myfile)   != this->_nlon) ERROR2("Error writing file",2)
-	if (std::fwrite(this->_lat2m.data(),DBLSZ,this->_nlat,myfile)   != this->_nlat) ERROR2("Error writing file",2)
-	if (std::fwrite(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR2("Error writing file",2)
+	if (std::fwrite(this->_lon2m.data(),DBLSZ,this->_nlon,myfile)   != this->_nlon) ERROR("Error writing file",2)
+	if (std::fwrite(this->_lat2m.data(),DBLSZ,this->_nlat,myfile)   != this->_nlat) ERROR("Error writing file",2)
+	if (std::fwrite(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR("Error writing file",2)
 
 	// Write the masks
 	for (int ii = 0; ii < 2; ii++)
-		if (std::fwrite(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR2("Error writing file",2)
+		if (std::fwrite(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR("Error writing file",2)
 
 	std::fclose(myfile);
 	return 1;

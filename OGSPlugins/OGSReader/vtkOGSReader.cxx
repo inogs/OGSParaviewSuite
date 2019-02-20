@@ -183,7 +183,6 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 															   this->ogsdata.ncells()
 															   );
 				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">!Aborting!"); return 0; }
-				
 				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),f);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();

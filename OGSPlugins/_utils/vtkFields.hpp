@@ -36,13 +36,13 @@ namespace VTK
 		Creates a vtk array from a field given the array name.
 	*/
 	template <class ARRAY, class P>
-	ARRAY *createVTKfromField(const char *name, field::Field<P> f) {
+	ARRAY *createVTKfromField(const char *name, field::Field<P> &f) {
 		// Create VTK array
 		ARRAY *vtkArray = ARRAY::New();
 		vtkArray->SetName(name);
 		vtkArray->SetNumberOfComponents(f.get_m()); // Scalar field
 		vtkArray->SetNumberOfTuples(f.get_n());
-		
+
 		if (f.data() != NULL)
 			// Fill the vtkArray with the values of the array
 			std::memcpy(vtkArray->GetPointer(0),f.data(),f.get_sz()*sizeof(P));

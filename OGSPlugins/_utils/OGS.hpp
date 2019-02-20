@@ -36,7 +36,7 @@
 /* MACRO FOR ERROR */
 
 //#define ERROR(errstr) {fprintf(stderr,"Error in %s line %d:\n%s\n",__FILE__,__LINE__,errstr); exit(-1);}
-#define ERROR2(errstr,errid) {std::fprintf(stderr,"Error in %s line %d:\n%s\n",__FILE__,__LINE__,errstr); return(-errid);}
+#define ERROR(errstr,errid) {std::fprintf(stderr,"Error in %s line %d:\n%s\n",__FILE__,__LINE__,errstr); return(-errid);}
 
 namespace ogs
 {
@@ -109,10 +109,10 @@ namespace ogs
 			inline double  nav_lev(int i);
 			inline double *nav_lev();
 
-			inline field::Field<double> mask(int i);
-			inline field::Field<double> e1();
-			inline field::Field<double> e2();
-			inline field::Field<double> e3();
+			inline field::Field<double> &mask(int i);
+			inline field::Field<double> &e1();
+			inline field::Field<double> &e2();
+			inline field::Field<double> &e3();
 
 			inline int         var_n(int i);
 			inline const char *var_name(int i, int j);
@@ -167,10 +167,10 @@ namespace ogs
 	inline double *OGS::lat2meters()               { return this->_lat2m.data(); }
 	inline double  OGS::nav_lev(int i)             { return (i >= 0) ? this->_nav_lev[i] : this->_nav_lev[this->_nlev + i];}
 	inline double *OGS::nav_lev()                  { return this->_nav_lev.data(); }
-	inline field::Field<double> OGS::mask(int i)   { return this->_masks[i]; }
-	inline field::Field<double> OGS::e1()          { return this->_e1; }
-	inline field::Field<double> OGS::e2()          { return this->_e2; }
-	inline field::Field<double> OGS::e3()          { return this->_e3; }
+	inline field::Field<double> &OGS::mask(int i)  { return this->_masks[i]; }
+	inline field::Field<double> &OGS::e1()         { return this->_e1; }
+	inline field::Field<double> &OGS::e2()         { return this->_e2; }
+	inline field::Field<double> &OGS::e3()         { return this->_e3; }
 	inline int     OGS::var_n(int i)               { return this->_vars[i].get_nvars(); }
 	inline const char *OGS::var_name(int i, int j) { return this->_vars[i].get_name(j); }
 	inline const char *OGS::var_vname(int i, int j){ return this->_vars[i].get_vname(j); }

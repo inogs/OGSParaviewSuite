@@ -38,16 +38,16 @@ namespace field
 
 		public:
 			// Constructors and destructors
-			inline Field()                                          { alloc = false; n = 0; m = 0; sz = 0; }
-			inline Field(const int nn, const int mm)                { alloc = false; set_dim(nn,mm); }
-			inline Field(const int nn, const int mm, const T  v)    { alloc = false; set(nn,mm,v); }
-			inline Field(const int nn, const int mm, const T *v)    { alloc = false; set(nn,mm,v); }
-			inline Field(const Field<T> &f)                         { alloc = false; set(f.n,f.m,f.val); }
-			inline ~Field()                                         { if (alloc) delete [] val; }
+			inline Field()                                            { alloc = false; n = 0; m = 0; sz = 0; }
+			inline Field(const int nn, const int mm)                  { alloc = false; set_dim(nn,mm); }
+			inline Field(const int nn, const int mm, const T  v)      { alloc = false; set(nn,mm,v); }
+			inline Field(const int nn, const int mm, const T *v)      { alloc = false; set(nn,mm,v); }
+			inline Field(const Field<T> &f)                           { alloc = false; set(f.n,f.m,f.val); }
+			inline ~Field()                                           { if (alloc) delete [] val; }
 
 			// Functions
 			inline void   set_dim(const int nn, const int mm)         { n = nn; m = mm; sz = (size_t)(n*m); val = new T[sz]; alloc = true; }
-			inline void   set_val(const T  v)                         { if (alloc) std::fill_n(val,sz,v); }
+			inline void   set_val(const T  v)                         { if (alloc) std::fill(val,val+sz,v); }
 			inline void   set_val(const T *v)                         { if (alloc) std::memcpy(val,v,sz*sizeof(T)); }
 			inline void   set(const int nn, const int mm, const T  v) { set_dim(nn,mm); set_val(v); }
 			inline void   set(const int nn, const int mm, const T *v) { set_dim(nn,mm); set_val(v); }
@@ -58,7 +58,7 @@ namespace field
 			inline bool   isempty()                                   { return n == 0; }
 
 			// Operators
-			inline T         *operator[](int i)                   { return val + m*i; }
+			inline T         *operator[](int i)                   { return (i>=0) ? val + m*i : val + m*(n+i); }
 			inline Field<T>  &operator=(const Field<T> &f)        { set(f.n,f.m,f.val); return (*this); }
 
 			inline Field<T>   operator+(const T v) const          { Field<T> f(n,m); for(int i=0;i<sz;i++) {f.val[i] = val[i] + v;} return f; }

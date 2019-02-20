@@ -180,7 +180,7 @@ class OGSmesh(object):
 			xpt,ypt        = mproj(Lon[0,nLon/2],Lat[jj,nLon/2])
 			Lat2Meters[jj] = ypt
 		# Return
-		return Lon2Meters, Lat2Meters
+		return np.sort(Lon2Meters), np.sort(Lat2Meters)
 
 	def OGS(self,fname,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
 		'''
@@ -204,7 +204,7 @@ class OGSmesh(object):
 		nLat = Lat2Meters.shape[0]
 		nLev = nav_lev.shape[0]
 
-		# Return class instannce
+		# Return class instance
 		return OGSnew(fname,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
 					  Lat2Meters.ctypes.data_as(c_double_p), nav_lev.ctypes.data_as(c_double_p),\
 					  basins_mask.ctypes.data_as(c_double_p),coast_mask.ctypes.data_as(c_double_p)

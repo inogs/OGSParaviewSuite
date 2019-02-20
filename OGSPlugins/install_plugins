@@ -110,7 +110,7 @@ cd -
 	os.system(\
 		"""
 ln -s %s/OGS2Paraview.py %s
-chmod +x %s/OGS2Paraview
+chmod +x %s/OGS2Paraview.py
 		""" % (os.path.join(install_dir,"python2.7","site-packages"),os.path.join(install_dir,"..","bin"),os.path.join(install_dir,"..","bin")) )
 
 #-------------------------------------------------------------------------------
