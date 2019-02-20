@@ -17,7 +17,10 @@
 #ifndef FIELDOPERATIONS_H
 #define FIELDOPERATIONS_H
 
+#include "V3.h"
 #include "field.h"
+
+#include <vector>
 
 #define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 
@@ -62,7 +65,7 @@ namespace field
 			out[2] = 0.5*(f[PNTIND(ii,jj,kk-1,nx,ny)][2] + f[PNTIND(ii,jj,kk,nx,ny)][2]);
 	}
 	template<class T>
-	void UVW2T(Field<T> &f, Field<T> e1, Field <T> e2, Field <T> e3, int nx, int ny, int nz) {
+	void UVW2T(Field<T> &f, Field<T> &e1, Field <T> &e2, Field <T> &e3, int nx, int ny, int nz) {
 
 		T *out; out = new T[f.get_sz()];
 
@@ -78,6 +81,17 @@ namespace field
 		f.set_val(out);
 		delete [] out;
 	}
+
+	/* COUNTDEPTHLEVELS
+
+		Counts the number of depth levels (unique values in Z direction) and
+		returns the values and the field connectivity.
+
+		If uniquevals is not empty, it will return the depth levels at the
+		desired uniquevals.
+
+	*/
+	field::Field<int> countDepthLevels(v3::V3v &xyz, std::vector<double> &uniquevals, double epsi);
 }
 
 #endif
