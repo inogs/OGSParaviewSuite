@@ -250,6 +250,7 @@ namespace v3
 	}
 	inline int     V3v::len()                              { return n; }
 	inline V3     *V3v::data()                             { return v; }
+	inline bool    V3v::isempty()						   { return n == 0; }
 	inline float  *V3v::tofloat()                          {
 		float *out; out = new float[3*n];
 //		#pragma omp parallel for 
