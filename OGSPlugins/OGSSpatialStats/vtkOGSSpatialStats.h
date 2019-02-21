@@ -37,8 +37,8 @@ public:
   vtkSetMacro(epsi, double);
   vtkGetMacro(epsi, double);
 
-  //
-  //
+  // Description:
+  // Number of user inputed depths
   void SetNumberOfDepthLevels(int n);
   void SetDepthLevels(int i, double value);
 
