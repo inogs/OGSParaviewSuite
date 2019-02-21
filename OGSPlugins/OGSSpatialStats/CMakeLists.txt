@@ -22,6 +22,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSSpatialStats "1.0"
   SERVER_MANAGER_XML OGSSpatialStats.xml
-  SERVER_MANAGER_SOURCES vtkOGSSpatialStats.cxx
+  SERVER_MANAGER_SOURCES ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSSpatialStats.cxx
   REQUIRED_ON_SERVER
   )

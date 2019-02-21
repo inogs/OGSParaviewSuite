@@ -59,6 +59,8 @@ namespace field
 						itId[0] = ii;
 			}
 		} else {
+			// Add one extra depth level in uniquevals corresponding to the bottom
+			uniquevals.push_back( 2.*xyz[-1][2] );
 			// The user has inputed a range of depth levels, we shall search within
 			// these range and set the connectivity matrix appropriately.
 			for (itId = cId2zId.begin(), itxyz = xyz.begin(); itxyz != xyz.end(); 

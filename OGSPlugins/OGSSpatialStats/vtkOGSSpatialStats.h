@@ -23,6 +23,9 @@
 
 #include <vector>
 
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
 class VTK_EXPORT vtkOGSSpatialStats : public vtkDataSetAlgorithm
 {
 public:
@@ -33,11 +36,6 @@ public:
   // Get the epsilon
   vtkSetMacro(epsi, double);
   vtkGetMacro(epsi, double);
-
-  // Description:
-  // Get the depth_factor
-  vtkSetMacro(depth_factor, double);
-  vtkGetMacro(depth_factor, double);
 
   //
   //
@@ -69,11 +67,19 @@ private:
   vtkOGSSpatialStats(const vtkOGSSpatialStats&) = delete;
   void operator=(const vtkOGSSpatialStats&) = delete;
 
-  double epsi, depth_factor;
+  // Tolerance for finding the depth levels
+  double epsi;
 
+  // Depth levels and number of depth levels
   int ndepths;
   std::vector<double> zcoords;
 
+  // Auxiliar variables worth conserving
+  // they are read once in the RequestInformation and used in the
+  // RequestData
+  bool iscelld;              // Whether we have cell or point data 
+  v3::V3v xyz;               // Stores cell/point coordinates
+  field::Field<int> cId2zId; // Cell to depth level connectivity
 };
 
 #endif
