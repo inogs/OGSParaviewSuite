@@ -225,7 +225,7 @@ namespace v3
 	inline V3v::V3v(const int nn, const double *val)       { alloc = false; n = 0; size(nn,val); }
 	inline V3v::V3v(const int nn, const V3 *val)           { alloc = false; n = 0; size(nn,val); }
 	inline V3v::V3v(const V3v &val)                        { alloc = false; n = 0; size(val.n,val.v); }
-	inline V3v::~V3v()                                     { delete[] v; }
+	inline V3v::~V3v()                                     { if (alloc) delete[] v; }
 
 	// Operators
 	inline V3   V3v::operator[](int i) const               { return (i>=0) ? v[i] : v[n+i]; }
