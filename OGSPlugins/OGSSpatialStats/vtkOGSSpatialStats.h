@@ -57,6 +57,7 @@ protected:
   ~vtkOGSSpatialStats() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   void CellStats(vtkDataSet *, vtkDataSet *, double );
   void PointStats(vtkDataSet *, vtkDataSet *, double );
@@ -80,6 +81,8 @@ private:
   bool iscelld;              // Whether we have cell or point data 
   v3::V3v xyz;               // Stores cell/point coordinates
   field::Field<int> cId2zId; // Cell to depth level connectivity
+
+  bool isReqInfo;            // Set true when request information
 };
 
 #endif

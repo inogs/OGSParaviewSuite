@@ -64,9 +64,10 @@ vtkOGSSpatialStats::vtkOGSSpatialStats(){
 	this->StatDataArraySelection->AddArray("p95");
 	this->StatDataArraySelection->AddArray("max");
 
-	this->iscelld = true;
-	this->epsi    = 1.e-3;
-	this->ndepths = 0;
+	this->iscelld   = true;
+	this->isReqInfo = false;
+	this->epsi      = 1.e-3;
+	this->ndepths   = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -106,11 +107,17 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	// cId2zId arrays. Successive iterations should not execute.
 	// This section is included here since RequestInformation gives
 	// troubles when restarting.
-	if (this->xyz.isempty()) {
+	if (this->xyz.isempty() || this->isReqInfo) {
+
+		this->isReqInfo = false;
+		
 		// Recover Metadata array (depth factor)
 		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
 			input->GetFieldData()->GetAbstractArray("Metadata"));
-		double dfact = std::stod( vtkmetadata->GetValue(2) );
+		double dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
+		
+		if (vtkmetadata == NULL) 
+			vtkWarningMacro("Field array Metadata not found! Depth factor set to 1000. automatically.");
 
 		// Recover cell or point coordinates, depending on the array type
 		this->xyz = (this->iscelld) ? VTK::getVTKCellCenters(input,dfact) : 
@@ -125,7 +132,6 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		// its mesh connectivity (cId2zId).
 		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi);
 	}
-
 
 	// At this point we either have a rectilinear grid or an
 	// unstructured grid with either cell or point data
@@ -162,7 +168,8 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	//vtkcId2zId->Delete();
 
 	// We can now loop the number of active variables
-	int narrays = input->GetCellData()->GetNumberOfArrays();
+	int narrays = (this->iscelld) ? input->GetCellData()->GetNumberOfArrays() :
+									input->GetPointData()->GetNumberOfArrays();
 	int nstat   = this->GetNumberOfStatArrays();
 
 	for (int varId = 0; varId < narrays; ++varId) {
@@ -218,7 +225,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 			++itc2z,++itarr,++ite1,++ite2,++ite3) {
 			// Set maps
 			mValuesPerLayer[itc2z[0]].push_back(itarr[0]);
-			mWeightPerLayer[itc2z[0]].push_back(ite1[0]*ite2[0]*ite3[0]);
+			mWeightPerLayer[itc2z[0]].push_back(ite1[0]*ite2[0]);//*ite3[0]
 			mMeshPerLayer[itc2z[0]].push_back(itc2z.ind());
 		}
 
@@ -276,7 +283,6 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 			for (int pp = 0; pp < 5; pp++) {
 				// Find the value that is equal to perc or immediately after.
 				std::vector<FLDARRAY>::iterator lbound = std::lower_bound(percw.begin(),percw.end(),perc[pp]);
-				lbound--; // We need to decrement this value;
 				// This is our position on the ordered value array
 				int s = (lbound - percw.begin()) < 0 ? 0 : lbound - percw.begin(); 
 				// Set the value for the weight
@@ -343,7 +349,13 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	return 1;
 }
 
+//----------------------------------------------------------------------------
+int vtkOGSSpatialStats::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
+  	this->isReqInfo = true;
+
+}
 
 
 
