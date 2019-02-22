@@ -89,7 +89,7 @@ class OGS2ParaView:
 		'''
 		if not os.path.exists(self.meshfile) or force_mesh:
 			mesh = OGSmesh.OGSmesh(self._path,maskname=self._meshmask)
-			mesh.createOGSMesh("%s.ogsmsh" % self._name)
+			mesh.createOGSMesh("%s.ogsmsh" % self._name,self._path)
 
 	def readTimeInstants(self):
 		'''
@@ -113,7 +113,7 @@ class OGS2ParaView:
 		a wildcard using glob. Looks for the variable names.
 		'''
 		# Build the search string
-		searchstr = self.vardicts[idx]["format"] % (self.time_list[0],"*")
+		searchstr = os.path.join(self._path,self.vardicts[idx]["format"] % (self.time_list[0],"*"))
 		# Return the variables list
 		return sorted([os.path.basename(file).split('.')[2] for file in gl.iglob(os.path.join(self._path,searchstr))])
 
@@ -160,9 +160,9 @@ class OGS2ParaView:
 			cdfname = [v[1].strip() for v in cdfname]
 
 		# Check if all the variables exist for the specified timesteps
-		bwrite_var = np.any([os.path.exists(self.vardicts[idx]["format"] % (t,v)) for t in self.time_list for v in varname]) \
+		bwrite_var = np.any([os.path.exists(os.path.join(self._path,self.vardicts[idx]["format"] % (t,v))) for t in self.time_list for v in varname]) \
 			if not self.vardicts[idx]["forcen"] \
-			else np.any([os.path.exists(self.vardicts[idx]["format"] % (t,self.vardicts[idx]["refvar"])) for t in self.time_list])
+			else np.any([os.path.exists(os.path.join(self._path,self.vardicts[idx]["format"] % (t,self.vardicts[idx]["refvar"]))) for t in self.time_list])
 
 		# Write the variables
 		if (len(self.time_list) == 0 or not bwrite_var):

@@ -302,13 +302,13 @@ void OGS::print() {
 
 extern "C"
 {
-	OGS *newOGS(const char *fname, const int nlon, const int nlat, const int nlev,
+	OGS *newOGS(const char *fname, const char *wrkdir, const int nlon, const int nlat, const int nlev,
 		double *lon2m, double *lat2m, double *nav_lev, double *bmask, double *cmask) {
 		// Create a new instance of the class
 		OGS *ogscls; ogscls = new OGS[1];
 		// Populate the class
 		ogscls->SetMfile(fname);
-		ogscls->SetWdir(".");
+		ogscls->SetWdir(wrkdir);
 		ogscls->Setlon2m(nlon,lon2m);
 		ogscls->Setlat2m(nlat,lat2m);
 		ogscls->Setnavlev(nlev,nav_lev);
