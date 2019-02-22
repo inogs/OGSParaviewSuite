@@ -38,6 +38,12 @@ public:
   vtkGetMacro(epsi, double);
 
   // Description:
+  // Decide to use the volume for statistics
+  vtkGetMacro(useVolume, int);
+  vtkSetMacro(useVolume, int);
+  vtkBooleanMacro(useVolume, int);
+
+  // Description:
   // Number of user inputed depths
   void SetNumberOfDepthLevels(int n);
   void SetDepthLevels(int i, double value);
@@ -58,9 +64,6 @@ protected:
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-
-  void CellStats(vtkDataSet *, vtkDataSet *, double );
-  void PointStats(vtkDataSet *, vtkDataSet *, double );
 
   vtkDataArraySelection* StatDataArraySelection;
 
@@ -83,6 +86,7 @@ private:
   field::Field<int> cId2zId; // Cell to depth level connectivity
 
   bool isReqInfo;            // Set true when request information
+  int  useVolume;            // Use the volume as weight instead of the area
 };
 
 #endif

@@ -62,6 +62,20 @@
         </Documentation>
       </DoubleVectorProperty>
 
+     <!-- Use Volume -->
+     <IntVectorProperty name="UseVolume"
+                        label="Use Volume"
+                        command="SetuseVolume"
+                        number_of_elements="1"
+                        default_values="0"
+                        panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 1, the volume will be used as
+          weight instead of the area.
+        </Documentation>
+     </IntVectorProperty>
+
       <!-- Optional range of depths -->
       <DoubleVectorProperty command="SetDepthLevels"
                             name="DepthLevels"
