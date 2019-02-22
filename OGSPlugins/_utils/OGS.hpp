@@ -17,14 +17,17 @@
 #ifndef OGS_H
 #define OGS_H
 
+#include <cstdint>
 #include <vector>
 #include <string>
+
 #include "field.h"
 
 /* SIZES FOR MALLOCS */
 
 #define CHRSZ sizeof(char)
 #define INTSZ sizeof(int)
+#define UI8SZ sizeof(uint8_t)
 #define DBLSZ sizeof(double)
 
 /* BUFFER SIZE FOR FILE READING */
@@ -91,7 +94,7 @@ namespace ogs
 			inline void Setlon2m(const int n, double *arr);
 			inline void Setlat2m(const int n, double *arr);
 			inline void Setnavlev(const int n, double *arr);
-			inline void SetMask(const int i, double *mask);
+			inline void SetMask(const int i, const int m, uint8_t *mask);
 			inline void Setncells();
 
 			inline std::string meshfile();
@@ -109,7 +112,7 @@ namespace ogs
 			inline double  nav_lev(int i);
 			inline double *nav_lev();
 
-			inline field::Field<double> &mask(int i);
+			inline field::Field<uint8_t> &mask(int i);
 			inline field::Field<double> &e1();
 			inline field::Field<double> &e2();
 			inline field::Field<double> &e3();
@@ -139,7 +142,7 @@ namespace ogs
 			// Mesh size information
 			int _nlat, _nlon, _nlev, _ncells;
 			std::vector<double> _lon2m, _lat2m, _nav_lev;
-			field::Field<double> _masks[2];
+			field::Field<uint8_t> _masks[2];
 			field::Field<double> _e1, _e2, _e3;
 
 			std::string var_WritePath(int i, int j, const char *str, const char *token);
@@ -167,10 +170,10 @@ namespace ogs
 	inline double *OGS::lat2meters()               { return this->_lat2m.data(); }
 	inline double  OGS::nav_lev(int i)             { return (i >= 0) ? this->_nav_lev[i] : this->_nav_lev[this->_nlev + i];}
 	inline double *OGS::nav_lev()                  { return this->_nav_lev.data(); }
-	inline field::Field<double> &OGS::mask(int i)  { return this->_masks[i]; }
-	inline field::Field<double> &OGS::e1()         { return this->_e1; }
-	inline field::Field<double> &OGS::e2()         { return this->_e2; }
-	inline field::Field<double> &OGS::e3()         { return this->_e3; }
+	inline field::Field<uint8_t> &OGS::mask(int i) { return this->_masks[i]; }
+	inline field::Field<double>  &OGS::e1()        { return this->_e1; }
+	inline field::Field<double>  &OGS::e2()        { return this->_e2; }
+	inline field::Field<double>  &OGS::e3()        { return this->_e3; }
 	inline int     OGS::var_n(int i)               { return this->_vars[i].get_nvars(); }
 	inline const char *OGS::var_name(int i, int j) { return this->_vars[i].get_name(j); }
 	inline const char *OGS::var_vname(int i, int j){ return this->_vars[i].get_vname(j); }
@@ -197,9 +200,6 @@ namespace ogs
 		if (arr != NULL) 
 			std::memcpy(this->_nav_lev.data(),arr,n*sizeof(double));
 	}
-	inline void    OGS::SetMask(const int i, double *mask) {
-		this->_masks[i].set_dim(this->_ncells,1);
-		std::memcpy(this->_masks[i].data(),mask,this->_ncells*sizeof(double));
-	}
+	inline void    OGS::SetMask(const int i, const int m, uint8_t *mask) { this->_masks[i].set_dim(this->_ncells,m); this->_masks[i].set_val(mask); }
 }
 #endif

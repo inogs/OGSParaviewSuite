@@ -27,9 +27,12 @@
 #include "vtkDoubleArray.h"
 #include "vtkStringArray.h"
 
+#include "vtkTypeUInt8Array.h"
+
 #include "vtkObjectFactory.h"
 
 #include <string>
+#include <cstdint>
 
 #include <vtksys/SystemTools.hxx>
 
@@ -395,14 +398,14 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 	*/
 	VTK::createRectilinearGrid(this->ogsdata.nlon(),
-									this->ogsdata.nlat(),
-									this->ogsdata.nlev(),
-									this->ogsdata.lon2meters(),
-									this->ogsdata.lat2meters(),
-									this->ogsdata.nav_lev(),
-									this->DepthScale,
-									this->Mesh
-								   );
+							   this->ogsdata.nlat(),
+							   this->ogsdata.nlev(),
+							   this->ogsdata.lon2meters(),
+							   this->ogsdata.lat2meters(),
+							   this->ogsdata.nav_lev(),
+							   this->DepthScale,
+							   this->Mesh
+							  );
 
 	this->UpdateProgress(0.10);
 
@@ -416,21 +419,22 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 			> Continental shelf: area from 0 to 200 m of depth.
 
 	*/
+	vtkTypeUInt8Array *vtkmask;
 	VTKARRAY *vtkarray;
 
 	if (this->GetMaskArrayStatus("Sub-basins")) {
-		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("basins mask",this->ogsdata.mask(0));
-		this->Mesh->GetCellData()->AddArray(vtkarray);
-		vtkarray->Delete();
+		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("basins mask",this->ogsdata.mask(0));
+		this->Mesh->GetCellData()->AddArray(vtkmask);
+		vtkmask->Delete();
 	} else {
 		this->Mesh->GetCellData()->RemoveArray("basins mask");
 	}
 
 	// Continental shelf mask ("coast mask")
 	if (this->GetMaskArrayStatus("Continental shelf")) {
-		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("coast mask",this->ogsdata.mask(1));
-		this->Mesh->GetCellData()->AddArray(vtkarray);
-		vtkarray->Delete();
+		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("coast mask",this->ogsdata.mask(1));
+		this->Mesh->GetCellData()->AddArray(vtkmask);
+		vtkmask->Delete();
 	} else {
 		this->Mesh->GetCellData()->RemoveArray("coast mask");
 	}

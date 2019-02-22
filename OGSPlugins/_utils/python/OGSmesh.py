@@ -18,6 +18,8 @@ from basins import V2 as OGS
 c_void_p   = ct.c_void_p
 c_char     = ct.c_char
 c_char_p   = ct.POINTER(ct.c_char)
+c_uint8    = ct.c_uint8
+c_uint8_p  = ct.POINTER(ct.c_uint8)
 c_int      = ct.c_int
 c_int_p    = ct.POINTER(ct.c_int)
 c_double   = ct.c_double
@@ -95,7 +97,7 @@ class OGSmesh(object):
 
 		return None
 
-	def generateBasinsMask(self):
+	def generateBasinsMaskOld(self):
 		'''
 		Generate the basins_mask field where all basins are numbered from 1
 		to the number of basins.
@@ -117,6 +119,13 @@ class OGSmesh(object):
 			basins_mask[s.mask] = index + 1
 
 		return basins_mask
+
+	def generateBasinsMask(self):
+		'''
+		Generate the basins_mask field where all basins are numbered from 1
+		to the number of basins.
+		'''
+		return np.array([SubMask(sub, maskobject=self.mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
 
 	def generateCoastsMask(self):
 		'''
@@ -140,7 +149,7 @@ class OGSmesh(object):
 		s = SubMask(OGS.P.basin_list[-1], maskobject=self.mask)
 
 		# Define coasts mask
-		coasts_mask = np.zeros(dims)
+		coasts_mask = np.zeros(dims,dtype=c_uint8)
 		coasts_mask[~mask200_3D & s.mask] = 1 # Coast
 		coasts_mask[ mask200_3D & s.mask] = 2 # Open sea
 
@@ -196,7 +205,7 @@ class OGSmesh(object):
 			> coast_mask:  Mask contanining the coasts
 		'''
 		OGSnew       = self.OGSlib.newOGS
-		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_double_p,c_double_p]
+		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p]
 		OGS.restype  = c_void_p
 
 		# Compute sizes of vectors
@@ -207,7 +216,7 @@ class OGSmesh(object):
 		# Return class instance
 		return OGSnew(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
 					  Lat2Meters.ctypes.data_as(c_double_p), nav_lev.ctypes.data_as(c_double_p),\
-					  basins_mask.ctypes.data_as(c_double_p),coast_mask.ctypes.data_as(c_double_p)
+					  basins_mask.ctypes.data_as(c_uint8_p),coast_mask.ctypes.data_as(c_uint8_p)
 					 )
 
 	def OGSwriteMesh(self,OGScls):
@@ -261,7 +270,7 @@ if __name__ == '__main__':
 	if not args.map: args.map = 'merc'
 
 	# Define class instance
-	mesh = OGSmesh(args.inpath,args.map)
+	mesh = OGSmesh(args.inpath,maptype=args.map)
 
 	# Generate the mesh file
 	if not args.outfile:

@@ -186,8 +186,10 @@ int OGS::readMesh() {
 
 	// Read the masks
 	for (int ii = 0; ii < 2; ii++) {
-		this->_masks[ii].set_dim(this->_ncells,1);
-		if (std::fread(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR("Error reading file",2)
+		int m;
+		if (std::fread(&m,INTSZ,1,myfile) != 1) ERROR("Error reading file",2)
+		this->_masks[ii].set_dim(this->_ncells,m);
+		if (std::fread(this->_masks[ii].data(),UI8SZ,this->_masks[ii].get_sz(),myfile) != this->_masks[ii].get_sz()) ERROR("Error reading file",2)
 	}
 
 	std::fclose(myfile);
@@ -210,8 +212,11 @@ int OGS::writeMesh() {
 	if (std::fwrite(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR("Error writing file",2)
 
 	// Write the masks
-	for (int ii = 0; ii < 2; ii++)
-		if (std::fwrite(this->_masks[ii].data(),DBLSZ,this->_ncells,myfile) != this->_ncells) ERROR("Error writing file",2)
+	for (int ii = 0; ii < 2; ii++) {
+		int m = this->_masks[ii].get_m();
+		if (std::fwrite(&m,INTSZ,1,myfile) != 1) ERROR("Error writing file",2)
+		if (std::fwrite(this->_masks[ii].data(),UI8SZ,this->_masks[ii].get_sz(),myfile) != this->_masks[ii].get_sz()) ERROR("Error writing file",2)
+	}
 
 	std::fclose(myfile);
 	return 1;
@@ -303,7 +308,7 @@ void OGS::print() {
 extern "C"
 {
 	OGS *newOGS(const char *fname, const char *wrkdir, const int nlon, const int nlat, const int nlev,
-		double *lon2m, double *lat2m, double *nav_lev, double *bmask, double *cmask) {
+		double *lon2m, double *lat2m, double *nav_lev, uint8_t *bmask, uint8_t *cmask) {
 		// Create a new instance of the class
 		OGS *ogscls; ogscls = new OGS[1];
 		// Populate the class
@@ -314,8 +319,8 @@ extern "C"
 		ogscls->Setnavlev(nlev,nav_lev);
 		ogscls->Setncells();
 		// Load the masks
-		ogscls->SetMask(0,bmask);
-		ogscls->SetMask(1,cmask);
+		ogscls->SetMask(0,16,bmask);
+		ogscls->SetMask(1,1,cmask);
 		// Return
 		return ogscls;
 	}
