@@ -182,7 +182,7 @@ class OGSmesh(object):
 		# Return
 		return np.sort(Lon2Meters), np.sort(Lat2Meters)
 
-	def OGS(self,fname,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
+	def OGS(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
 		'''
 		Interface with the C++ OGS class. Create a new object and return
 		the pointer to said object.
@@ -196,7 +196,7 @@ class OGSmesh(object):
 			> coast_mask:  Mask contanining the coasts
 		'''
 		OGSnew       = self.OGSlib.newOGS
-		OGS.argtypes = [c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_double_p,c_double_p]
+		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_double_p,c_double_p]
 		OGS.restype  = c_void_p
 
 		# Compute sizes of vectors
@@ -205,7 +205,7 @@ class OGSmesh(object):
 		nLev = nav_lev.shape[0]
 
 		# Return class instance
-		return OGSnew(fname,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
+		return OGSnew(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
 					  Lat2Meters.ctypes.data_as(c_double_p), nav_lev.ctypes.data_as(c_double_p),\
 					  basins_mask.ctypes.data_as(c_double_p),coast_mask.ctypes.data_as(c_double_p)
 					 )
@@ -220,7 +220,7 @@ class OGSmesh(object):
 
 		return writeMesh(OGScls)
 
-	def createOGSMesh(self,fname="mesh.ogsmsh"):
+	def createOGSMesh(self,fname="mesh.ogsmsh",path="."):
 		'''
 		creates a binary file containing all the mesh information for ParaView as well as
 		the basins and coasts masks.
@@ -239,7 +239,7 @@ class OGSmesh(object):
 		Lon2Meters, Lat2Meters = self.applyProjection(dims,Lon,Lat)
 
 		# Create an instance of the OGS class
-		OGScls = self.OGS(fname,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coasts_mask);
+		OGScls = self.OGS(fname,path,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coasts_mask);
 
 		# Save into file
 		self.OGSwriteMesh(OGScls)
