@@ -175,10 +175,10 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 	for (int varId = 0; varId < narrays; ++varId) {
 		// Recover the array and the array name
-		VTKARRAY *vtkArray;
-		vtkArray = (this->iscelld) ? VTKARRAY::SafeDownCast(input->GetCellData()->GetArray(varId)) :
-									 VTKARRAY::SafeDownCast(input->GetPointData()->GetArray(varId));
-		std::string arrName = std::string(vtkArray->GetName());
+		vtkDataArray *vtkDArray;
+		vtkDArray = (this->iscelld) ? input->GetCellData()->GetArray(varId) :
+									  input->GetPointData()->GetArray(varId);
+		std::string arrName = vtkDArray->GetName();
 
 		// We should not average the coast or basins mask nor e1t or e2t
 		// Names have been harcoded here as there is no way to ensure that
@@ -189,8 +189,11 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		if (arrName == std::string("e2"))          continue;
 		if (arrName == std::string("e3"))          continue;
 
-		// If the array is valid, obtain a field
-		field::Field<FLDARRAY> array = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
+		// Recover Array values
+		VTKARRAY *vtkArray;
+		field::Field<FLDARRAY> array;
+		vtkArray = VTKARRAY::SafeDownCast( vtkDArray );
+		array = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
 
 		// Also anything not being an scalar array should not be computed
 		if (array.get_m() > 1) {

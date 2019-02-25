@@ -14,11 +14,13 @@
 
 #include "vtkCell.h"
 #include "vtkPoints.h"
+#include "vtkTypeUInt8Array.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkStringArray.h"
 #include "vtkCellData.h"
 #include "vtkFieldData.h"
+#include "vtkDataArray.h"
 #include "vtkDataArraySelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -28,6 +30,7 @@
 
 #include "vtkObjectFactory.h"
 
+#include <cstdint>
 #include <string>
 
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
@@ -110,21 +113,22 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Recover the basins and coasts mask
 	// and add them to the output
-	VTKARRAY *vtkArray;
+	vtkTypeUInt8Array *vtkMask;
 	int nbasins = 21, ncoasts = 3;
-	field::Field<FLDARRAY> bmask, cmask;
+	field::Field<uint8_t> bmask, cmask;
 	// Basins mask
-	vtkArray = VTKARRAY::SafeDownCast( 
+	vtkMask = vtkTypeUInt8Array::SafeDownCast( 
 		input->GetCellData()->GetArray(this->bmask_field) );
-	output->GetCellData()->AddArray(vtkArray);
-	bmask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
+	output->GetCellData()->AddArray(vtkMask);
+	bmask = VTK::createFieldfromVTK<vtkTypeUInt8Array,uint8_t>(vtkMask);
 	// Coast mask
-	vtkArray = VTKARRAY::SafeDownCast( 
+	vtkMask = vtkTypeUInt8Array::SafeDownCast( 
 		input->GetCellData()->GetArray(this->cmask_field) );
-	output->GetCellData()->AddArray(vtkArray);
-	cmask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
+	output->GetCellData()->AddArray(vtkMask);
+	cmask = VTK::createFieldfromVTK<vtkTypeUInt8Array,uint8_t>(vtkMask);
 
 	// Copy e1, e2 and e3
+	VTKARRAY *vtkArray;
 	vtkArray = VTKARRAY::SafeDownCast( 
 		input->GetCellData()->GetArray("e1") );
 	output->GetCellData()->AddArray(vtkArray);
@@ -143,11 +147,9 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 
 	for (int varId = 0; varId < narrays; varId++) {
 		// Recover the array and the array name
-		field::Field<FLDARRAY> array;
-		vtkArray = VTKARRAY::SafeDownCast( 
-			input->GetCellData()->GetArray(varId) );
-		array = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
-		std::string arrName = vtkArray->GetName();
+		vtkDataArray *vtkDArray;
+		vtkDArray = input->GetCellData()->GetArray(varId);
+		std::string arrName = vtkDArray->GetName();
 
 		// Do not work with the basins, coasts mask, e1, e2 or e3
 		if (std::string(this->bmask_field) == arrName) continue;
@@ -156,12 +158,16 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		if (std::string("e2")              == arrName) continue;
 		if (std::string("e3")              == arrName) continue;
 
-		// At this point, we can try to load the stat profile
-		field::Field<FLDARRAY> statProfile;
-		statProfile = NetCDF::readNetCDF2F(filename.c_str(),arrName.c_str(),nbasins*ncoasts*(nz-1)*nstat);
+		// Recover Array values
+		field::Field<FLDARRAY> array;
+		vtkArray = VTKARRAY::SafeDownCast( vtkDArray );
+		array = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
 
-		// If file cannot be read or variable does not exist
-		if (statProfile.isempty()) {
+		// At this point, we can try to load the stat profile
+		field::Field<FLDARRAY> statProfile(nbasins*ncoasts*(nz-1)*nstat,1);
+		
+		if ( NetCDF::readNetCDF2F(filename.c_str(),arrName.c_str(),statProfile) != NETCDF_OK ) {
+			// If file cannot be read or variable does not exist
 			vtkWarningMacro("File <"<<filename.c_str()<<"> or variable <"
 				<<arrName.c_str()<<"> cannot be read!");
 			continue;
@@ -189,11 +195,17 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 					for (int ii = 0; ii < nx-1; ii++) {
 						// Position acording x,y,z
 						int pos = CLLIND(ii,jj,kk,nx,ny);
-						// In which basin and which coast are we?
-						int bId = (int)( bmask[pos][0] ) - 1;
+						// In which basin are we? (we need to loop the basins and find which is true)
+						int  bId = 0; 
+						bool isbasin = false;
+						for (bId = 0; bId < bmask.get_m(); ++bId) {
+							if (bmask[pos][bId]) { isbasin = true; break; }
+						}
+//						int bId = (int)( bmask[pos][0] ) - 1;
+						// In which coast are we?
 						int cId = this->per_coast ? cmask[pos][0] - 1 : 2;
 						// Set the value (generally cId < 0 when bId < 0)
-						statArray[pos][0] = (bId < 0) ? 0. : statProfile[STTIND(bId,cId,kk,statId,nstat,nz-1,ncoasts)][0];
+						statArray[pos][0] = (isbasin) ? statProfile[STTIND(bId,cId,kk,statId,nstat,nz-1,ncoasts)][0] : 0.;
 					}
 				}
 			}
