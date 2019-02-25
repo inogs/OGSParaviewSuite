@@ -62,26 +62,48 @@ namespace NetCDF
 
 		Stores the variable in a field structure, therefore it is safe.
 	*/
-	field::Field<double> readNetCDF2F(const char *fname, const char *varname, const int n) {
+	int readNetCDF2F(const char *fname, const char *varname, field::Field<double> &f) {
 
 		int fid, varid;
-		field::Field<double> out;
 
 		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR ) return out;
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
 		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return out;
+		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return NETCDF_ERR;
+		
 		// Read the data
-		out.set_dim(n,1);
-		nc_get_var_double(fid,varid,out.data());
+		nc_get_var_double(fid,varid,f.data());
 		// Close the file
 		nc_close(fid);
+		
 		// Eliminate the missing variables
-		for (int ii=0; ii<n; ++ii)
-			if(out[ii][0] > MAXVAL) out[ii][0] = 0.;
+		field::Field<double>::iterator iter;
+		for (iter = f.begin(); iter != f.end(); ++iter)
+			if (iter[0] > MAXVAL) iter[0] = 0.;
 
-		// Return
-		return out;
+		return NETCDF_OK;
+	}
+
+	int readNetCDF2F(const char *fname, const char *varname, field::Field<float> &f) {
+
+		int fid, varid;
+
+		// Open file for reading
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
+		// Get the variable id based on its name
+		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return NETCDF_ERR;
+		
+		// Read the data
+		nc_get_var_float(fid,varid,f.data());
+		// Close the file
+		nc_close(fid);
+		
+		// Eliminate the missing variables
+		field::Field<float>::iterator iter;
+		for (iter = f.begin(); iter != f.end(); ++iter)
+			if (iter[0] > MAXVAL) iter[0] = 0.;
+
+		return NETCDF_OK;
 	}
 
 	/* READNETCDF2F3
@@ -91,24 +113,23 @@ namespace NetCDF
 
 		Stores the variable in a field structure, therefore it is safe.
 	*/
-	field::Field<double> readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, const char *vname3, const int n) {
+	int readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, 
+		const char *vname3, field::Field<double> &f) {
 
-		int fid, varid1, varid2, varid3;
+		int fid, varid1, varid2, varid3, n = f.get_n();
 		double *u, *v, *w;
-
-		field::Field<double> out;
 
 		// Allocate
 		u = new double[n]; v = new double[n]; w = new double[n];
 
 		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR ) return out;
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
 		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,vname1,&varid1) != NC_NOERR ) return out;
-		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return out;
-		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return out;
+		if ( nc_inq_varid(fid,vname1,&varid1) != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return NETCDF_ERR;
+		
 		// Read the data
-		out.set_dim(n,3);
 		nc_get_var_double(fid,varid1,u);
 		nc_get_var_double(fid,varid2,v);
 		nc_get_var_double(fid,varid3,w);
@@ -116,14 +137,50 @@ namespace NetCDF
 		nc_close(fid);
 
 		// Set field and eliminate the missing variables
-		for (int ii=0; ii<n; ++ii) {
-			out[ii][0] = u[ii]; if(out[ii][0] > MAXVAL) out[ii][0] = 0.;
-			out[ii][1] = v[ii]; if(out[ii][1] > MAXVAL) out[ii][1] = 0.;
-			out[ii][2] = w[ii]; if(out[ii][2] > MAXVAL) out[ii][2] = 0.;
+		field::Field<double>::iterator iter;
+		for (iter = f.begin(); iter != f.end(); ++iter) {
+			iter[0] = u[iter.ind()]; if(iter[0] > MAXVAL) iter[0] = 0.;
+			iter[1] = v[iter.ind()]; if(iter[1] > MAXVAL) iter[1] = 0.;
+			iter[2] = w[iter.ind()]; if(iter[2] > MAXVAL) iter[2] = 0.;
 		}
 
 		// Return
 		delete [] u; delete [] v; delete [] w;
-		return out;
+		return NETCDF_OK;
+	}
+	int readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, 
+		const char *vname3, field::Field<float> &f) {
+
+		int fid, varid1, varid2, varid3, n = f.get_n();
+		float *u, *v, *w;
+
+		// Allocate
+		u = new float[n]; v = new float[n]; w = new float[n];
+
+		// Open file for reading
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
+		// Get the variable id based on its name
+		if ( nc_inq_varid(fid,vname1,&varid1) != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return NETCDF_ERR;
+		
+		// Read the data
+		nc_get_var_float(fid,varid1,u);
+		nc_get_var_float(fid,varid2,v);
+		nc_get_var_float(fid,varid3,w);
+		// Close the file
+		nc_close(fid);
+
+		// Set field and eliminate the missing variables
+		field::Field<float>::iterator iter;
+		for (iter = f.begin(); iter != f.end(); ++iter) {
+			iter[0] = u[iter.ind()]; if(iter[0] > MAXVAL) iter[0] = 0.;
+			iter[1] = v[iter.ind()]; if(iter[1] > MAXVAL) iter[1] = 0.;
+			iter[2] = w[iter.ind()]; if(iter[2] > MAXVAL) iter[2] = 0.;
+		}
+
+		// Return
+		delete [] u; delete [] v; delete [] w;
+		return NETCDF_OK;
 	}
 }

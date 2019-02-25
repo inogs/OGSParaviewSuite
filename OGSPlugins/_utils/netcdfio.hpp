@@ -20,12 +20,17 @@
 
 #include "field.h"
 
+#define NETCDF_ERR 0
+#define NETCDF_OK  1
+
 namespace NetCDF
 {
 	/* Read NetCDF Routines */
-	double              *readNetCDF(const char *fname, const char *varname, const int n);
-	field::Field<double> readNetCDF2F(const char *fname, const char *varname, const int n);
-  field::Field<double> readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, const char *vname3, const int n);
+	double *readNetCDF(const char *fname, const char *varname, const int n);
+	int     readNetCDF2F(const char *fname, const char *varname, field::Field<double> &f);
+  int     readNetCDF2F(const char *fname, const char *varname, field::Field<float> &f);
+  int     readNetCDF2F3(const char *fname, const char *vname1, const char *vname2,const char *vname3, field::Field<double> &f);
+  int     readNetCDF2F3(const char *fname, const char *vname1, const char *vname2,const char *vname3, field::Field<float> &f);
 }
 
 #endif
