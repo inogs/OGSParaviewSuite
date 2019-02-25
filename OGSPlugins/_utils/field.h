@@ -43,12 +43,13 @@ namespace field
 			inline Field(const int nn, const int mm, const T  v)      { alloc = false; set(nn,mm,v); }
 			inline Field(const int nn, const int mm, const T *v)      { alloc = false; set(nn,mm,v); }
 			inline Field(const Field<T> &f)                           { alloc = false; set(f.n,f.m,f.val); }
-			inline ~Field()                                           { if (alloc) delete [] val; }
+			inline ~Field()                                           { clear(); }
 
 			// Functions
 			inline void   set_dim(const int nn, const int mm)         { n = nn; m = mm; sz = (size_t)(n*m); val = new T[sz]; alloc = true; }
 			inline void   set_val(const T  v)                         { if (alloc) std::fill(val,val+sz,v); }
 			inline void   set_val(const T *v)                         { if (alloc) std::memcpy(val,v,sz*sizeof(T)); }
+			inline void   clear()                                     { n = 0; if (alloc) { delete [] val; } alloc = false; }
 			inline void   set(const int nn, const int mm, const T  v) { set_dim(nn,mm); set_val(v); }
 			inline void   set(const int nn, const int mm, const T *v) { set_dim(nn,mm); set_val(v); }
 			inline T     *data()                                      { return val; }
