@@ -23,11 +23,10 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
+#include "vtkTypeUInt8Array.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkStringArray.h"
-
-#include "vtkTypeUInt8Array.h"
 
 #include "vtkObjectFactory.h"
 
@@ -49,6 +48,7 @@ vtkStandardNewMacro(vtkOGSReader);
 /*
 	Macro to set the array precision 
 */
+#define FLDARRAY double
 #define VTKARRAY vtkDoubleArray
 
 #include "../_utils/field.h"
@@ -144,6 +144,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	this->UpdateProgress(0.25);
 	
 	VTKARRAY *vtkarray;
+	field::Field<FLDARRAY> array;
 	int n_vars_loaded = 0;
 
 	/* READING THE PHYSICAL VARIABLES
@@ -157,16 +158,15 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		// Test if the variable has been activated
 		if (this->GetAvePhysArrayStatus(this->ogsdata.var_name(0,ii))) {
 			if (std::string(this->ogsdata.var_name(0,ii)) == "Velocity") {
-				field::Field<double>  veloc = NetCDF::readNetCDF2F3(this->ogsdata.var_path(0,ii,ii_tstep).c_str(),
-																	"vozocrtx",
-																	"vomecrty",
-																	"vovecrtz",
-																	this->ogsdata.ncells()
-																   );							    								  
-				if (veloc.isempty()) { vtkErrorMacro("Cannot read NetCDF <Velocity>!Aborting!"); return 0; }
+				array.clear(); array.set_dim(this->ogsdata.ncells(),3);
+
+				if ( NetCDF::readNetCDF2F3(this->ogsdata.var_path(0,ii,ii_tstep).c_str(),
+											"vozocrtx","vomecrty","vovecrtz",array ) != NETCDF_OK )	{					    								  
+					vtkErrorMacro("Cannot read NetCDF <Velocity>!Aborting!"); return 0; 
+				}
 
 				// We need to project the velocity field from a face centered grid to a cell centered grid
-				field::UVW2T(veloc,
+				field::UVW2T(array,
 							 this->ogsdata.e1(),
 							 this->ogsdata.e2(),
 							 this->ogsdata.e3(),
@@ -175,18 +175,19 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 							 this->ogsdata.nlev()-1
 							);
 
-				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),veloc);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
 				n_vars_loaded++;
 			} else {
-				field::Field<double>  f = NetCDF::readNetCDF2F(this->ogsdata.var_path(0,ii,ii_tstep).c_str(),
-															   this->ogsdata.var_vname(0,ii),
-															   this->ogsdata.ncells()
-															   );
-				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">!Aborting!"); return 0; }
-				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(0,ii),f);
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(0,ii,ii_tstep).c_str(), this->ogsdata.var_vname(0,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">!Aborting!"); return 0;
+				}
+
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -207,13 +208,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	for (int ii = 0; ii < this->ogsdata.var_n(1); ii++) {
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(this->ogsdata.var_name(1,ii))) {
-				field::Field<double>  f = NetCDF::readNetCDF2F(this->ogsdata.var_path(1,ii,ii_tstep).c_str(),
-															   this->ogsdata.var_vname(1,ii),
-															   this->ogsdata.ncells()
-															   );
-				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(1,ii)<<">!Aborting!"); return 0; }
+
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(1,ii,ii_tstep).c_str(), this->ogsdata.var_vname(1,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(1,ii)<<">!Aborting!"); return 0;
+				}
 				
-				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(1,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(1,ii),array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -232,13 +234,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	for (int ii = 0; ii < this->ogsdata.var_n(2); ii++) {
 		// Test if the variable has been activated
 		if (this->GetForcingArrayStatus(this->ogsdata.var_name(2,ii))) {
-				field::Field<double>  f = NetCDF::readNetCDF2F(this->ogsdata.var_path(2,ii,ii_tstep).c_str(),
-															   this->ogsdata.var_vname(2,ii),
-															   this->ogsdata.ncells()
-															   );
-				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(2,ii)<<">!Aborting!"); return 0; }
+
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(2,ii,ii_tstep).c_str(), this->ogsdata.var_vname(2,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(2,ii)<<">!Aborting!"); return 0;
+				}
 				
-				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(2,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(2,ii),array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
@@ -256,13 +259,14 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	for (int ii = 0; ii < this->ogsdata.var_n(3); ii++) {
 		// Test if the variable has been activated
 		if (this->GetGeneralArrayStatus(this->ogsdata.var_name(3,ii))) {
-				field::Field<double>  f = NetCDF::readNetCDF2F(this->ogsdata.var_path(3,ii,ii_tstep).c_str(),
-															   this->ogsdata.var_vname(3,ii),
-															   this->ogsdata.ncells()
-															   );
-				if (f.isempty()) { vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(3,ii)<<">!Aborting!"); return 0; }
+
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(3,ii,ii_tstep).c_str(), this->ogsdata.var_vname(3,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(3,ii)<<">!Aborting!"); return 0;
+				}
 				
-				vtkarray = VTK::createVTKfromField<VTKARRAY,double>(this->ogsdata.var_name(3,ii),f);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(3,ii),array);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
 				vtkarray->Delete();
 				
