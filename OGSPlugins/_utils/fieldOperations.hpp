@@ -66,20 +66,14 @@ namespace field
 	}
 	template<class T>
 	void UVW2T(Field<T> &f, Field<T> &e1, Field <T> &e2, Field <T> &e3, int nx, int ny, int nz) {
-
-		T *out; out = new T[f.get_sz()];
-
 		// Loop the components
-		for (int kk = 0; kk < nz; kk++) {
-			for (int jj = 0; jj < ny; jj++) { 
-				for (int ii = 0; ii < nx; ii++) {
-					UVW2T_ijk(ii,jj,kk,nx,ny,f,e1,e2,e3,out + f.get_m()*PNTIND(ii,jj,kk,nx,ny));
+		for (int kk = 0; kk < nz; ++kk) {
+			for (int jj = 0; jj < ny; ++jj) { 
+				for (int ii = 0; ii < nx; ++ii) {
+					UVW2T_ijk(ii,jj,kk,nx,ny,f,e1,e2,e3,f[PNTIND(ii,jj,kk,nx,ny)]);
 				} 
 			}
 		}
-
-		f.set_val(out);
-		delete [] out;
 	}
 
 	/* COUNTDEPTHLEVELS
