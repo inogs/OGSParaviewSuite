@@ -40,7 +40,7 @@ namespace VTK
 		// Create VTK array
 		ARRAY *vtkArray = ARRAY::New();
 		vtkArray->SetName(name);
-		vtkArray->SetNumberOfComponents(f.get_m()); // Scalar field
+		vtkArray->SetNumberOfComponents(f.get_m());
 		vtkArray->SetNumberOfTuples(f.get_n());
 
 		if (f.data() != NULL)
