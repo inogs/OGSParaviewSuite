@@ -21,6 +21,10 @@
 #include "vtknetcdf/include/netcdf.h"
 #include "netcdfio.hpp"
 
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
+
 #define MAXVAL 1.e15
 
 namespace NetCDF
@@ -48,9 +52,11 @@ namespace NetCDF
 		// Close the file
 		nc_close(fid);
 		// Eliminate the missing variables
-		for (int ii=0;ii<n;ii++)
+		#pragma omp parallel
+		{
+		for (int ii = omp_get_thread_num(); ii < n; ii += omp_get_num_threads())
 			if(out[ii] > MAXVAL) out[ii] = 0.;
-
+		}
 		// Return
 		return out;
 	}
@@ -77,9 +83,11 @@ namespace NetCDF
 		nc_close(fid);
 		
 		// Eliminate the missing variables
-		field::Field<double>::iterator iter;
-		for (iter = f.begin(); iter != f.end(); ++iter)
-			if (iter[0] > MAXVAL) iter[0] = 0.;
+		#pragma omp parallel
+		{
+		for (int ii = omp_get_thread_num(); ii < f.get_n(); ii += omp_get_num_threads())
+			if (f[ii][0] > MAXVAL) f[ii][0] = 0.;
+		}
 
 		return NETCDF_OK;
 	}
@@ -99,9 +107,11 @@ namespace NetCDF
 		nc_close(fid);
 		
 		// Eliminate the missing variables
-		field::Field<float>::iterator iter;
-		for (iter = f.begin(); iter != f.end(); ++iter)
-			if (iter[0] > MAXVAL) iter[0] = 0.;
+		#pragma omp parallel
+		{
+		for (int ii = omp_get_thread_num(); ii < f.get_n(); ii += omp_get_num_threads())
+			if (f[ii][0] > MAXVAL) f[ii][0] = 0.;
+		}
 
 		return NETCDF_OK;
 	}
@@ -172,11 +182,13 @@ namespace NetCDF
 		nc_close(fid);
 
 		// Set field and eliminate the missing variables
-		field::Field<float>::iterator iter;
-		for (iter = f.begin(); iter != f.end(); ++iter) {
-			iter[0] = u[iter.ind()]; if(iter[0] > MAXVAL) iter[0] = 0.;
-			iter[1] = v[iter.ind()]; if(iter[1] > MAXVAL) iter[1] = 0.;
-			iter[2] = w[iter.ind()]; if(iter[2] > MAXVAL) iter[2] = 0.;
+		#pragma omp parallel
+		{
+		for (int ii = omp_get_thread_num(); ii < f.get_n(); ii += omp_get_num_threads()) {
+			f[ii][0] = u[ii]; if(f[ii][0] > MAXVAL) f[ii][0] = 0.;
+			f[ii][1] = v[ii]; if(f[ii][1] > MAXVAL) f[ii][1] = 0.;
+			f[ii][2] = w[ii]; if(f[ii][2] > MAXVAL) f[ii][2] = 0.;
+		}
 		}
 
 		// Return
