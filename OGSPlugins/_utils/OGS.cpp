@@ -19,6 +19,9 @@
 #include <cstring>
 
 #include <string>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
 
 #include "netcdfio.hpp"
 #include "OGS.hpp"
@@ -185,7 +188,7 @@ int OGS::readMesh() {
 	if (std::fread(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR("Error reading file",2)
 
 	// Read the masks
-	for (int ii = 0; ii < 2; ii++) {
+	for (int ii = 0; ii < 2; ++ii) {
 		int m;
 		if (std::fread(&m,INTSZ,1,myfile) != 1) ERROR("Error reading file",2)
 		this->_masks[ii].set_dim(this->_ncells,m);
@@ -212,7 +215,7 @@ int OGS::writeMesh() {
 	if (std::fwrite(this->_nav_lev.data(),DBLSZ,this->_nlev,myfile) != this->_nlev) ERROR("Error writing file",2)
 
 	// Write the masks
-	for (int ii = 0; ii < 2; ii++) {
+	for (int ii = 0; ii < 2; ++ii) {
 		int m = this->_masks[ii].get_m();
 		if (std::fwrite(&m,INTSZ,1,myfile) != 1) ERROR("Error writing file",2)
 		if (std::fwrite(this->_masks[ii].data(),UI8SZ,this->_masks[ii].get_sz(),myfile) != this->_masks[ii].get_sz()) ERROR("Error writing file",2)
@@ -248,7 +251,9 @@ void OGS::readMeshmask() {
 	this->_e3.set_dim(this->_ncells,4);
 
 	// Fill the fields
-	for (int kk = 0; kk < this->_nlev-1; kk++) {
+	#pragma omp parallel
+	{
+	for (int kk = omp_get_thread_num(); kk < this->_nlev-1; kk += omp_get_num_threads()) {
 		for (int jj = 0; jj < this->_nlat-1; jj++) {
 			for (int ii = 0; ii < this->_nlon-1; ii++) {
 				// e1
@@ -268,6 +273,7 @@ void OGS::readMeshmask() {
 				this->_e3[CLLIND(ii,jj,kk,this->_nlon,this->_nlat)][3] = e3w[CLLIND(ii,jj,kk,this->_nlon,this->_nlat)];
 			}
 		}
+	}
 	}
 
 	delete [] e1t; delete [] e1u; delete [] e1v; delete [] e1f;
