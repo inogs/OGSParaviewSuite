@@ -144,7 +144,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	this->UpdateProgress(0.25);
 	
 	VTKARRAY *vtkarray;
-	field::Field<FLDARRAY> array;
+	field::Field<FLDARRAY> array, array1;
 	int n_vars_loaded = 0;
 
 	/* READING THE PHYSICAL VARIABLES
@@ -166,18 +166,18 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 				}
 
 				// We need to project the velocity field from a face centered grid to a cell centered grid
-				field::UVW2T(array,
-							 this->ogsdata.e1(),
-							 this->ogsdata.e2(),
-							 this->ogsdata.e3(),
-							 this->ogsdata.nlon()-1,
-							 this->ogsdata.nlat()-1,
-							 this->ogsdata.nlev()-1
-							);
+				array1 = field::UVW2T(array,
+							 		  this->ogsdata.e1(),
+							 		  this->ogsdata.e2(),
+							 		  this->ogsdata.e3(),
+							 		  this->ogsdata.nlon()-1,
+							 		  this->ogsdata.nlat()-1,
+							 		  this->ogsdata.nlev()-1
+									 );
 
-				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array);
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array1);
 				this->Mesh->GetCellData()->AddArray(vtkarray);
-				vtkarray->Delete();
+				vtkarray->Delete(); array1.clear();
 				
 				n_vars_loaded++;
 			} else {
