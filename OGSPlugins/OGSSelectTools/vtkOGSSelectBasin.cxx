@@ -27,6 +27,10 @@
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
+
 
 vtkStandardNewMacro(vtkOGSSelectBasin);
 
@@ -121,12 +125,14 @@ int vtkOGSSelectBasin::RequestData(
 	this->UpdateProgress(0.2);
 
 	// Loop and update cutting mask (Mesh loop, can be parallelized)
-	field::Field<FLDARRAY>::iterator it_mask, it_cut;
-	for (it_mask = mask.begin(), it_cut = cutmask.begin(); it_mask != mask.end(); ++it_mask,++it_cut) {
-		it_cut[0] = 0;
+	#pragma omp parallel shared(mask,cutmask)
+	{
+	for (int ii = 0 + omp_get_thread_num(); ii < mask.get_n(); ii += omp_get_num_threads()) {
+		cutmask[ii][0] = 0;
 		// Loop on the basins array selection
 		for (int bid=0; bid < this->GetNumberOfBasinsArrays(); ++bid)
-			if (this->GetBasinsArrayStatus(this->GetBasinsArrayName(bid)) && it_mask[bid]) { it_cut[0] = 1; continue; }
+			if (this->GetBasinsArrayStatus(this->GetBasinsArrayName(bid)) && mask[ii][bid]) { cutmask[ii][0] = 1; continue; }
+	}
 	}
 
 	// Convert field to vtkArray and add it to input
