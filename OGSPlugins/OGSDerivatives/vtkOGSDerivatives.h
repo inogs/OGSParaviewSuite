@@ -20,6 +20,9 @@
 #include "vtkFloatArray.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
 class VTK_EXPORT vtkOGSDerivatives : public vtkRectilinearGridAlgorithm
 {
 public:
@@ -58,16 +61,20 @@ protected:
   ~vtkOGSDerivatives() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
-
-  void ScalarArrayDerivatives(vtkFloatArray *, vtkRectilinearGrid *);
-  void VectorArrayDerivatives(vtkFloatArray *, vtkRectilinearGrid *);
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 private:
   vtkOGSDerivatives(const vtkOGSDerivatives&) = delete;
   void operator=(const vtkOGSDerivatives&) = delete;
 
   char *field;
-  int grad_type, ComputeDivergence, ComputeCurl, ComputeQ;
+
+  int grad_type;
+  
+  bool isReqInfo;
+  bool ComputeDivergence, ComputeCurl, ComputeQ;
+
+  v3::V3v xyz;               // Stores cell/point coordinates
 };
 
 #endif
