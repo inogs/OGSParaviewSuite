@@ -57,8 +57,11 @@ namespace VTK
 		vtkDoubleArray *vtkz; vtkz = createVTKscaf<vtkDoubleArray,double>("z coord", nz, z);
 
 		// Fix scaling in z
-		for (int ii=0; ii<nz; ii++) 
+		#pragma omp parallel
+		{
+		for (int ii=omp_get_thread_num(); ii<nz; ii+=omp_get_num_threads()) 
 			vtkz->SetTuple1(ii,-scalf*z[ii]);
+		}
 
 		// Set rectilinear grid
 		rgrid->SetDimensions(nx,ny,nz);
