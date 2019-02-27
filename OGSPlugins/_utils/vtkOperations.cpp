@@ -21,6 +21,10 @@
 #include "vtkPointData.h"
 #include "vtkFieldData.h"
 
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
+
 #include "vtkOperations.hpp"
 
 #define CLLIND(ii,jj,kk,nx,ny) ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
@@ -38,14 +42,16 @@ namespace VTK
 		v3::V3v xyz( mesh->GetNumberOfPoints() );
 
 		// Loop the mesh and get the point coordinates
-		v3::V3v::iterator iter;
-		for(iter = xyz.begin(); iter != xyz.end(); ++iter) {
+		#pragma omp parallel shared(xyz)
+		{
+		for (int ii=omp_get_thread_num(); ii < xyz.len(); ii+=omp_get_num_threads()) {
 			// Obtain point from VTK structure
-			double pnt[3]; mesh->GetPoint(iter.ind(),pnt);
+			double pnt[3]; mesh->GetPoint(ii,pnt);
 			// Set the V3 structure
-			iter[0] = pnt[0];
-			iter[1] = pnt[1];
-			iter[2] = pnt[2]/fact;
+			xyz[ii][0] = pnt[0];
+			xyz[ii][1] = pnt[1];
+			xyz[ii][2] = pnt[2]/fact;
+		}
 		}
 
 		// Return V3v
@@ -62,24 +68,28 @@ namespace VTK
 		v3::V3v xyz( mesh->GetNumberOfCells() );
 
 		// Loop the mesh and get the point coordinates
-		v3::V3v::iterator iter;
-		for(iter = xyz.begin(); iter != xyz.end(); ++iter) {
-			// Get number of points per cell
-			vtkCell *cell = mesh->GetCell(iter.ind());
-			int ncellp    = cell->GetNumberOfPoints();
+		#pragma omp parallel shared(xyz)
+		{
+		for (int ii=omp_get_thread_num(); ii < xyz.len(); ii+=omp_get_num_threads()) {
 			// Preallocate to zero
-			*iter = v3::V3(0.,0.,0.);
+			xyz[ii] = v3::V3(0.,0.,0.);
 			// Loop the points in the cell
+			#pragma omp critical
+			{
+			// Get number of points per cell
+			vtkCell *cell = mesh->GetCell(ii);
+			int ncellp    = cell->GetNumberOfPoints();
 			for (int pId = 0; pId < ncellp; ++pId) {
 				// Obtain point from VTK structure
 				double pnt[3]; cell->GetPoints()->GetPoint(pId,pnt);
 				// Set the V3 structure
-				iter[0] += pnt[0]/ncellp;
-				iter[1] += pnt[1]/ncellp;
-				iter[2] += pnt[2]/ncellp;						
+				xyz[ii][0] += pnt[0]/ncellp;
+				xyz[ii][1] += pnt[1]/ncellp;
+				xyz[ii][2] += pnt[2]/ncellp;						
 			}
-			iter[2] /= fact;
-
+			}
+			xyz[ii][2] /= fact;
+		}
 		}
 
 		// Return V3v
