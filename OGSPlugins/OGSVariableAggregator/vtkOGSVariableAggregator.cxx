@@ -153,7 +153,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 			// Loop the mesh 
 			#pragma omp parallel
 			{
-			for (int ii=omp_get_thread_num(); ii<arrayNew.get_sz(); ii+=omp_get_num_threads())
+			for (int ii=omp_get_thread_num(); ii<arrayNew.get_n(); ii+=omp_get_num_threads())
 				arrayNew[ii][0] += (*vecIter)[ii][0];
 			}
 		}
