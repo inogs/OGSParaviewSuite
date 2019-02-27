@@ -154,6 +154,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		variables to load by using a panel.
 
 	*/
+	// Parallelization strategy MPI
 	for (int ii = 0; ii < this->ogsdata.var_n(0); ii++) {
 		// Test if the variable has been activated
 		if (this->GetAvePhysArrayStatus(this->ogsdata.var_name(0,ii))) {
@@ -205,6 +206,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		variables to load by using a panel.
 
 	*/
+	// Parallelization strategy MPI
 	for (int ii = 0; ii < this->ogsdata.var_n(1); ii++) {
 		// Test if the variable has been activated
 		if (this->GetAveFreqArrayStatus(this->ogsdata.var_name(1,ii))) {
@@ -231,6 +233,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		Variables inside FORCINCS are read here. User can select which
 		variables to load by using a panel.
 	*/
+	// Parallelization strategy MPI
 	for (int ii = 0; ii < this->ogsdata.var_n(2); ii++) {
 		// Test if the variable has been activated
 		if (this->GetForcingArrayStatus(this->ogsdata.var_name(2,ii))) {
@@ -256,6 +259,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 		Variables inside GENERAL are read here. User can select which
 		variables to load by using a panel.
 	*/
+	// Parallelization strategy MPI
 	for (int ii = 0; ii < this->ogsdata.var_n(3); ii++) {
 		// Test if the variable has been activated
 		if (this->GetGeneralArrayStatus(this->ogsdata.var_name(3,ii))) {

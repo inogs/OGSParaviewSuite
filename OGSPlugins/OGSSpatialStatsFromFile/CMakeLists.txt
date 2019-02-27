@@ -20,6 +20,9 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSSpatialStatsFromFile "1.0"
   SERVER_MANAGER_XML OGSSpatialStatsFromFile.xml
   SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp vtkOGSSpatialStatsFromFile.cxx

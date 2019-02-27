@@ -32,6 +32,7 @@
 
 #include <cstdint>
 #include <string>
+#include <omp.h>
 
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
@@ -145,6 +146,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	int narrays = input->GetCellData()->GetNumberOfArrays();
 	int nstat   = this->GetNumberOfStatArrays();
 
+	// Parallelization strategy MPI
 	for (int varId = 0; varId < narrays; varId++) {
 		// Recover the array and the array name
 		vtkDataArray *vtkDArray;
@@ -175,7 +177,6 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 
 		// At this point we do have the statistics per basin, coast and depth level
 		// of a single variable. Loop the number of statistics.
-		// Parallelization MPI
 		for (int statId = 0; statId < nstat; ++statId) {
 			// Recover stat name
 			std::string statName = this->GetStatArrayName(statId);
@@ -189,10 +190,11 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 			
 			// Loop the mesh and generate the array
 			field::Field<FLDARRAY> statArray(array.get_n(),array.get_m());
-			// Parallelization OPENMP
-			for (int kk = 0; kk < nz-1; kk++) {
-				for (int jj = 0; jj < ny-1; jj++) {
-					for (int ii = 0; ii < nx-1; ii++) {
+			
+			#pragma omp parallel for collapse(3)
+			for (int kk = 0; kk < nz-1; ++kk) {
+				for (int jj = 0; jj < ny-1; ++jj) {
+					for (int ii = 0; ii < nx-1; ++ii) {
 						// Position acording x,y,z
 						int pos = CLLIND(ii,jj,kk,nx,ny);
 						// In which basin are we? (we need to loop the basins and find which is true)
@@ -201,7 +203,6 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 						for (bId = 0; bId < bmask.get_m(); ++bId) {
 							if (bmask[pos][bId]) { isbasin = true; break; }
 						}
-//						int bId = (int)( bmask[pos][0] ) - 1;
 						// In which coast are we?
 						int cId = this->per_coast ? cmask[pos][0] - 1 : 2;
 						// Set the value (generally cId < 0 when bId < 0)

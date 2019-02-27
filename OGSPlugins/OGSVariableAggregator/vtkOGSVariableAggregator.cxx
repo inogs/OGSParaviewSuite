@@ -26,6 +26,9 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
 
 #include "pugixml.hpp"
 namespace xml = pugi;
@@ -101,6 +104,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		the mesh and add the variables at each point. Assume all variables are scalar 
 		arrays.
 	*/
+	// Parallelization strategy MPI
 	for(int varId=0; varId<this->GetNumberOfVarArrays(); varId++) {
 		// Check if the variable has been enabled
 		if ( !this->GetVarArrayStatus(this->GetVarArrayName(varId)) ) continue;
@@ -146,10 +150,11 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		field::Field<FLDARRAY>::iterator arrIter, auxIter;
 		std::vector<field::Field<FLDARRAY>>::iterator vecIter;
 		for (vecIter = arrayVector.begin()+1; vecIter != arrayVector.end(); ++vecIter) {
-			// Loop the mesh (parallelization OPENMP)
-			for (arrIter = arrayNew.begin(), auxIter = (*vecIter).begin(); 
-				 arrIter != arrayNew.end(); ++arrIter, ++auxIter) {
-				arrIter[0] += auxIter[0];
+			// Loop the mesh 
+			#pragma omp parallel
+			{
+			for (int ii=omp_get_thread_num(); ii<arrayNew.get_sz(); ii+=omp_get_num_threads())
+				arrayNew[ii][0] += (*vecIter)[ii][0];
 			}
 		}
 		// Convert to vtkArray
