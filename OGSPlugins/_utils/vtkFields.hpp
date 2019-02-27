@@ -104,16 +104,14 @@ namespace VTK
 		
 		if (array != NULL) {
 			// Fill the vtkArray with the values of the array
-			#pragma omp parallel
-			{
-			for (int kk = omp_get_thread_num(); kk < nz; kk += omp_get_num_threads()) {
+			#pragma omp parallel for collapse(3)
+			for (int kk = 0; kk < nz; ++kk) {
 				for (int jj = 0; jj < ny; ++jj) {
 					for (int ii = 0; ii < nx; ++ii) {
 						vtkArray->SetTuple1(PNTIND(ii,jj,kk,nx,ny),
 							array[PNTIND(ii,jj,kk,nx,ny)]);
 					}
 				}
-			}
 			}
 		} else {
 			// Preallocate vtkArray to zero

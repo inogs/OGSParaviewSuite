@@ -21,6 +21,7 @@
 #include "field.h"
 
 #include <vector>
+#include <omp.h>
 
 #define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 
@@ -75,6 +76,7 @@ namespace field
 		// Create new field
 		Field<T> f_T(f_UVW);
 		// Loop the components
+		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {
@@ -157,6 +159,7 @@ namespace field
 		// Create output array
 		Field<T> grad(f.get_n(),3*f.get_m());
 		// Loop the components
+		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {
@@ -278,6 +281,7 @@ namespace field
 		// Create output array
 		Field<T> grad(f.get_n(),3*f.get_m());
 		// Loop the components
+		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {
@@ -360,6 +364,7 @@ namespace field
 		// Create output array
 		Field<T> grad_UVW(f.get_n(),3*f.get_m(),0.), grad_T(f.get_n(),3*f.get_m());
 		// Loop the components
+		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {
@@ -455,6 +460,7 @@ namespace field
 		// Create output array
 		Field<T> grad_UVW(f.get_n(),3*f.get_m(),0.), grad_T(f.get_n(),3*f.get_m());
 		// Loop the components
+		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {
@@ -589,6 +595,7 @@ namespace field
 		// Create output array
 		Field<T> grad_UVW(f.get_n(),3*f.get_m(),0.), grad_T(f.get_n(),3*f.get_m());
 		// Loop the components
+		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {

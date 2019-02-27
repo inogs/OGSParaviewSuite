@@ -238,13 +238,13 @@ namespace v3
 	inline void V3v::size(const int nn, const V3 *val)     { size(nn); std::memcpy(v,val,n*sizeof(V3)); }
 	inline void V3v::size(const int nn, const float *val)  { 
 		size(nn);
-//		#pragma omp parallel for
+		#pragma omp parallel for
 		for(int i=0;i<n;i++)
 			v[i] = V3((double)(val[3*i + 0]),(double)(val[3*i + 1]),(double)(val[3*i + 2]));
 	}
 	inline void V3v::size(const int nn, const double *val) { 
 		size(nn);
-//		#pragma omp parallel for
+		#pragma omp parallel for
 		for(int i=0;i<n;i++)
 			v[i] = V3(val[3*i + 0],val[3*i + 1],val[3*i + 2]);
 	}
@@ -253,7 +253,7 @@ namespace v3
 	inline bool    V3v::isempty()						   { return n == 0; }
 	inline float  *V3v::tofloat()                          {
 		float *out; out = new float[3*n];
-//		#pragma omp parallel for 
+		#pragma omp parallel for 
 		for (int i=0;i<n;i++){
 			out[n*i + 0] = (float)(v[i][0]);
 			out[n*i + 1] = (float)(v[i][1]);
@@ -263,7 +263,7 @@ namespace v3
 	}
 	inline double *V3v::todouble()                         {
 		double *out;  out = new double[3*n];
-//		#pragma omp parallel for
+		#pragma omp parallel for
 		for (int i=0;i<n;i++){
 			out[n*i + 0] = v[i][0];
 			out[n*i + 1] = v[i][1];

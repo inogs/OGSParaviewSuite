@@ -251,11 +251,10 @@ void OGS::readMeshmask() {
 	this->_e3.set_dim(this->_ncells,4);
 
 	// Fill the fields
-	#pragma omp parallel
-	{
-	for (int kk = omp_get_thread_num(); kk < this->_nlev-1; kk += omp_get_num_threads()) {
-		for (int jj = 0; jj < this->_nlat-1; jj++) {
-			for (int ii = 0; ii < this->_nlon-1; ii++) {
+	#pragma omp parallel for collapse(3)
+	for (int kk = 0; kk < this->_nlev-1; ++kk) {
+		for (int jj = 0; jj < this->_nlat-1; ++jj) {
+			for (int ii = 0; ii < this->_nlon-1; ++ii) {
 				// e1
 				this->_e1[CLLIND(ii,jj,kk,this->_nlon,this->_nlat)][0] = e1t[CLLIND(ii,jj,0,this->_nlon,this->_nlat)];
 				this->_e1[CLLIND(ii,jj,kk,this->_nlon,this->_nlat)][1] = e1u[CLLIND(ii,jj,0,this->_nlon,this->_nlat)];
@@ -273,7 +272,6 @@ void OGS::readMeshmask() {
 				this->_e3[CLLIND(ii,jj,kk,this->_nlon,this->_nlat)][3] = e3w[CLLIND(ii,jj,kk,this->_nlon,this->_nlat)];
 			}
 		}
-	}
 	}
 
 	delete [] e1t; delete [] e1u; delete [] e1v; delete [] e1f;
