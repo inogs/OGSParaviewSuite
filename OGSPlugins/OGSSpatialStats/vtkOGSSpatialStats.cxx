@@ -36,6 +36,9 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
 
 
 vtkStandardNewMacro(vtkOGSSpatialStats);
@@ -173,6 +176,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 									input->GetPointData()->GetNumberOfArrays();
 	int nstat   = this->GetNumberOfStatArrays();
 
+	// Parallelization strategy MPI
 	for (int varId = 0; varId < narrays; ++varId) {
 		// Recover the array and the array name
 		vtkDataArray *vtkDArray;
@@ -222,38 +226,43 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		std::map<int,std::vector<FLDARRAY>> mValuesPerLayer, mWeightPerLayer;
 		std::map<int,std::vector<int>> mMeshPerLayer;
 
-		field::Field<FLDARRAY>::iterator itarr = array.begin(); 
-		field::Field<FLDARRAY>::iterator ite1 = e1.begin(), ite2 = e2.begin(), ite3 = e3.begin();
-		field::Field<int>::iterator itc2z;
-		for (itc2z = this->cId2zId.begin(); itc2z != this->cId2zId.end();
-			++itc2z,++itarr,++ite1,++ite2,++ite3) {
+		#pragma omp parallel
+		{
+		for (int ii=omp_get_thread_num(); ii < array.get_n(); ii+=omp_get_num_threads()) {
 			// Set maps
-			double w = (this->useVolume) ? ite1[0]*ite2[0]*ite3[0] : ite1[0]*ite2[0];
-			mValuesPerLayer[itc2z[0]].push_back(itarr[0]);
-			mWeightPerLayer[itc2z[0]].push_back(w);
-			mMeshPerLayer[itc2z[0]].push_back(itc2z.ind());
+			double w = (this->useVolume) ? e1[ii][0]*e2[ii][0]*e3[ii][0] : e1[ii][0]*e2[ii][0];
+			int ind  = cId2zId[ii][0];
+			#pragma omp critical
+			{
+			mValuesPerLayer[ind].push_back(array[ii][0]);
+			mWeightPerLayer[ind].push_back(w);
+			mMeshPerLayer[ind].push_back(ii);
+			}	
+		}
 		}
 
 		// For each depth layer, compute the statistics
 		for (int zId = 0; zId < this->zcoords.size(); ++zId) {
 
-			std::vector<std::pair<FLDARRAY,int>> sortedValues;
+			std::vector<std::pair<FLDARRAY,int>> sortedValues(mValuesPerLayer[zId].size());
 
 			// Iterate on the layer, compute  the weights, mean and min/max
-			int ii;
-			std::vector<FLDARRAY>::iterator itval, itwei;
-			
 			double sum_weight = 0., meanval = 0., maxval = 0., minval = 1.e20;
-			for (ii = 0, itval = mValuesPerLayer[zId].begin(),itwei = mWeightPerLayer[zId].begin();
-				 itval != mValuesPerLayer[zId].end(); ++itval, ++itwei, ++ii) {
+
+			#pragma omp parallel reduction(+:sum_weight,meanval) reduction(max:maxval) reduction(min:minval)
+			{
+			for (int ii=omp_get_thread_num(); ii<mValuesPerLayer[zId].size(); ii+=omp_get_num_threads()) {
+				double v = mValuesPerLayer[zId][ii];
+				double w = mWeightPerLayer[zId][ii];
 				// Minimum and maximum
-				minval = (*itval < minval) ? *itval : minval;
-				maxval = (*itval > maxval) ? *itval : maxval;
+				minval = (v < minval) ? v : minval;
+				maxval = (v > maxval) ? v : maxval;
 				// Weights and mean
-				sum_weight += *itwei;
-				meanval    += (*itval)*(*itwei);
+				sum_weight += w;
+				meanval    += v*w;
 				// Array to sort
-				sortedValues.push_back(std::make_pair(*itval,ii));
+				sortedValues[ii] = std::make_pair(v,ii);				
+			}
 			}
 
 			// Finish computing the mean
@@ -265,17 +274,23 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 			// Second iteration on the layer, this time compute
 			// standard deviation and percentile weight
 			double stdval = 0., pweight = 0.;
-			std::vector<FLDARRAY> percw;
-			for (ii = 0, itval = mValuesPerLayer[zId].begin(),itwei = mWeightPerLayer[zId].begin();
-				 itval != mValuesPerLayer[zId].end(); ++itval, ++itwei, ++ii) {
+			std::vector<FLDARRAY> percw(mValuesPerLayer[zId].size());
+			
+			#pragma omp parallel for ordered reduction(+:stdval) schedule(dynamic)
+			for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
+				double v = mValuesPerLayer[zId][ii];
+				double w = mWeightPerLayer[zId][ii];
 				// Standard deviation
-				double aux = *itval - meanval;
-				stdval += aux*aux*(*itwei);
+				double aux = v - meanval;
+				stdval += aux*aux*(w);
 				// Weights
+				#pragma ordered
+				{
 				int ind  = sortedValues[ii].second;
 				pweight += mWeightPerLayer[zId][ind];
 				aux = (pweight - .5*mWeightPerLayer[zId][ind])/sum_weight; // Reused variable
-				percw.push_back( aux ); 
+				percw[ii] = aux;
+				}
 			}
 
 			// Finish computing standard deviation
@@ -301,34 +316,36 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 			// Third iteration on the layers, this time set
 			// the mesh to the proper value.
-			std::map<std::string,field::Field<FLDARRAY>>::iterator iter;
-			std::vector<int>::iterator itmesh;
-
-			for (itmesh = mMeshPerLayer[zId].begin(); itmesh != mMeshPerLayer[zId].end(); ++itmesh) {
+			#pragma omp parallel
+			{
+			for (int ii=omp_get_thread_num(); ii<mMeshPerLayer[zId].size(); ii+=omp_get_num_threads()) {
+				std::map<std::string,field::Field<FLDARRAY>>::iterator iter;
+				int ind = mMeshPerLayer[zId][ii];
 				// Loop each one of the active statistics
 				for (iter = mStatArray.begin(); iter != mStatArray.end(); ++iter) {
 					// Switch computed statistic
 					switch ( this->GetStatArrayIndex(iter->first.c_str()) ) {
 						case 0: // Mean
-							iter->second[*itmesh][0] = meanval; break;
+							iter->second[ind][0] = meanval; break;
 						case 1: // Std dev
-							iter->second[*itmesh][0] = stdval; break;
+							iter->second[ind][0] = stdval; break;
 						case 2: // Min
-							iter->second[*itmesh][0] = minval; break;
+							iter->second[ind][0] = minval; break;
 						case 3: // p05
-							iter->second[*itmesh][0] = percval[0]; break;;
+							iter->second[ind][0] = percval[0]; break;;
 						case 4: // p25
-							iter->second[*itmesh][0] = percval[1]; break;
+							iter->second[ind][0] = percval[1]; break;
 						case 5: // p50
-							iter->second[*itmesh][0] = percval[2]; break;
+							iter->second[ind][0] = percval[2]; break;
 						case 6: // p75
-							iter->second[*itmesh][0] = percval[3]; break;
+							iter->second[ind][0] = percval[3]; break;
 						case 7: // p95
-							iter->second[*itmesh][0] = percval[4]; break;
+							iter->second[ind][0] = percval[4]; break;
 						case 8: // Max
-							iter->second[*itmesh][0] = maxval; break;
+							iter->second[ind][0] = maxval; break;
 					}
-				}
+				}				
+			}
 			}
 		}
 
