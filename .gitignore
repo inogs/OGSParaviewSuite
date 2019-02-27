@@ -17,4 +17,4 @@ OGSPlugins/*/build
 OGSPlugins/*/Testing
 
 # We also ignore all the scalability tests directories inside OGSPlugins
-OGSPlugins/*/Testing
+OGSPlugins/*/ScalabilityTests/
