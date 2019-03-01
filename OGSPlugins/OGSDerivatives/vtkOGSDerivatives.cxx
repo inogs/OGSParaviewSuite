@@ -31,11 +31,6 @@
 
 #include <string>
 
-/*namespace VTK
-{
-// Include the VTK Operations
-#include "../_utils/vtkOperations.cpp"
-}*/
 
 vtkStandardNewMacro(vtkOGSDerivatives);
 
@@ -72,11 +67,8 @@ vtkOGSDerivatives::~vtkOGSDerivatives()
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSDerivatives::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
+int vtkOGSDerivatives::RequestData( vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -118,16 +110,16 @@ int vtkOGSDerivatives::RequestData(
 	vtke2 = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray("e2"));
 	vtke3 = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray("e3"));
 
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
+	if (this->grad_type > 1 && (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)) {
 		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
 		return 0;
 	}
 
 	// Convert to field arrays
 	field::Field<FLDARRAY> e1, e2, e3;
-	e1 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke1);
-	e2 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke2);
-	e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
+	if (vtke1) e1 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke1);
+	if (vtke2) e2 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke2);
+	if (vtke3) e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
 
 	// Cell centers, update only when request info
 	if (this->isReqInfo) {

@@ -22,6 +22,8 @@
 
 #include <vector>
 #include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
 
 #define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 
@@ -119,8 +121,8 @@ namespace field
 			ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 		}
 		// Compute the derivatives with respect to x
-		for (int ii = 0; ii < f.get_m(); ++ii) {
-			deri[0 + 3*ii] = (f[ind][ii] - f[ind1][ii])/(xyz[ind][0] - xyz[ind1][0]); // dqdx
+		for (int gg = 0; gg < f.get_m(); ++gg) {
+			deri[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/(xyz[ind][0] - xyz[ind1][0]); // dqdx
 		}
 
 		/* DERIVATIVES WITH RESPECT TO Y */
@@ -135,8 +137,8 @@ namespace field
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 		}
 		// Compute the derivatives with respect to x
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[1 + 3*ii] = (f[ind][ii] - f[ind1][ii])/(xyz[ind][1] - xyz[ind1][1]); // dqdy
+		for (int gg = 0; gg < f.get_m(); ++gg)
+			deri[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/(xyz[ind][1] - xyz[ind1][1]); // dqdy
 
 		/* DERIVATIVES WITH RESPECT TO Z */
 		if (kk == 0) {
@@ -150,8 +152,8 @@ namespace field
 			ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 		}
 		// Compute the derivatives with respect to x
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[2 + 3*ii] = (f[ind][ii] - f[ind1][ii])/(xyz[ind][2] - xyz[ind1][2]); // dqdz
+		for (int gg = 0; gg < f.get_m(); ++gg)
+			deri[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/-(xyz[ind][2] - xyz[ind1][2]); // dqdz
 	}
 	template<class T>
 	Field<T> gradXYZ2(int nx, int ny, int nz, v3::V3v &xyz, 
@@ -206,23 +208,23 @@ namespace field
 			ind1 = PNTIND(ii+1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[0 + 3*ii] = (-f[ind][ii] + 4.*f[ind1][ii] - 3.*f[ind2][ii])/2./(xyz[ind1][0] - xyz[ind2][0]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[0 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./(xyz[ind1][0] - xyz[ind2][0]);
 		} else if (ii >= nx-2) {
 			ind  = PNTIND(ii,jj,kk,nx,ny);
 			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[0 + 3*ii] = (3.*f[ind][ii] - 4.*f[ind1][ii] + f[ind2][ii])/2./(xyz[ind][0] - xyz[ind1][0]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[0 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./(xyz[ind][0] - xyz[ind1][0]);
 		} else {
 			ind  = PNTIND(ii+2,jj,kk,nx,ny);
 			ind1 = PNTIND(ii+1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[0 + 3*ii] = (-f[ind][ii] + 8.*f[ind1][ii] - 8.*f[ind2][ii] + f[ind3][ii])/6./(xyz[ind1][0] - xyz[ind2][0]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind2][gg] + f[ind3][gg])/6./(xyz[ind1][0] - xyz[ind2][0]);
 		}
 					
 		/* DERIVATIVES WITH RESPECT TO Y */
@@ -231,23 +233,23 @@ namespace field
 			ind1 = PNTIND(ii,jj+1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[1 + 3*ii] = (-f[ind][ii] + 4.*f[ind1][ii] - 3.*f[ind2][ii])/2./(xyz[ind1][1] - xyz[ind2][1]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[1 + 3*gg] = (-f[ind][gg] + 4.*f[ind1][gg] - 3.*f[ind2][gg])/2./(xyz[ind1][1] - xyz[ind2][1]);
 		} else if (jj >= ny-2) {
 			ind  = PNTIND(ii,jj,kk,nx,ny);
 			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[1 + 3*ii] = (3.*f[ind][ii] - 4.*f[ind1][ii] + f[ind2][ii])/2./(xyz[ind][1] - xyz[ind1][1]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[1 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./(xyz[ind][1] - xyz[ind1][1]);
 		} else {
 			ind  = PNTIND(ii,jj+2,kk,nx,ny);
 			ind1 = PNTIND(ii,jj+1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind3 = PNTIND(ii,jj-2,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[1 + 3*ii] = (-f[ind][ii] + 8.*f[ind1][ii] - 8.*f[ind2][ii] + f[ind3][ii])/6./(xyz[ind1][1] - xyz[ind2][1]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind2][gg] + f[ind3][gg])/6./(xyz[ind1][1] - xyz[ind2][1]);
 		}
 	
 		/* DERIVATIVES WITH RESPECT TO Z */
@@ -256,23 +258,23 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk+1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[2 + 3*ii] = (-f[ind][ii] + 4.*f[ind1][ii] - 3.*f[ind2][ii])/2./(xyz[ind1][2] - xyz[ind2][2]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[2 + 3*gg] = (-f[ind][gg] + 4.*f[ind1][gg] - 3.*f[ind2][gg])/-2./(xyz[ind1][2] - xyz[ind2][2]);
 		} else if (kk >= nz-2) {
 			ind  = PNTIND(ii,jj,kk,nx,ny);
 			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[2 + 3*ii] = (3.*f[ind][ii] - 4.*f[ind1][ii] + f[ind2][ii])/2./(xyz[ind][2] - xyz[ind1][2]);
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[2 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/-2./(xyz[ind][2] - xyz[ind1][2]);
 		} else {
 			ind  = PNTIND(ii,jj,kk+2,nx,ny);
 			ind1 = PNTIND(ii,jj,kk+1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[2 + 3*ii] = (-f[ind][ii] + 8.*f[ind1][ii] - 8.*f[ind2][ii] + f[ind3][ii])/6./(xyz[ind1][2] - xyz[ind2][2]);			
+			for (int gg = 0; gg < f.get_m(); ++gg)
+				deri[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind2][gg] + f[ind3][gg])/-6./(xyz[ind1][2] - xyz[ind2][2]);			
 		}
 	}
 	template<class T>
@@ -317,89 +319,145 @@ namespace field
 		mesh, and it is projected back to the cell centered mesh. 
 
 		The input is assumed to be on the cell centered mesh. 
+		Returns the gradient projected on the T mesh.
 
 	*/
 	template<class T>
 	void gradOGS1_ijk(int ii, int jj, int kk, int nx, int ny, int nz,
-		Field<T> &f, T e1u, T e2v, T e3w, T *deri) {
+		Field<T> &f, Field<T> &e1, Field<T> &e2, Field<T> &e3, T *deri) {
 
-		int ind, ind1;
+		int ind, ind1, ind2;
+
+		T deri1[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
+		T deri2[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 		/* DERIVATIVES WITH RESPECT TO X */
-		if (ii == nx-1) {
+		if (ii == 0) {
+			ind  = PNTIND(ii+1,jj,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = 0.; // dqdx
+				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e1[ind1][1]; // dqdx
+			}
+		} else if (ii == nx-1) {
 			ind  = PNTIND(ii,jj,kk,nx,ny); 
 			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind1][1]; // dqdx
+				deri2[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind][1];  // dqdx
+			}
 		} else {
 			ind  = PNTIND(ii+1,jj,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e1[ind2][1]; // dqdx
+				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e1[ind1][1]; // dqdx
+			}
 		}
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[0 + 3*ii] = (f[ind][ii] - f[ind1][ii])/e1u; // dqdx
 
 		/* DERIVATIVES WITH RESPECT TO Y */
-		if (jj == ny-1) {
+		if (jj == 0) {
+			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = 0.; // dqdx
+				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e2[ind1][2]; // dqdx
+			}
+		} else if (jj == ny-1) {
 			ind  = PNTIND(ii,jj,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e2[ind1][2]; // dqdx
+				deri2[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e2[ind][2];  // dqdx
+			}
 		} else {
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e2[ind2][2]; // dqdx
+				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e2[ind1][2]; // dqdx
+			}
 		}
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[1 + 3*ii] = (f[ind][ii] - f[ind1][ii])/e2v; // dqdy
 
 		/* DERIVATIVES WITH RESPECT TO Z */
-		if (kk == nz-1) {
+		if (kk == 0) {
+			ind  = PNTIND(ii,jj,kk+1,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = 0.; // dqdx
+				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e3[ind1][3]; // dqdx
+			}
+		} else if (kk == nz-1) {
 			ind  = PNTIND(ii,jj,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e3[ind1][3]; // dqdx
+				deri2[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e3[ind][3];  // dqdx
+			}
 		} else {
 			ind  = PNTIND(ii,jj,kk+1,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e3[ind2][3]; // dqdx
+				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e3[ind1][3]; // dqdx
+			}
 		}
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[2 + 3*ii] = (f[ind][ii] - f[ind1][ii])/e3w; // dqdy
+
+		/* PROJECT FROM UVW TO T */
+		for (int gg = 0; gg < 3; ++gg) {
+			T d1_UVW[3] = {deri1[0 + 3*gg],deri1[1 + 3*gg],deri1[2 + 3*gg]};
+			T d2_UVW[3] = {deri2[0 + 3*gg],deri2[1 + 3*gg],deri2[2 + 3*gg]};
+			UVW2T_ijk(ii,jj,kk,nx,ny,d1_UVW,d2_UVW,e1,e2,e3,deri + 3*gg);
+		}
 	}
 	template<class T>
 	Field<T> gradOGS1(int nx, int ny, int nz, Field<T> &f, 
 		Field<T> &e1, Field<T> &e2, Field<T> &e3, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
-		Field<T> grad_UVW(f.get_n(),3*f.get_m(),0.), grad_T(f.get_n(),3*f.get_m());
+		Field<T> grad(f.get_n(),3*f.get_m(),0.);
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
 			for (int jj = 0; jj < ny; ++jj) { 
 				for (int ii = 0; ii < nx; ++ii) {
 					// Point id
-					int ind = PNTIND(ii,jj,kk,nx,ny);
-					int indx = PNTIND(ii-1,jj,kk,nx,ny);
-					int indy = PNTIND(ii,jj-1,kk,nx,ny);
-					int indz = PNTIND(ii,jj,kk-1,nx,ny);
+					int ind  = PNTIND(ii,jj,kk,nx,ny);
 					// Compute the gradient on UVW
-					gradOGS1_ijk(ii,jj,kk,nx,ny,nz,f,e1[ind][1],e2[ind][2],e3[ind][3],grad_UVW[ind]);
-					// Project from the UVW grid to T grid
-					for (int gg = 0; gg < 3; ++gg) {
-						T g1_UVW[3] = {grad_UVW[indx][0 + 3*gg],grad_UVW[indy][1 + 3*gg],grad_UVW[indz][2 + 3*gg]};
-						T g2_UVW[3] = {grad_UVW[ind][0 + 3*gg], grad_UVW[ind][1 + 3*gg], grad_UVW[ind][2 + 3*gg]};
-						UVW2T_ijk(ii,jj,kk,nx,ny,g1_UVW,g2_UVW,e1,e2,e3,grad_T[ind] + 3*gg);
-					}
+					gradOGS1_ijk(ii,jj,kk,nx,ny,nz,f,e1,e2,e3,grad[ind]);
 					// Computation of the divergence
 					if (!div.isempty()) {
-						div[ind][0] = grad_T[ind][0] + grad_T[ind][4] + grad_T[ind][8];
+						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
 					if (!curl.isempty()) {
-						curl[ind][0] = grad_T[ind][7] - grad_T[ind][5];
-						curl[ind][1] = grad_T[ind][2] - grad_T[ind][6];
-						curl[ind][2] = grad_T[ind][3] - grad_T[ind][1];
+						curl[ind][0] = grad[ind][7] - grad[ind][5];
+						curl[ind][1] = grad[ind][2] - grad[ind][6];
+						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
-						Q[ind][0] = -0.5*(grad_T[ind][0]*grad_T[ind][0] + grad_T[ind][4]*grad_T[ind][4] + grad_T[ind][8]*grad_T[ind][8])
-						            -grad_T[ind][1]*grad_T[ind][3]-grad_T[ind][2]*grad_T[ind][6]-grad_T[ind][5]*grad_T[ind][7];
+						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
+						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
 		}
-		return grad_T;
+		return grad;
 	}
 
 	/* GRADOGS2
@@ -409,56 +467,148 @@ namespace field
 		mesh, and it is projected back to the cell centered mesh. 
 
 		The input is assumed to be on the cell centered mesh.
+		Returns the gradient projected on the T mesh.
 		This gradient method is experimental.
 
 	*/
 	template<class T>
 	void gradOGS2_ijk(int ii, int jj, int kk, int nx, int ny, int nz,
-		Field<T> &f, T e1u, T e2v, T e3w, T *deri) {
+		Field<T> &f, Field<T> &e1, Field<T> &e2, Field<T> &e3, T *deri) {
 
-		int ind = 0, ind1 = 0;
+		T deri1[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
+		T deri2[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
+
+		int ind = 0, ind1 = 0, ind2 = 0, ind3 = 0;
 
 		/* DERIVATIVES WITH RESPECT TO X */
 		if (ii == 0) {
-			ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind  = PNTIND(ii+1,jj,kk,nx,ny);
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = 0.;
+				deri2[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind1][1]; // dqdx
+			}
+		} else if (ii == 1) {
+			ind  = PNTIND(ii+1,jj,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e1[ind2][1];    // dqdx
+				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e1[ind1][1]; // dqdx
+			}			
 		} else if (ii == nx-1) {
-			ind  = PNTIND(ii,jj,kk,nx,ny);   ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind  = PNTIND(ii,jj,kk,nx,ny);
+			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (f[ind][gg] - f[ind2][gg])/2./e1[ind1][1]; // dqdx
+				deri2[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind][1];     // dqdx
+			}
 		} else {
-			ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
-			e1u *= 2.;
+			ind  = PNTIND(ii+1,jj,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (f[ind1][gg] - f[ind3][gg])/2./e1[ind2][1]; // dqdx
+				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e1[ind1][1]; // dqdx
+			}
 		}
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[0 + 3*ii] = (f[ind][ii] - f[ind1][ii])/e1u; // dqdx
 
 		/* DERIVATIVES WITH RESPECT TO Y */
 		if (jj == 0) {
-			ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = 0.;
+				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e2[ind1][2]; // dqdx
+			}
+		} else if (jj == 1) {
+			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e2[ind2][2];    // dqdx
+				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e2[ind1][2]; // dqdx
+			}	
 		} else if (jj == ny-1) {
-			ind  = PNTIND(ii,jj,kk,nx,ny);   ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind  = PNTIND(ii,jj,kk,nx,ny);   
+			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (f[ind][gg] - f[ind2][gg])/2./e2[ind1][2]; // dqdx
+				deri2[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e2[ind][2];     // dqdx
+			}
 		} else {
-			ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
-			e2v *= 2.;
-		}
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[1 + 3*ii] = (f[ind][ii] - f[ind1][ii])/e2v; // dqdy		
+			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind3 = PNTIND(ii,jj-2,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (f[ind1][gg] - f[ind3][gg])/2./e2[ind2][2]; // dqdx
+				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e2[ind1][2]; // dqdx
+			}
+		}		
 
 		/* DERIVATIVES WITH RESPECT TO Z */
 		if (kk == 0) {
-			ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind  = PNTIND(ii,jj,kk+1,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = 0.;
+				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e3[ind1][3]; // dqdx
+			}
+		} else if (kk == 1) {
+			ind  = PNTIND(ii,jj,kk+1,nx,ny); 
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e3[ind2][3];    // dqdx
+				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e3[ind1][3]; // dqdx
+			}			
 		} else if (kk == nz-1) {
-			ind  = PNTIND(ii,jj,kk,nx,ny);   ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind  = PNTIND(ii,jj,kk,nx,ny);
+			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (f[ind][gg] - f[ind2][gg])/2./e3[ind1][3]; // dqdx
+				deri2[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e3[ind][3];     // dqdx
+			}
 		} else {
-			ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
-			e3w *= 2.;
+			ind  = PNTIND(ii,jj,kk+1,nx,ny);
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (f[ind1][gg] - f[ind3][gg])/2./e3[ind2][3]; // dqdx
+				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e3[ind1][3]; // dqdx
+			}
 		}
-		for (int ii = 0; ii < f.get_m(); ++ii)
-			deri[2 + 3*ii] = (f[ind][ii] - f[ind1][ii])/e3w; // dqdy
+
+		/* PROJECT FROM UVW TO T */
+		for (int gg = 0; gg < 3; ++gg) {
+			T d1_UVW[3] = {deri1[0 + 3*gg],deri1[1 + 3*gg],deri1[2 + 3*gg]};
+			T d2_UVW[3] = {deri2[0 + 3*gg],deri2[1 + 3*gg],deri2[2 + 3*gg]};
+			UVW2T_ijk(ii,jj,kk,nx,ny,d1_UVW,d2_UVW,e1,e2,e3,deri + 3*gg);
+		}
 	}
 	template<class T>
 	Field<T> gradOGS2(int nx, int ny, int nz, Field<T> &f, 
 		Field<T> &e1, Field<T> &e2, Field<T> &e3, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
-		Field<T> grad_UVW(f.get_n(),3*f.get_m(),0.), grad_T(f.get_n(),3*f.get_m());
+		Field<T> grad(f.get_n(),3*f.get_m(),0.);
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -466,36 +616,27 @@ namespace field
 				for (int ii = 0; ii < nx; ++ii) {
 					// Point id
 					int ind = PNTIND(ii,jj,kk,nx,ny);
-					int indx = PNTIND(ii-1,jj,kk,nx,ny);
-					int indy = PNTIND(ii,jj-1,kk,nx,ny);
-					int indz = PNTIND(ii,jj,kk-1,nx,ny);
 					// Compute the gradient on UVW
-					gradOGS2_ijk(ii,jj,kk,nx,ny,nz,f,e1[ind][1],e2[ind][2],e3[ind][3],grad_UVW[ind]);
-					// Project from the UVW grid to T grid
-					for (int gg = 0; gg < 3; ++gg) {
-						T g1_UVW[3] = {grad_UVW[indx][0 + 3*gg],grad_UVW[indy][1 + 3*gg],grad_UVW[indz][2 + 3*gg]};
-						T g2_UVW[3] = {grad_UVW[ind][0 + 3*gg], grad_UVW[ind][1 + 3*gg], grad_UVW[ind][2 + 3*gg]};
-						UVW2T_ijk(ii,jj,kk,nx,ny,g1_UVW,g2_UVW,e1,e2,e3,grad_T[ind] + 3*gg);
-					}
+					gradOGS2_ijk(ii,jj,kk,nx,ny,nz,f,e1,e2,e3,grad[ind]);
 					// Computation of the divergence
 					if (!div.isempty()) {
-						div[ind][0] = grad_T[ind][0] + grad_T[ind][4] + grad_T[ind][8];
+						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
 					if (!curl.isempty()) {
-						curl[ind][0] = grad_T[ind][7] - grad_T[ind][5];
-						curl[ind][1] = grad_T[ind][2] - grad_T[ind][6];
-						curl[ind][2] = grad_T[ind][3] - grad_T[ind][1];
+						curl[ind][0] = grad[ind][7] - grad[ind][5];
+						curl[ind][1] = grad[ind][2] - grad[ind][6];
+						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
-						Q[ind][0] = -0.5*(grad_T[ind][0]*grad_T[ind][0] + grad_T[ind][4]*grad_T[ind][4] + grad_T[ind][8]*grad_T[ind][8])
-						            -grad_T[ind][1]*grad_T[ind][3]-grad_T[ind][2]*grad_T[ind][6]-grad_T[ind][5]*grad_T[ind][7];
+						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
+						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
 		}
-		return grad_T;
+		return grad;
 	}
 
 	/* GRADOGS4
@@ -505,38 +646,74 @@ namespace field
 		mesh, and it is projected back to the cell centered mesh. 
 
 		The input is assumed to be on the cell centered mesh.
+		Returns the gradient projected on the T mesh.
 		This gradient method is experimental.
 
 	*/
 	template<class T>
 	void gradOGS4_ijk(int ii, int jj, int kk, int nx, int ny, int nz,
-		Field<T> &f, T e1u, T e2v, T e3w, T *deri) {
+		Field<T> &f, Field<T> &e1, Field<T> &e2, Field<T> &e3, T *deri) {
 
-		int ind, ind1, ind2, ind3;
+		T deri1[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
+		T deri2[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
+
+		int ind, ind1, ind2, ind3, ind4, ind5;
 
 		/* DERIVATIVES WITH RESPECT TO X */
 		if (ii <= 1) {
 			ind  = PNTIND(ii+2,jj,kk,nx,ny);
 			ind1 = PNTIND(ii+1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii-1,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[0 + 3*ii] = (-f[ind][ii] + 4.*f[ind1][ii] - 3.*f[ind2][ii])/2./e1u;
-		} else if (ii >= nx-2) {
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (ii == 0) ? 0. : (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e1[ind3][1];
+				deri2[0 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./e1[ind2][1];
+			}
+		} else if (ii <= 3) {
+			ind  = PNTIND(ii+2,jj,kk,nx,ny);
+			ind1 = PNTIND(ii+1,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind4 = PNTIND(ii-2,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e1[ind3][1];
+				deri2[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e1[ind2][1];
+			}
+		} else if (ii == nx-2) {
+			ind  = PNTIND(ii+1,jj,kk,nx,ny);
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
+			ind4 = PNTIND(ii-3,jj,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e1[ind2][1];
+				deri2[0 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e1[ind1][1];
+			}
+		} else if (ii == nx-1) {
 			ind  = PNTIND(ii,jj,kk,nx,ny);
 			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
+			ind3 = PNTIND(ii-3,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[0 + 3*ii] = (3.*f[ind][ii] - 4.*f[ind1][ii] + f[ind2][ii])/2./e1u;
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e1[ind1][1];
+				deri2[0 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./e1[ind][1];
+			}
 		} else {
 			ind  = PNTIND(ii+2,jj,kk,nx,ny);
 			ind1 = PNTIND(ii+1,jj,kk,nx,ny);
-			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
-			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii-1,jj,kk,nx,ny);
+			ind4 = PNTIND(ii-2,jj,kk,nx,ny);
+			ind5 = PNTIND(ii-2,jj,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[0 + 3*ii] = (-f[ind][ii] + 8.*f[ind1][ii] - 8.*f[ind2][ii] + f[ind3][ii])/12./e1u;
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[0 + 3*gg] = (-f[ind1][gg] + 8.*f[ind2][gg] - 8.*f[ind4][gg] + f[ind5][gg])/12./e1[ind3][1];
+				deri2[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e1[ind2][1];
+			}
 		}
 					
 		/* DERIVATIVES WITH RESPECT TO Y */
@@ -544,24 +721,56 @@ namespace field
 			ind  = PNTIND(ii,jj+2,kk,nx,ny);
 			ind1 = PNTIND(ii,jj+1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii,jj-1,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[1 + 3*ii] = (-f[ind][ii] + 4.*f[ind1][ii] - 3.*f[ind2][ii])/2./e2v;
-		} else if (jj >= ny-2) {
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (jj == 0) ? 0. : (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e2[ind3][2];
+				deri2[1 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./e2[ind2][2];
+			}
+		} else if (jj <= 3) {
+			ind  = PNTIND(ii,jj+2,kk,nx,ny);
+			ind1 = PNTIND(ii,jj+1,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind4 = PNTIND(ii,jj-2,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e2[ind3][2];
+				deri2[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e2[ind2][2];
+			}			
+		} else if (jj == ny-2) {
+			ind  = PNTIND(ii,jj+1,kk,nx,ny);
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind3 = PNTIND(ii,jj-2,kk,nx,ny);
+			ind4 = PNTIND(ii,jj-3,kk,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e2[ind2][2];
+				deri2[1 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e2[ind1][2];
+			}
+		} else if (jj == ny-1) {
 			ind  = PNTIND(ii,jj,kk,nx,ny);
 			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
+			ind3 = PNTIND(ii,jj-3,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[1 + 3*ii] = (3.*f[ind][ii] - 4.*f[ind1][ii] + f[ind2][ii])/2./e2v;
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e2[ind1][2];
+				deri2[1 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./e2[ind][2];
+			}
 		} else {
 			ind  = PNTIND(ii,jj+2,kk,nx,ny);
 			ind1 = PNTIND(ii,jj+1,kk,nx,ny);
-			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
-			ind3 = PNTIND(ii,jj-2,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii,jj-1,kk,nx,ny);
+			ind4 = PNTIND(ii,jj-2,kk,nx,ny);
+			ind5 = PNTIND(ii,jj-3,kk,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[1 + 3*ii] = (-f[ind][ii] + 8.*f[ind1][ii] - 8.*f[ind2][ii] + f[ind3][ii])/12./e2v;
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[1 + 3*gg] = (-f[ind1][gg] + 8.*f[ind2][gg] - 8.*f[ind4][gg] + f[ind5][gg])/12./e2[ind3][2];
+				deri2[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e2[ind2][2];
+			}
 		}
 	
 		/* DERIVATIVES WITH RESPECT TO Z */
@@ -569,31 +778,70 @@ namespace field
 			ind  = PNTIND(ii,jj,kk+2,nx,ny);
 			ind1 = PNTIND(ii,jj,kk+1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii,jj,kk-1,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[2 + 3*ii] = (-f[ind][ii] + 4.*f[ind1][ii] - 3.*f[ind2][ii])/2./e3w;
-		} else if (kk >= nz-2) {
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (kk == 0) ? 0. : (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e3[ind3][3];
+				deri2[2 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./e3[ind2][3];
+			}
+		} else if (kk <= 3) {
+			ind  = PNTIND(ii,jj,kk+2,nx,ny);
+			ind1 = PNTIND(ii,jj,kk+1,nx,ny);
+			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind4 = PNTIND(ii,jj,kk-2,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e3[ind3][3];
+				deri2[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e3[ind2][3];
+			}			
+		} else if (kk == nz-2) {
+			ind  = PNTIND(ii,jj,kk+1,nx,ny);
+			ind1 = PNTIND(ii,jj,kk,nx,ny);
+			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
+			ind4 = PNTIND(ii,jj,kk-3,nx,ny);
+
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e3[ind2][3];
+				deri2[2 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e3[ind1][3];
+			}
+		} else if (kk == nz-1) {
 			ind  = PNTIND(ii,jj,kk,nx,ny);
 			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
+			ind3 = PNTIND(ii,jj,kk-3,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[2 + 3*ii] = (3.*f[ind][ii] - 4.*f[ind1][ii] + f[ind2][ii])/2./e3w;
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e3[ind1][3];
+				deri2[2 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./e3[ind][3];
+			}
 		} else {
 			ind  = PNTIND(ii,jj,kk+2,nx,ny);
 			ind1 = PNTIND(ii,jj,kk+1,nx,ny);
-			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
-			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
+			ind2 = PNTIND(ii,jj,kk,nx,ny);
+			ind3 = PNTIND(ii,jj,kk-1,nx,ny);
+			ind4 = PNTIND(ii,jj,kk-2,nx,ny);
+			ind5 = PNTIND(ii,jj,kk-3,nx,ny);
 
-			for (int ii = 0; ii < f.get_m(); ++ii)
-				deri[2 + 3*ii] = (-f[ind][ii] + 8.*f[ind1][ii] - 8.*f[ind2][ii] + f[ind3][ii])/12./e3w;
+			for (int gg = 0; gg < f.get_m(); ++gg) {
+				deri1[2 + 3*gg] = (-f[ind1][gg] + 8.*f[ind2][gg] - 8.*f[ind4][gg] + f[ind5][gg])/12./e3[ind3][3];
+				deri2[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e3[ind2][3];
+			}
+		}
+
+		/* PROJECT FROM UVW TO T */
+		for (int gg = 0; gg < 3; ++gg) {
+			T d1_UVW[3] = {deri1[0 + 3*gg],deri1[1 + 3*gg],deri1[2 + 3*gg]};
+			T d2_UVW[3] = {deri2[0 + 3*gg],deri2[1 + 3*gg],deri2[2 + 3*gg]};
+			UVW2T_ijk(ii,jj,kk,nx,ny,d1_UVW,d2_UVW,e1,e2,e3,deri + 3*gg);
 		}
 	}
 	template<class T>
 	Field<T> gradOGS4(int nx, int ny, int nz, Field<T> &f, 
 		Field<T> &e1, Field<T> &e2, Field<T> &e3, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
-		Field<T> grad_UVW(f.get_n(),3*f.get_m(),0.), grad_T(f.get_n(),3*f.get_m());
+		Field<T> grad(f.get_n(),3*f.get_m(),0.);
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -601,36 +849,27 @@ namespace field
 				for (int ii = 0; ii < nx; ++ii) {
 					// Point id
 					int ind = PNTIND(ii,jj,kk,nx,ny);
-					int indx = PNTIND(ii-1,jj,kk,nx,ny);
-					int indy = PNTIND(ii,jj-1,kk,nx,ny);
-					int indz = PNTIND(ii,jj,kk-1,nx,ny);
 					// Compute the gradient on UVW
-					gradOGS4_ijk(ii,jj,kk,nx,ny,nz,f,e1[ind][1],e2[ind][2],e3[ind][3],grad_UVW[ind]);
-					// Project from the UVW grid to T grid
-					for (int gg = 0; gg < 3; ++gg) {
-						T g1_UVW[3] = {grad_UVW[indx][0 + 3*gg],grad_UVW[indy][1 + 3*gg],grad_UVW[indz][2 + 3*gg]};
-						T g2_UVW[3] = {grad_UVW[ind][0 + 3*gg], grad_UVW[ind][1 + 3*gg], grad_UVW[ind][2 + 3*gg]};
-						UVW2T_ijk(ii,jj,kk,nx,ny,g1_UVW,g2_UVW,e1,e2,e3,grad_T[ind] + 3*gg);
-					}
+					gradOGS4_ijk(ii,jj,kk,nx,ny,nz,f,e1,e2,e3,grad[ind]);
 					// Computation of the divergence
 					if (!div.isempty()) {
-						div[ind][0] = grad_T[ind][0] + grad_T[ind][4] + grad_T[ind][8];
+						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
 					if (!curl.isempty()) {
-						curl[ind][0] = grad_T[ind][7] - grad_T[ind][5];
-						curl[ind][1] = grad_T[ind][2] - grad_T[ind][6];
-						curl[ind][2] = grad_T[ind][3] - grad_T[ind][1];
+						curl[ind][0] = grad[ind][7] - grad[ind][5];
+						curl[ind][1] = grad[ind][2] - grad[ind][6];
+						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
-						Q[ind][0] = -0.5*(grad_T[ind][0]*grad_T[ind][0] + grad_T[ind][4]*grad_T[ind][4] + grad_T[ind][8]*grad_T[ind][8])
-						            -grad_T[ind][1]*grad_T[ind][3]-grad_T[ind][2]*grad_T[ind][6]-grad_T[ind][5]*grad_T[ind][7];
+						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
+						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
 		}
-		return grad_T;
+		return grad;
 	}
 
 	/* COUNTDEPTHLEVELS
