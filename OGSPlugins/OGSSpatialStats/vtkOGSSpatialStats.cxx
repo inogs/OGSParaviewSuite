@@ -239,19 +239,20 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 			mMeshPerLayer[ind].push_back(ii);
 			}	
 		}
-		}
-
+		
+		// Wait until the previous calculation has been performed
+		// then proceed to run for each depth layer
+		#pragma omp barrier
+		
 		// For each depth layer, compute the statistics
-		for (int zId = 0; zId < this->zcoords.size(); ++zId) {
+		for (int zId = omp_get_thread_num(); zId < this->zcoords.size(); zId += omp_get_num_threads()) {
 
 			std::vector<std::pair<FLDARRAY,int>> sortedValues(mValuesPerLayer[zId].size());
 
 			// Iterate on the layer, compute  the weights, mean and min/max
 			double sum_weight = 0., meanval = 0., maxval = 0., minval = 1.e20;
 
-			#pragma omp parallel reduction(+:sum_weight,meanval) reduction(max:maxval) reduction(min:minval)
-			{
-			for (int ii=omp_get_thread_num(); ii<mValuesPerLayer[zId].size(); ii+=omp_get_num_threads()) {
+			for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
 				double v = mValuesPerLayer[zId][ii];
 				double w = mWeightPerLayer[zId][ii];
 				// Minimum and maximum
@@ -262,7 +263,6 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 				meanval    += v*w;
 				// Array to sort
 				sortedValues[ii] = std::make_pair(v,ii);				
-			}
 			}
 
 			// Finish computing the mean
@@ -276,7 +276,6 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 			double stdval = 0., pweight = 0.;
 			std::vector<FLDARRAY> percw(mValuesPerLayer[zId].size());
 			
-			#pragma omp parallel for ordered reduction(+:stdval) schedule(dynamic)
 			for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
 				double v = mValuesPerLayer[zId][ii];
 				double w = mWeightPerLayer[zId][ii];
@@ -284,13 +283,10 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 				double aux = v - meanval;
 				stdval += aux*aux*(w);
 				// Weights
-				#pragma ordered
-				{
 				int ind  = sortedValues[ii].second;
 				pweight += mWeightPerLayer[zId][ind];
 				aux = (pweight - .5*mWeightPerLayer[zId][ind])/sum_weight; // Reused variable
 				percw[ii] = aux;
-				}
 			}
 
 			// Finish computing standard deviation
@@ -316,9 +312,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 			// Third iteration on the layers, this time set
 			// the mesh to the proper value.
-			#pragma omp parallel
-			{
-			for (int ii=omp_get_thread_num(); ii<mMeshPerLayer[zId].size(); ii+=omp_get_num_threads()) {
+			for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
 				std::map<std::string,field::Field<FLDARRAY>>::iterator iter;
 				int ind = mMeshPerLayer[zId][ii];
 				// Loop each one of the active statistics
@@ -346,7 +340,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 					}
 				}				
 			}
-			}
+		}
 		}
 
 		// Now that we computed the arrays, we can set them in the output
