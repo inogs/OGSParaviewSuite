@@ -19,6 +19,9 @@
 #include "vtkDataSet.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
 class VTK_EXPORT vtkOGSComputeOkuboWeiss : public vtkRectilinearGridAlgorithm
 {
 public:
@@ -44,6 +47,7 @@ protected:
   ~vtkOGSComputeOkuboWeiss() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 private:
   vtkOGSComputeOkuboWeiss(const vtkOGSComputeOkuboWeiss&) = delete;
@@ -52,6 +56,10 @@ private:
   char *field;
   double coef;
   int grad_type;
+
+  bool isReqInfo;
+
+  v3::V3v xyz;               // Stores cell/point coordinates
 };
 
 #endif

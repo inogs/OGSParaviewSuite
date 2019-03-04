@@ -20,8 +20,11 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSOkuboWeiss "1.0"
   SERVER_MANAGER_XML OGSOkuboWeiss.xml
-  SERVER_MANAGER_SOURCES vtkOGSComputeOkuboWeiss.cxx vtkOGSSelectOkuboWeiss.cxx
+  SERVER_MANAGER_SOURCES ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx vtkOGSSelectOkuboWeiss.cxx
   REQUIRED_ON_SERVER
   )
