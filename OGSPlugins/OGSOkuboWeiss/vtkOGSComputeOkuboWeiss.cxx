@@ -32,12 +32,6 @@
 
 #include <cstdint>
 
-/*namespace VTK
-{
-// Include the VTK Operations
-#include "../_utils/vtkOperations.cpp"
-}*/
-
 vtkStandardNewMacro(vtkOGSComputeOkuboWeiss);
 
 //----------------------------------------------------------------------------
@@ -214,12 +208,12 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 		}
 	}
 	this->UpdateProgress(0.2);
-
-	// Up to this point the Okubo-Weiss criterion in the surface is computed
-	// and stored in vtkOW and the mean in OW_mean.
+	
+	// Work out the mean
 	OW_mean /= sum_weights;
 
-	// Now we can work out the standard deviation
+	// Up to this point the Okubo-Weiss criterion in the surface is computed.
+	// Now we can work out the standard deviation.
 	FLDARRAY OW_std = 0.;
 
 	#pragma omp parallel for collapse(2) reduction(+:OW_std)
@@ -254,7 +248,7 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 			// Compute current point
 			int ind = CLLIND(ii,jj,0,nx,ny);
 
-			// Initalize mask to zero
+			// Initalize mask for Background field
 			OWm[ind][0] = 1;
 
 			// Use the mask to determine whether we are in the sea or not
