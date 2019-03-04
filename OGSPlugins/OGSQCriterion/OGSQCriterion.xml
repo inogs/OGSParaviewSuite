@@ -29,7 +29,7 @@
                             label="Filter coefficient: "
                             command="Setcoef"
                             animateable="1"
-                            default_values="0.02"
+                            default_values="0.2"
                             number_of_elements="1">
         <DoubleRangeDomain name="range" min="0.0" max="2.0" />
         <Documentation>
