@@ -102,6 +102,11 @@ int vtkOGSSelectCoast::RequestData(
 		iscelld = false;
 	}
 
+	if (vtkmask == NULL) {
+		vtkErrorMacro("Cannot load mask field "<<this->mask_field<<"!");
+		return 0;
+	}
+
 	// Recover basins mask as a field
 	field::Field<FLDMASK> mask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkmask);
 
