@@ -39,8 +39,8 @@ vtkStandardNewMacro(vtkOGSSelectBasin);
 /*
 	Macro to set the array precision 
 */
-#define FLDARRAY uint8_t
-#define VTKARRAY vtkTypeUInt8Array
+#define FLDMASK uint8_t
+#define VTKMASK vtkTypeUInt8Array
 
 #include "../_utils/field.h"
 #include "../_utils/vtkFields.hpp"
@@ -106,21 +106,21 @@ int vtkOGSSelectBasin::RequestData(
 	this->UpdateProgress(0.0);
 
 	// Get the basins mask
-	VTKARRAY *vtkmask = NULL;
+	VTKMASK *vtkmask = NULL;
 	bool iscelld = true;
 
-	vtkmask = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray(this->mask_field));
+	vtkmask = VTKMASK::SafeDownCast(input->GetCellData()->GetArray(this->mask_field));
 
 	if (vtkmask == NULL) {
-		vtkmask = VTKARRAY::SafeDownCast(input->GetPointData()->GetArray(this->mask_field));
+		vtkmask = VTKMASK::SafeDownCast(input->GetPointData()->GetArray(this->mask_field));
 		iscelld = false;
 	}
 
 	// Recover basins mask as a field
-	field::Field<FLDARRAY> mask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkmask);
+	field::Field<FLDMASK> mask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkmask);
 
 	// Generate a new field (initialized at zero) that will be used as cutting mask
-	field::Field<FLDARRAY> cutmask(mask.get_n(),1);
+	field::Field<FLDMASK> cutmask(mask.get_n(),1);
 
 	this->UpdateProgress(0.2);
 
@@ -136,8 +136,8 @@ int vtkOGSSelectBasin::RequestData(
 	}
 
 	// Convert field to vtkArray and add it to input
-	VTKARRAY *vtkcutmask;
-	vtkcutmask = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("CutMask",cutmask);
+	VTKMASK *vtkcutmask;
+	vtkcutmask = VTK::createVTKfromField<VTKMASK,FLDMASK>("CutMask",cutmask);
 
 	if (iscelld)
 		input->GetCellData()->AddArray(vtkcutmask);
