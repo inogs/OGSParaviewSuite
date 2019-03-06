@@ -20,8 +20,11 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSLambda2Criterion "1.0"
   SERVER_MANAGER_XML OGSLambda2Criterion.xml
-  SERVER_MANAGER_SOURCES vtkOGSComputeLambda2Criterion.cxx
+  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeLambda2Criterion.cxx
   REQUIRED_ON_SERVER
   )

@@ -19,6 +19,9 @@
 #include "vtkDataSet.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
 class VTK_EXPORT vtkOGSComputeLambda2Criterion : public vtkRectilinearGridAlgorithm
 {
 public:
@@ -39,6 +42,7 @@ protected:
   ~vtkOGSComputeLambda2Criterion() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 private:
   vtkOGSComputeLambda2Criterion(const vtkOGSComputeLambda2Criterion&) = delete;
@@ -46,6 +50,10 @@ private:
 
   char *field;
   int grad_type;
+
+  bool isReqInfo;
+
+  v3::V3v xyz;               // Stores cell/point coordinates
 };
 
 #endif
