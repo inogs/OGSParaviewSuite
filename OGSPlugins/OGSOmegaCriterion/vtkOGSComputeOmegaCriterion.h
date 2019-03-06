@@ -19,6 +19,9 @@
 #include "vtkDataSet.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
 class VTK_EXPORT vtkOGSComputeOmegaCriterion : public vtkRectilinearGridAlgorithm
 {
 public:
@@ -44,6 +47,7 @@ protected:
   ~vtkOGSComputeOmegaCriterion() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 private:
   vtkOGSComputeOmegaCriterion(const vtkOGSComputeOmegaCriterion&) = delete;
@@ -52,6 +56,10 @@ private:
   char *field;
   int grad_type;
   double epsi;
+
+  bool isReqInfo;
+
+  v3::V3v xyz;               // Stores cell/point coordinates
 };
 
 #endif
