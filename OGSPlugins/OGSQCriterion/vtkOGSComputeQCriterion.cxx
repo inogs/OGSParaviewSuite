@@ -192,7 +192,7 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 				// Compute Q-criterion
 				Q[ind][0] = -0.5*(deri[0]*deri[0] + deri[4]*deri[4] + deri[8]*deri[8])
 						    -deri[1]*deri[3]-deri[2]*deri[6]-deri[5]*deri[7];
-				Q[ind][0]*= -2; // Scaling fix so that Q == OW
+				Q[ind][0]*= -2.; // Scaling fix so that Q == OW
 
 				// Compute the mean
 				Q_mean      += Q[ind][0]*e1[ind][0]*e2[ind][0];
@@ -260,6 +260,9 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 				// Set the values of the mask
 				if (Q[ind][0] < -Q_std) Qm[ind][0] = 0; // Vorticity-dominated flow
 				if (Q[ind][0] >  Q_std) Qm[ind][0] = 2; // Strain-dominated flow
+
+				// Undo the scaling to recover the definition of Q
+				Q[ind][0]*= -.5; // Scaling fix so that Q == OW
 			}
 		}
 	}
