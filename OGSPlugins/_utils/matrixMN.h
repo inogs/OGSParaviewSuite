@@ -125,16 +125,21 @@ namespace matMN
 			cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,this->m,mn.n,mn.m,1
 				this->mat,this->n,mn.mat,1,out.mat,out.n);
 		#else
-			if (this->m = 3 && this->n == 3) {
-				out.mat[0] = this->mat[0]*mn.mat[0] + this->mat[1]*mn.mat[3] + this->mat[2]*mn.mat[6];
-				out.mat[1] = this->mat[0]*mn.mat[1] + this->mat[1]*mn.mat[4] + this->mat[2]*mn.mat[7];
-				out.mat[2] = this->mat[0]*mn.mat[2] + this->mat[1]*mn.mat[5] + this->mat[2]*mn.mat[8];
-				out.mat[3] = this->mat[3]*mn.mat[0] + this->mat[4]*mn.mat[3] + this->mat[5]*mn.mat[6];
-				out.mat[4] = this->mat[3]*mn.mat[1] + this->mat[4]*mn.mat[4] + this->mat[5]*mn.mat[7];
-				out.mat[5] = this->mat[3]*mn.mat[2] + this->mat[4]*mn.mat[5] + this->mat[5]*mn.mat[8];
-				out.mat[6] = this->mat[6]*mn.mat[0] + this->mat[7]*mn.mat[3] + this->mat[8]*mn.mat[6];
-				out.mat[7] = this->mat[6]*mn.mat[1] + this->mat[7]*mn.mat[4] + this->mat[8]*mn.mat[7];
-				out.mat[8] = this->mat[6]*mn.mat[2] + this->mat[7]*mn.mat[5] + this->mat[8]*mn.mat[8];
+			if (this->m == 2 && this->n == 2) {
+				out.ij(0,0, this->ij(0,0)*mn.ij(0,0) + this->ij(0,1)*mn.ij(1,0) );
+				out.ij(0,1, this->ij(0,0)*mn.ij(0,1) + this->ij(0,1)*mn.ij(1,1) );
+				out.ij(1,0, this->ij(1,0)*mn.ij(0,0) + this->ij(1,1)*mn.ij(1,0) );
+				out.ij(1,1, this->ij(1,0)*mn.ij(0,1) + this->ij(1,1)*mn.ij(1,1) );
+			} else if (this->m == 3 && this->n == 3) {
+				out.ij(0,0, this->ij(0,0)*mn.ij(0,0) + this->ij(0,1)*mn.ij(1,0) + this->ij(0,2)*mn.ij(2,0) );
+				out.ij(0,1, this->ij(0,0)*mn.ij(0,1) + this->ij(0,1)*mn.ij(1,1) + this->ij(0,2)*mn.ij(2,1) );
+				out.ij(0,2, this->ij(0,0)*mn.ij(0,2) + this->ij(0,1)*mn.ij(1,2) + this->ij(0,2)*mn.ij(2,2) );
+				out.ij(1,0, this->ij(1,0)*mn.ij(0,0) + this->ij(1,1)*mn.ij(1,0) + this->ij(1,2)*mn.ij(2,0) );
+				out.ij(1,1, this->ij(1,0)*mn.ij(0,1) + this->ij(1,1)*mn.ij(1,1) + this->ij(1,2)*mn.ij(2,1) );
+				out.ij(1,2, this->ij(1,0)*mn.ij(0,2) + this->ij(1,1)*mn.ij(1,2) + this->ij(1,2)*mn.ij(2,2) );
+				out.ij(2,0, this->ij(2,0)*mn.ij(0,0) + this->ij(2,1)*mn.ij(1,0) + this->ij(2,2)*mn.ij(2,0) );
+				out.ij(2,1, this->ij(2,0)*mn.ij(0,1) + this->ij(2,1)*mn.ij(1,1) + this->ij(2,2)*mn.ij(2,1) );
+				out.ij(2,2, this->ij(2,0)*mn.ij(0,2) + this->ij(2,1)*mn.ij(1,2) + this->ij(2,2)*mn.ij(2,2) );
 			} else {
 				for (int ii=0; ii<out.m; ii++) {
 					for (int jj=0; jj<out.n; jj++) {
@@ -154,7 +159,7 @@ namespace matMN
 		if (alloc) {
 			for (int i=0; i<this->m; ++i) {
 				std::printf("|");
-				for (int j=0; j<this->n; j++)
+				for (int j=0; j<this->n; ++j)
 					std::printf(style,this->ij(i,j));
 				std::printf("|\n");
 			}
@@ -234,32 +239,33 @@ namespace matMN
 			// The convergence threshold is based on the size of the elements in
 			// the strict upper triangle of the matrix.
 			double thresh = 0.;
-			for (int ii=0; ii<mat.get_n(); ++ii)
-				for (int jj=0; jj<ii; ++jj)
-					thresh += mat.ij(ii,jj)*mat.ij(ii,jj);
-				thresh = std::sqrt(thresh)/(double)(4.*v.get_n());
+			for (int j=0; j<mat.get_n(); ++j)
+				for (int i=0; i<j; ++i)
+					thresh += mat.ij(i,j)*mat.ij(i,j);
+				thresh = std::sqrt(thresh)/(double)(4.*mat.get_n());
 
 			if (thresh == 0.) break;
 
 			// Jacobi algorithm
-			for (int p=0; p<mat.get_n(); p++) {
-				for (int q=p+1; q<mat.get_n(); q++) {
-					double gapq  = 10.0 * std::fabs(mat.ij(q,p));
+			for (int p=0; p<mat.get_n(); ++p) {
+				for (int q=p+1; q<mat.get_n(); ++q) {
+					double gapq  = 10.0 * std::fabs(mat.ij(p,q));
 					double termp = gapq + std::fabs(d[p]);
 					double termq = gapq + std::fabs(d[q]);
+
 					//Annihilate tiny offdiagonal elements
-					if (4<n_iter && termp == std::fabs(d[p]) && termq == std::fabs(d[q]) )
+					if (n_iter > 4 && termp == std::fabs(d[p]) && termq == std::fabs(d[q]) )
 						mat.ij(p,q,0.);
 					// Otherwise, apply a rotation.
-					else if ( thresh <= std::fabs(mat.ij(q,p)) ) { 
+					else if ( thresh <= std::fabs(mat.ij(p,q)) ) { 
 						double h    = d[q] - d[p];
 						double term = std::fabs(h) + gapq;
 
 						double t;
 						if (term == std::fabs(h))
-							t = mat.ij(q,p)/h;
+							t = mat.ij(p,q)/h;
 						else {
-							double theta = 0.5*h/mat.ij(q,p);
+							double theta = 0.5*h/mat.ij(p,q);
 							t = 1.0/( std::fabs(theta) + std::sqrt(1.0 + theta*theta) );
 							t = (theta < 0.) ? -t : t;
 						}
@@ -268,7 +274,7 @@ namespace matMN
 						double s   = t*c;
 						double tau = s/(1.0 + c);
 
-						h = t * mat.ij(q,p);
+						h = t * mat.ij(p,q);
 
 						//Accumulate corrections to diagonal elements.
 						zw[p] -= h;                 
@@ -276,37 +282,37 @@ namespace matMN
 						d[p]  -= h;
 						d[q]  += h;
 
-						mat.ij(q,p,0.);
+						mat.ij(p,q,0.);
 
 						//  Rotate, using information from the upper triangle of A only.
 						double g;
 						for (int j=0; j<p; ++j) {
-							g = mat.ij(p,j);
-							h = mat.ij(q,j);
-							mat.ij(p,j, g - s*(h + g*tau) );
-							mat.ij(q,j, h + s*(g - h*tau) );
-						}
-
-						for (int j=p+1; j<q; ++j) {
-							g = mat.ij(j,p);
-							h = mat.ij(q,j);
-							mat.ij(j,p, g - s*(h + g*tau) );
-							mat.ij(q,j, h + s*(g - h*tau) );
-						}
-
-						for (int j=q+1; j<mat.get_n(); ++j) {
 							g = mat.ij(j,p);
 							h = mat.ij(j,q);
 							mat.ij(j,p, g - s*(h + g*tau) );
 							mat.ij(j,q, h + s*(g - h*tau) );
 						}
 
+						for (int j=p+1; j<q; ++j) {
+							g = mat.ij(p,j);
+							h = mat.ij(j,q);
+							mat.ij(p,j, g - s*(h + g*tau) );
+							mat.ij(j,q, h + s*(g - h*tau) );
+						}
+
+						for (int j=q+1; j<mat.get_n(); ++j) {
+							g = mat.ij(p,j);
+							h = mat.ij(q,j);
+							mat.ij(p,j, g - s*(h + g*tau) );
+							mat.ij(q,j, h + s*(g - h*tau) );
+						}
+
 						//Accumulate information in the eigenvector matrix.
 						for (int j=0; j<mat.get_n(); ++j) {
-							g = v.ij(p,j);
-							h = v.ij(q,j);
-							v.ij(p,j, g - s*(h + g*tau) );
-							v.ij(q,j, h + s*(g - h*tau) );
+							g = v.ij(j,p);
+							h = v.ij(j,q);
+							v.ij(j,p, g - s*(h + g*tau) );
+							v.ij(j,q, h + s*(g - h*tau) );
 						}
 
 						++n_rot;
@@ -322,8 +328,8 @@ namespace matMN
 		}
 
 		// Restore lower triangle of input matrix.
-		for (int i = 0; i < mat.get_n(); ++i)
-			for (int j = 0; j < i; j++ )
+		for (int j = 0; j < mat.get_n(); ++j)
+			for (int i = 0; i < j; i++ )
 				mat.ij(i,j, mat.ij(j,i) );
 
 		//  Ascending sort the eigenvalues and eigenvectors.
@@ -333,7 +339,7 @@ namespace matMN
 				m = (d[l] < d[m]) ? l : m;
 
 			if (m != k) {
-				T t = d[m];
+				T t      = d[m];
 				d[m]     = d[k];
 				d[k]     = t;
 
