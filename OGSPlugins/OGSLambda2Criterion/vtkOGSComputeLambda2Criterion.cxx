@@ -199,7 +199,6 @@ int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(reques
 				matMN::matrixMN<FLDARRAY> V(3,0.);
 	
 				int n_iter = matMN::eigen(C,e,V,100);
-				//printf("n iter %d\n",n_iter);
 				if (n_iter >= 100)
 					vtkWarningMacro("Maximum number of iterations reach in Eigenvalue computation! Results might be compromised...");
 
