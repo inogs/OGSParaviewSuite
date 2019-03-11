@@ -57,10 +57,10 @@ namespace matMN
 		public:
 			// Constructors and destructor
 			inline matrixMN()                                        { m = 0; n = 0; sz = 0; }
-			inline matrixMN(const int i)                             { size(i);         fill(0.); }
+			inline matrixMN(const int i)                             { size(i);         fill((T)(0.)); }
 			inline matrixMN(const int i, const T val)                { size(i);         fill(val); }
 			inline matrixMN(const int i, const T val[])              { size(i);         fill(val); }
-			inline matrixMN(const int i, const int j)                { size(i,j);       fill(0.); }
+			inline matrixMN(const int i, const int j)                { size(i,j);       fill((T)(0.)); }
 			inline matrixMN(const int i, const int j, const T val)   { size(i,j);       fill(val); }
 			inline matrixMN(const int i, const int j, const T val[]) { size(i,j);       fill(val); }
 			inline matrixMN(const matrixMN<T> &mn)                   { size(mn.m,mn.n); fill(mn.mat); }
