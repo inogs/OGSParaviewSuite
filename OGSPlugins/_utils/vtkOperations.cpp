@@ -16,10 +16,12 @@
 =========================================================================*/
 
 #include "vtkCell.h"
+#include "vtkGenericCell.h"
 #include "vtkPoints.h"
 #include "vtkCellData.h"
 #include "vtkPointData.h"
 #include "vtkFieldData.h"
+#include "vtkSmartPointer.h"
 
 #include <omp.h>
 int omp_get_num_threads();
@@ -42,7 +44,7 @@ namespace VTK
 		v3::V3v xyz( mesh->GetNumberOfPoints() );
 
 		// Loop the mesh and get the point coordinates
-		#pragma omp parallel shared(xyz)
+		#pragma omp parallel shared(mesh,xyz)
 		{
 		for (int ii=omp_get_thread_num(); ii < xyz.len(); ii+=omp_get_num_threads()) {
 			// Obtain point from VTK structure
@@ -68,17 +70,16 @@ namespace VTK
 		v3::V3v xyz( mesh->GetNumberOfCells() );
 
 		// Loop the mesh and get the point coordinates
-		#pragma omp parallel shared(xyz)
+		#pragma omp parallel shared(mesh,xyz) firstprivate(fact)
 		{
+		vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
 		for (int ii=omp_get_thread_num(); ii < xyz.len(); ii+=omp_get_num_threads()) {
 			// Preallocate to zero
 			xyz[ii] = v3::V3(0.,0.,0.);
-			// Loop the points in the cell
-			#pragma omp critical
-			{
 			// Get number of points per cell
-			vtkCell *cell = mesh->GetCell(ii);
+			mesh->GetCell(ii,cell);
 			int ncellp    = cell->GetNumberOfPoints();
+			// Loop the points in the cell
 			for (int pId = 0; pId < ncellp; ++pId) {
 				// Obtain point from VTK structure
 				double pnt[3]; cell->GetPoints()->GetPoint(pId,pnt);
@@ -86,7 +87,6 @@ namespace VTK
 				xyz[ii][0] += pnt[0]/ncellp;
 				xyz[ii][1] += pnt[1]/ncellp;
 				xyz[ii][2] += pnt[2]/ncellp;						
-			}
 			}
 			xyz[ii][2] /= fact;
 		}
