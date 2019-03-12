@@ -30,6 +30,8 @@
 
 #include "vtkObjectFactory.h"
 
+#include <omp.h>
+
 vtkStandardNewMacro(vtkOGSComputeOmegaCriterion);
 
 //----------------------------------------------------------------------------

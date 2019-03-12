@@ -30,7 +30,7 @@
 #include "vtkObjectFactory.h"
 
 #include <string>
-
+#include <omp.h>
 
 vtkStandardNewMacro(vtkOGSDerivatives);
 

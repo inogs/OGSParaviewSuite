@@ -29,6 +29,8 @@
 
 #include "vtkObjectFactory.h"
 
+#include <omp.h>
+
 vtkStandardNewMacro(vtkOGSComputeQCriterion);
 
 //----------------------------------------------------------------------------

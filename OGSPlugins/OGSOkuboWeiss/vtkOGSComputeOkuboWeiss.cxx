@@ -31,6 +31,7 @@
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
+#include <omp.h>
 
 vtkStandardNewMacro(vtkOGSComputeOkuboWeiss);
 
