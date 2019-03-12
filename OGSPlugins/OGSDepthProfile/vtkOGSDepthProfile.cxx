@@ -22,16 +22,35 @@
 #include "vtkPointData.h"
 #include "vtkPointSet.h"
 #include "vtkDataSet.h"
+#include "vtkDataArray.h"
+#include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkStaticCellLocator.h"
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+#include <string>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
+
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
 vtkStandardNewMacro(vtkOGSDepthProfile);
 vtkCxxSetObjectMacro(vtkOGSDepthProfile, CellLocatorPrototype, vtkAbstractCellLocator);
+//----------------------------------------------------------------------------
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDARRAY double
+#define VTKARRAY vtkDoubleArray
+
+#include "../_utils/field.h"
+#include "../_utils/V3.h"
+#include "../_utils/vtkFields.hpp"
 
 //----------------------------------------------------------------------------
 vtkOGSDepthProfile::vtkOGSDepthProfile() {
@@ -80,12 +99,6 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 	if (source) {
 		this->Initialize(input, source, output);
 		this->Interpolate(input, source, output);
-		// Remove some arrays
-		output->GetPointData()->RemoveArray("basins mask");
-		output->GetPointData()->RemoveArray("coast mask");
-		output->GetPointData()->RemoveArray("e1");
-		output->GetPointData()->RemoveArray("e2");
-		output->GetPointData()->RemoveArray("e3");
 		// Make sure the metadata array is passed to the output
 		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
 			source->GetFieldData()->GetAbstractArray("Metadata"));
@@ -162,39 +175,58 @@ int vtkOGSDepthProfile::RequestUpdateExtent(vtkInformation *vtkNotUsed(request),
 
 //----------------------------------------------------------------------------
 void vtkOGSDepthProfile::Initialize(vtkDataSet* input,vtkDataSet* source, vtkDataSet* output) {
-	
-	// Build Point List
-	delete this->PointList;
-	this->PointList = new vtkDataSetAttributes::FieldList(1);
-	this->PointList->InitializeFieldList(source->GetPointData());
+	// In this function, we will allocate space in output for the arrays to be interpolated
+	// We will recover them and create VTKARRAYS
 
-	// Build Cell List
-	delete this->CellList;
-	this->CellList = new vtkDataSetAttributes::FieldList(1);
-	this->CellList->InitializeFieldList(source->GetCellData());
+	int npoints = input->GetNumberOfPoints();
+	vtkDataArray *vtkDArray;
 
-	vtkIdType numPts = input->GetNumberOfPoints();
+	// Copy Cell Arrays
+	for (int varId = 0; varId < source->GetCellData()->GetNumberOfArrays(); ++varId) {
+		// Recover the array and the array name
+		vtkDArray = source->GetCellData()->GetArray(varId);
+		std::string arrName = vtkDArray->GetName();
 
-	// Allocate storage for output PointData
-	// All input PD is passed to output as PD. Those arrays in input CD that are
-	// not present in output PD will be passed as output PD.
-	output->GetPointData()->InterpolateAllocate((*this->PointList), numPts, numPts);
-	// We assume we either have points or cells
-	output->GetPointData()->InterpolateAllocate((*this->CellList), numPts, numPts);
+		// Do not work with the basins, coasts mask, e1, e2 or e3
+		if (std::string("basins mask") == arrName) continue;
+		if (std::string("coast mask")  == arrName) continue;
+		if (std::string("e1")          == arrName) continue;
+		if (std::string("e2")          == arrName) continue;
+		if (std::string("e3")          == arrName) continue;
 
-	// Initialize Output Arrays
-	int nArr = output->GetPointData()->GetNumberOfArrays();
-	for (int arrId = 0; arrId < nArr; arrId++) {
-		output->GetPointData()->GetArray(arrId)->SetNumberOfTuples(numPts);
-		output->GetPointData()->GetArray(arrId)->Fill(0);
+		field::Field<FLDARRAY> array(npoints,vtkDArray->GetNumberOfComponents(),0.);
+		VTKARRAY *vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName.c_str(),array);
+		output->GetPointData()->AddArray(vtkArray);
+	}
+
+	// Copy Point Arrays
+	for (int varId = 0; varId < source->GetPointData()->GetNumberOfArrays(); ++varId) {
+		// Recover the array and the array name
+		vtkDArray = source->GetPointData()->GetArray(varId);
+		std::string arrName = vtkDArray->GetName();
+
+		// Do not work with the basins, coasts mask, e1, e2 or e3
+		if (std::string("basins mask") == arrName) continue;
+		if (std::string("coast mask")  == arrName) continue;
+		if (std::string("e1")          == arrName) continue;
+		if (std::string("e2")          == arrName) continue;
+		if (std::string("e3")          == arrName) continue;
+
+		field::Field<FLDARRAY> array(npoints,vtkDArray->GetNumberOfComponents(),0.);
+		VTKARRAY *vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName.c_str(),array);
+		output->GetPointData()->AddArray(vtkArray);
 	}
 }
 
 void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output) {
 
+	// Update progress
+	this->UpdateProgress(0.);
+
+	#pragma omp parallel shared(input,source,output)
+	{
 	// Preallocate weights
-	double *weights;
-	weights = new double[source->GetMaxCellSize()];
+	double *weights; weights = new double[source->GetMaxCellSize()];
 
 	// Create the cell locator object
 	vtkCellLocator *cellLocator = vtkCellLocator::New();
@@ -204,27 +236,24 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 	int npoints = input->GetNumberOfPoints();
 
 	// Loop the number of points
-	vtkNew<vtkGenericCell> gcell;
-	int abort = 0;
-	for (int ii = 0; ii < npoints && !abort; ii++) {
-		// Update progress
-		this->UpdateProgress((double)(ii)/(double)(npoints));
-		abort = GetAbortExecute();
+	vtkNew<vtkGenericCell> cell, gcell;
+	vtkDataArray *vtkDArray;
 
+	for (int pId = omp_get_thread_num(); pId < npoints; pId+=omp_get_num_threads()) {
 		// Get the xyz coordinate of the point in the input dataset
-		double xyz[3]; input->GetPoint(ii, xyz);
-
-		// Find the cell that contains xyz and get it
-		vtkIdType cellId; int subId;
-		double dist2, pcoords[3], closestPoint[3];
-		cellLocator->FindClosestPoint(xyz, closestPoint, gcell.GetPointer(),cellId,subId,dist2);
+		// then, find the cell id that contains xyz
+		vtkIdType cellId = 0; int subId = 0;
+		double dist2;
+		v3::V3 xyz, pcoords, closestPoint; 
+		
+		input->GetPoint(pId, &xyz[0]);
+		cellLocator->FindClosestPoint(&xyz[0], &closestPoint[0], gcell.GetPointer(), cellId, subId, dist2);
 
 		// Evaluate interpolation weights
-		vtkCell* cell = nullptr;
 		if (cellId >= 0) {
-			cell = source->GetCell(cellId);
+			source->GetCell(cellId,cell);
 			// Compute a tolerance proportional to the cell length.
-			cell->EvaluatePosition(xyz, closestPoint, subId, pcoords, dist2, weights);
+			cell->EvaluatePosition(&xyz[0], &closestPoint[0], subId, &pcoords[0], dist2, weights);
 			// Abort if the distance is too big
 			if (dist2 > (cell->GetLength2() * CELL_TOLERANCE_FACTOR_SQR))
 				continue;
@@ -232,21 +261,29 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 
 		// Check if the cell has been found
 		if (cell) {
-			// Interpolate point array data
-			output->GetPointData()->InterpolatePoint(
-					(*this->PointList), source->GetPointData(), 0, ii, cell->PointIds, weights
-				);
-			// Interpolate cell array data
-			for (int arrId=0; arrId < source->GetCellData()->GetNumberOfArrays(); arrId++) {
-				output->GetPointData()->CopyTuple(
-					source->GetCellData()->GetArray(arrId),
-					output->GetPointData()->GetArray(arrId),
-					cellId,ii);
+			// Interpolate the point
+			for (int varId = 0; varId < output->GetPointData()->GetNumberOfArrays(); ++varId) {
+				// Recover data arrays
+				VTKARRAY *outArray = VTKARRAY::SafeDownCast( output->GetPointData()->GetArray(varId) );
+				VTKARRAY *srcArray = VTKARRAY::SafeDownCast( source->GetCellData()->GetArray(outArray->GetName()) );
+
+				if (srcArray) {
+					// We have a CellData array
+					output->GetPointData()->CopyTuple(srcArray,outArray,cellId,pId);
+				} else {
+					// We have a PointData array
+					srcArray = VTKARRAY::SafeDownCast( source->GetPointData()->GetArray(outArray->GetName()) );
+					outArray->InterpolateTuple(pId,cell->PointIds,srcArray,weights);
+				}
 			}
 		}
 	}
 	delete [] weights;
 	cellLocator->Delete();
+	}
+
+	// Update progress
+	this->UpdateProgress(1.);
 }
 
 //----------------------------------------------------------------------------
