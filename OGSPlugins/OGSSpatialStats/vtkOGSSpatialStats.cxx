@@ -249,8 +249,11 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 			std::vector<std::pair<FLDARRAY,int>> sortedValues(mValuesPerLayer[zId].size());
 
-			// Iterate on the layer, compute  the weights, mean and min/max
-			double sum_weight = 0., meanval = 0., maxval = 0., minval = 1.e20;
+			// Iterate on the layer, compute  the weights, mean, std dev and min/max
+			// This code uses the weighted variant of Welford's online algorithm for
+			// the standard deviation.
+			// West, D. H. D. "Updating mean and variance estimates: An improved method." Communications of the ACM 22.9 (1979): 532-535.
+			double sum_weight = 0., meanval = 0., meanval_old = 0., stdval = 0., maxval = 0., minval = 1.e20;
 
 			for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
 				double v = mValuesPerLayer[zId][ii];
@@ -260,54 +263,54 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 				maxval = (v > maxval) ? v : maxval;
 				// Weights and mean
 				sum_weight += w;
-				meanval    += v*w;
+				meanval_old = meanval;
+				meanval    += w/sum_weight*(v-meanval);
+				// Standard deviation
+				stdval += w*(v-meanval_old)*(v-meanval);
 				// Array to sort
 				sortedValues[ii] = std::make_pair(v,ii);				
-			}
-
-			// Finish computing the mean
-			meanval /= sum_weight;
-
-			// Order the values
-			std::sort(sortedValues.begin(),sortedValues.end());
-
-			// Second iteration on the layer, this time compute
-			// standard deviation and percentile weight
-			double stdval = 0., pweight = 0.;
-			std::vector<FLDARRAY> percw(mValuesPerLayer[zId].size());
-			
-			for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
-				double v = mValuesPerLayer[zId][ii];
-				double w = mWeightPerLayer[zId][ii];
-				// Standard deviation
-				double aux = v - meanval;
-				stdval += aux*aux*(w);
-				// Weights
-				int ind  = sortedValues[ii].second;
-				pweight += mWeightPerLayer[zId][ind];
-				aux = (pweight - .5*mWeightPerLayer[zId][ind])/sum_weight; // Reused variable
-				percw[ii] = aux;
 			}
 
 			// Finish computing standard deviation
 			stdval = sqrt(stdval/sum_weight);
 
-			// Compute the percentiles
+			// Percentile Weight computation
+			// Just execute this part of the code if the user has requested to compute the
+			// percentiles. Otherwise, save a couple of for loops.
 			double perc[]    = {.05,.25,.50,.75,.95};
-			double percval[] = { 0., 0., 0., 0., 0.};
+			double percval[] = { 0., 0., 0., 0., 0.};	
+			
+			if ( this->GetStatArrayStatus("p05") || this->GetStatArrayStatus("p50") ||
+				 this->GetStatArrayStatus("p75") || this->GetStatArrayStatus("p95") ) {
 
-			for (int pp = 0; pp < 5; pp++) {
-				// Find the value that is equal to perc or immediately after.
-				std::vector<FLDARRAY>::iterator lbound = std::lower_bound(percw.begin(),percw.end(),perc[pp]);
-				// This is our position on the ordered value array
-				int s = (lbound - percw.begin()) < 0 ? 0 : lbound - percw.begin(); 
-				// Set the value for the weight
-				if (s == 0)                             { percval[pp] = sortedValues[s].first; continue; } // == sd[0]
-				if (s == mValuesPerLayer[zId].size()-1) { percval[pp] = sortedValues[s].first; continue; } // == sd[n-1]
-				double f1 = (percw[s] - perc[pp])   / (percw[s] - percw[s-1]);
-				double f2 = (perc[pp] - percw[s-1]) / (percw[s] - percw[s-1]);
+				// Order the values
+				std::sort(sortedValues.begin(),sortedValues.end());
 
-				percval[pp] = f1*sortedValues[s-1].first + f2*sortedValues[s].first;
+				// Second iteration on the layer, this time compute the percentile weight
+				double pweight = 0.;
+				std::vector<FLDARRAY> percw(mValuesPerLayer[zId].size());
+				
+				for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
+					int ind  = sortedValues[ii].second;
+					pweight += mWeightPerLayer[zId][ind];
+					double aux = (pweight - .5*mWeightPerLayer[zId][ind])/sum_weight; // Reused variable
+					percw[ii] = aux;
+				}
+
+				// Compute the percentiles
+				for (int pp = 0; pp < 5; pp++) {
+					// Find the value that is equal to perc or immediately after.
+					std::vector<FLDARRAY>::iterator lbound = std::lower_bound(percw.begin(),percw.end(),perc[pp]);
+					// This is our position on the ordered value array
+					int s = (lbound - percw.begin()) < 0 ? 0 : lbound - percw.begin(); 
+					// Set the value for the weight
+					if (s == 0)                             { percval[pp] = sortedValues[s].first; continue; } // == sd[0]
+					if (s == mValuesPerLayer[zId].size()-1) { percval[pp] = sortedValues[s].first; continue; } // == sd[n-1]
+					double f1 = (percw[s] - perc[pp])   / (percw[s] - percw[s-1]);
+					double f2 = (perc[pp] - percw[s-1]) / (percw[s] - percw[s-1]);
+
+					percval[pp] = f1*sortedValues[s-1].first + f2*sortedValues[s].first;
+				}
 			}
 
 			// Third iteration on the layers, this time set
