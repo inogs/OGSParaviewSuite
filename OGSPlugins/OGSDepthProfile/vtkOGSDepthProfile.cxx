@@ -223,8 +223,8 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 	// Update progress
 	this->UpdateProgress(0.);
 
-	#pragma omp parallel shared(input,source,output)
-	{
+	//#pragma omp parallel shared(input,source,output)
+	//{
 	// Preallocate weights
 	double *weights; weights = new double[source->GetMaxCellSize()];
 
@@ -236,10 +236,11 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 	int npoints = input->GetNumberOfPoints();
 
 	// Loop the number of points
-	vtkNew<vtkGenericCell> cell, gcell;
-	vtkDataArray *vtkDArray;
+	vtkNew<vtkGenericCell> gcell;
+	VTKARRAY *outArray, *srcArray;
 
-	for (int pId = omp_get_thread_num(); pId < npoints; pId+=omp_get_num_threads()) {
+	//for (int pId = omp_get_thread_num(); pId < npoints; pId+=omp_get_num_threads()) {
+	for (int pId = 0; pId < npoints; ++pId) {
 		// Get the xyz coordinate of the point in the input dataset
 		// then, find the cell id that contains xyz
 		vtkIdType cellId = 0; int subId = 0;
@@ -251,21 +252,17 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 
 		// Evaluate interpolation weights
 		if (cellId >= 0) {
-			source->GetCell(cellId,cell);
 			// Compute a tolerance proportional to the cell length.
-			cell->EvaluatePosition(&xyz[0], &closestPoint[0], subId, &pcoords[0], dist2, weights);
+			gcell->EvaluatePosition(&xyz[0], &closestPoint[0], subId, &pcoords[0], dist2, weights);
 			// Abort if the distance is too big
-			if (dist2 > (cell->GetLength2() * CELL_TOLERANCE_FACTOR_SQR))
+			if (dist2 > (gcell->GetLength2() * CELL_TOLERANCE_FACTOR_SQR))
 				continue;
-		}
 
-		// Check if the cell has been found
-		if (cell) {
 			// Interpolate the point
 			for (int varId = 0; varId < output->GetPointData()->GetNumberOfArrays(); ++varId) {
 				// Recover data arrays
-				VTKARRAY *outArray = VTKARRAY::SafeDownCast( output->GetPointData()->GetArray(varId) );
-				VTKARRAY *srcArray = VTKARRAY::SafeDownCast( source->GetCellData()->GetArray(outArray->GetName()) );
+				outArray = VTKARRAY::SafeDownCast( output->GetPointData()->GetArray(varId) );
+				srcArray = VTKARRAY::SafeDownCast( source->GetCellData()->GetArray(outArray->GetName()) );
 
 				if (srcArray) {
 					// We have a CellData array
@@ -273,14 +270,14 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 				} else {
 					// We have a PointData array
 					srcArray = VTKARRAY::SafeDownCast( source->GetPointData()->GetArray(outArray->GetName()) );
-					outArray->InterpolateTuple(pId,cell->PointIds,srcArray,weights);
+					outArray->InterpolateTuple(pId,gcell->PointIds,srcArray,weights);
 				}
 			}
 		}
 	}
 	delete [] weights;
 	cellLocator->Delete();
-	}
+	//}
 
 	// Update progress
 	this->UpdateProgress(1.);
