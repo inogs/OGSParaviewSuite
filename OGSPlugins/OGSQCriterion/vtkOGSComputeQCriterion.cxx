@@ -30,6 +30,8 @@
 #include "vtkObjectFactory.h"
 
 #include <omp.h>
+int omp_get_max_threads();
+int omp_get_thread_num();
 
 vtkStandardNewMacro(vtkOGSComputeQCriterion);
 
@@ -142,13 +144,17 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 	}
 
 	// Loop on the 3D mesh and compute the Q criterion also new scalar arrays 
-	// to store the values for the weights and the mean
-	field::Field<FLDARRAY> Q(array.get_n(),1,0.);
-	FLDARRAY Q_mean = 0., sum_weights = 0.;
+	// to store the values for the weights, the mean and thestandard deviation.
+	// This code uses the recursive updating formulae from:
+	// Chan, Tony F., Gene H. Golub, and Randall J. LeVeque. "Updating formulae and a pairwise algorithm for computing sample variances." 
+	// COMPSTAT 1982 5th Symposium held at Toulouse 1982. Physica, Heidelberg, 1982.
+	// To compute the statistics. For a bit of memory and maybe a fairly slower first loop
+	// we are able to avoid doing a second mesh loop.
+	field::Field<FLDARRAY> Q(array.get_n(),1,0.), Q_stats(3,omp_get_max_threads(),0.);
 
 	this->UpdateProgress(0.1);
 
-	#pragma omp parallel for collapse(3) reduction(+:Q_mean,sum_weights)
+	#pragma omp parallel for collapse(3)
 	for (int kk = 0; kk < nz-1; kk++) {
 		for (int jj = 0; jj < ny-1; jj++) {
 			for (int ii = 0; ii < nx-1; ii++) {
@@ -196,45 +202,34 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 						    -deri[1]*deri[3]-deri[2]*deri[6]-deri[5]*deri[7];
 				Q[ind][0]*= -2.; // Scaling fix so that Q == OW
 
-				// Compute the mean
-				Q_mean      += Q[ind][0]*e1[ind][0]*e2[ind][0];
-				sum_weights += e1[ind][0]*e2[ind][0];
-			}
-		}
-	}
-	this->UpdateProgress(0.4);
+				// Compute the statistics
+				int        tId = omp_get_thread_num();  // Which thread are we
+				FLDARRAY     w = e1[ind][0]*e2[ind][0]; // Weight
+				FLDARRAY m_old = Q_stats[1][tId];      // Mean Old
 
-	// Work out the mean
-	Q_mean /= sum_weights;
-
-	// Up to this point the Q criterion in the surface is computed.
-	// Now we can work out the standard deviation.
-	FLDARRAY Q_std = 0.;
-
-	#pragma omp parallel for collapse(3) reduction(+:Q_std)
-	for (int kk = 0; kk < nz-1; kk++) {
-		for(int jj = 0; jj < ny-1; jj++){
-			for (int ii = 0; ii < nx-1; ii++) {
-				// Compute current point
-				int ind = CLLIND(ii,jj,kk,nx,ny);
-
-				// Use the mask to determine whether we are in the sea or not
-				// to improve the averaging
-				if (!mask.isempty()) {
-					bool skip_ind = true;
-					for (int ii = 0; ii < mask.get_m(); ++ii) {
-						if (mask[ind][ii] > 0) {skip_ind = false; break;}
-					}
-					if (skip_ind) continue;
-				}
-
-				Q_std += (Q[ind][0] - Q_mean)*(Q[ind][0] - Q_mean)*e1[ind][0]*e2[ind][0];
+				Q_stats[0][tId] += w;                                                   // sum(weight)
+				Q_stats[1][tId] += w/Q_stats[0][tId]*(Q[ind][0]-Q_stats[1][tId]);       // accumulate mean
+				Q_stats[2][tId] += w*(Q[ind][0] - m_old)*(Q[ind][0] - Q_stats[1][tId]); // accumulate std deviation
 			}
 		}
 	}
 
-	this->UpdateProgress(0.7);
+	// Q_stats is a shared array containing the statistics per each thread. We must now
+	// reduce to obtain the mean and standard deviation
+	FLDARRAY sum_weights = 0., Q_mean = 0., Q_std = 0.;
+	for (int ii = 0; ii < omp_get_max_threads(); ++ii) {
+		FLDARRAY sum_weights_old = sum_weights;
+		// Weights
+		sum_weights += Q_stats[0][ii];
+		// Mean
+		Q_mean = (sum_weights_old*Q_mean + Q_stats[0][ii]*Q_stats[1][ii])/sum_weights;
+		// Standard deviation
+		FLDARRAY delta = Q_stats[1][ii] - Q_mean;
+		Q_std += Q_stats[2][ii] + delta*delta*sum_weights_old*Q_stats[0][ii]/sum_weights;
+	}
 	Q_std = this->coef*sqrt(Q_std/sum_weights);
+
+	this->UpdateProgress(0.4);
 
 	// We now have the standard deviation, let us work out the mask
 	field::Field<FLDMASK> Qm(array.get_n(),1);
@@ -264,7 +259,7 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 				if (Q[ind][0] >  Q_std) Qm[ind][0] = 2; // Strain-dominated flow
 
 				// Undo the scaling to recover the definition of Q
-				Q[ind][0]*= -.5; // Scaling fix so that Q == OW
+				Q[ind][0]*= -.5;
 			}
 		}
 	}
