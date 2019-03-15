@@ -59,7 +59,7 @@ namespace VTK
 
 	/* CREATEFIELDFROMVTK
 		
-		Creates a field froma vtk array.
+		Creates a field from a vtk array.
 	*/
 	template <class ARRAY, class P>
 	field::Field<P> createFieldfromVTK(ARRAY *vtkArray) {
