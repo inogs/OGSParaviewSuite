@@ -261,12 +261,11 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 				// Minimum and maximum
 				minval = (v < minval) ? v : minval;
 				maxval = (v > maxval) ? v : maxval;
-				// Weights and mean
+				// Weights, mean and standard deviation
 				sum_weight += w;
 				meanval_old = meanval;
 				meanval    += w/sum_weight*(v-meanval);
-				// Standard deviation
-				stdval += w*(v-meanval_old)*(v-meanval);
+				stdval     += w*(v-meanval_old)*(v-meanval);
 				// Array to sort
 				sortedValues[ii] = std::make_pair(v,ii);				
 			}
