@@ -98,7 +98,7 @@ vtkOGSReader::~vtkOGSReader() {
 	this->DeleteMesh();
 
 	#ifdef PARAVIEW_USE_MPI
-  		this->SetController(NULL);	
+		this->SetController(NULL);	
 	#endif
 }
 

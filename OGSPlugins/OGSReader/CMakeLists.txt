@@ -32,7 +32,3 @@ ADD_PARAVIEW_PLUGIN(OGSReader "1.0"
   SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp vtkOGSReader.cxx
   REQUIRED_ON_SERVER
   )
-
-#if(PARAVIEW_USE_MPI)
-#  vtk_mpi_link(OGSReader)
-#endif()
