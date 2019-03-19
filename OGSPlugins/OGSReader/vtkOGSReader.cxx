@@ -68,6 +68,8 @@ vtkOGSReader::vtkOGSReader() {
 	this->RMeshMask  = 1;
 	this->DepthScale = 1000.;
 	this->abort      = 0;
+	this->nProcs     = 0;
+	this->procId     = 0;
 
 	this->Mesh = vtkRectilinearGrid::New();
 
@@ -103,14 +105,219 @@ vtkOGSReader::~vtkOGSReader() {
 }
 
 //----------------------------------------------------------------------------
+int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+
+  	vtkInformation* outInfo = outputVector->GetInformationObject(0);
+
+  	/* SET UP THE PARALLEL CONTROLLER
+
+  		The MPI threads come initialized by the ParaView server. Here
+  		we set up the environment for this filter.
+
+  	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
+
+  	/* SET UP THE MASKS
+
+  		 Set up the data array selection containing the masks to be loaded.
+
+  	*/
+  	this->MaskDataArraySelection->AddArray("Sub-basins");         // Mask containing the different sub-basins of the MED
+  	this->MaskDataArraySelection->AddArray("Continental shelf");  // Mask of the continental shelf
+
+  	this->UpdateProgress(0.0);
+
+  	/* READING THE MASTER FILE
+
+		The master file contains the information of the working directory and the
+		paths to the mesh and variable files. It also contains a relationship of all
+		the existing variables.
+
+		See OGSmesh for further details.
+	*/
+	this->ogsdata.SetFile(this->FileName);
+	if (ogsdata.readMainFile() == -1) { 
+		vtkErrorMacro("Cannot read <"<<this->FileName<<">!\nAborting");
+		return 0; this->abort = 1;
+	}
+
+	/* READING THE MESH FILE 
+		
+		The mesh data (dims, Lon2Meters, Lat2Meters and nav_lev) are inside
+		the .ogsmsh file containing the correct resolution of the meshmask for
+		the current simulation.
+
+		This is done in the RequestInformation to ensure it is only read once
+		and stored in memory.
+
+		See OGS.hpp/OGS.cpp for further details.
+
+	*/
+	if (this->ogsdata.readMesh() < 0) {
+		vtkErrorMacro("Problems reading the mesh!\nAborting.");
+		return 0; this->abort = 1;		
+	}
+
+	this->UpdateProgress(0.05);
+
+	/* CREATE RECTILINEAR GRID
+
+		The rectilinear grid is created here from the mesh data that has
+		been previously read. This is handled in the RequestInformation as it only needs to
+		be executed once. Moreover, the rectilinear grid is only created when the mesh 
+		dimensions are (0,0,0).
+
+	*/
+	VTK::createRectilinearGrid(this->ogsdata.nlon(),
+							   this->ogsdata.nlat(),
+							   this->ogsdata.nlev(),
+							   this->ogsdata.lon2meters(),
+							   this->ogsdata.lat2meters(),
+							   this->ogsdata.nav_lev(),
+							   this->DepthScale,
+							   this->Mesh
+							  );
+
+	this->UpdateProgress(0.10);
+
+	/* ADD MASK ARRAYS
+
+		Add the masks to the mesh. This process is handled here since it only needs to change when
+		the request information executes, and not with the time-steppin
+
+		Current masks are:
+			> Sub-basins: mask with all the basins of the MED.
+			> Continental shelf: area from 0 to 200 m of depth.
+
+	*/
+	vtkTypeUInt8Array *vtkmask;
+	VTKARRAY *vtkarray;
+
+	if (this->GetMaskArrayStatus("Sub-basins")) {
+		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("basins mask",this->ogsdata.mask(0));
+		this->Mesh->GetCellData()->AddArray(vtkmask);
+		vtkmask->Delete();
+	} else {
+		this->Mesh->GetCellData()->RemoveArray("basins mask");
+	}
+
+	// Continental shelf mask ("coast mask")
+	if (this->GetMaskArrayStatus("Continental shelf")) {
+		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("coast mask",this->ogsdata.mask(1));
+		this->Mesh->GetCellData()->AddArray(vtkmask);
+		vtkmask->Delete();
+	} else {
+		this->Mesh->GetCellData()->RemoveArray("coast mask");
+	}
+
+	this->UpdateProgress(0.15);
+
+	/* ADD MESHMASK STRETCHING ARRAYS
+
+		Add the stretching arrays e1, e2 and e3 found in the meshmask. These arrays are needed to
+		project the velocity from a face centered coordinates to cell centered coordinates as well
+		as to compute gradients.
+
+	*/
+	this->ogsdata.readMeshmask();
+
+	if (this->RMeshMask) {
+		// e1
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e1",this->ogsdata.e1());
+		this->Mesh->GetCellData()->AddArray(vtkarray);
+		vtkarray->Delete();
+		// e2
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e2",this->ogsdata.e2());
+		this->Mesh->GetCellData()->AddArray(vtkarray);
+		vtkarray->Delete();
+		// e3
+		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e3",this->ogsdata.e3());
+		this->Mesh->GetCellData()->AddArray(vtkarray);
+		vtkarray->Delete();
+	} else {
+		this->Mesh->GetCellData()->RemoveArray("e1");
+		this->Mesh->GetCellData()->RemoveArray("e2");
+		this->Mesh->GetCellData()->RemoveArray("e3");
+	}
+
+	this->UpdateProgress(0.20);
+
+	/* SCAN THE PHYSICAL VARIABLES
+
+		Detect which physical variables (AVE_PHYS) are present in the master
+		file and list them inside the array selection.
+
+	*/
+	for(int ii = 0; ii < this->ogsdata.var_n(0); ii++)
+		this->AvePhysDataArraySelection->AddArray(this->ogsdata.var_name(0,ii));
+
+	/* SCAN THE BIOGEOCHEMICAL VARIABLES
+
+		Detect which biogeochemical variables (AVE_FREQ) are present in the master
+		file and list them inside the array selection.
+
+	*/
+	for(int ii = 0; ii < this->ogsdata.var_n(1); ii++)
+		this->AveFreqDataArraySelection->AddArray(this->ogsdata.var_name(1,ii));
+
+	/* SCAN THE FORCING VARIABLES
+
+		Detect which forcing variables (FORCINGS) are present in the master
+		file and list them inside the array selection.
+
+	*/
+	for(int ii = 0; ii < this->ogsdata.var_n(2); ii++)
+		this->ForcingDataArraySelection->AddArray(this->ogsdata.var_name(2,ii));
+
+	/* SCAN THE GENERAL VARIABLES
+
+		Detect which general variables (GENERAL) are present in the master
+		file and list them inside the array selection.
+
+	*/
+	for(int ii = 0; ii < this->ogsdata.var_n(3); ii++)
+		this->GeneralDataArraySelection->AddArray(this->ogsdata.var_name(3,ii));
+
+
+	/* SET UP THE TIMESTEP
+
+		Time stepping information is contained inside the master file. Here we set
+		the time step and the time step range for paraview.
+
+	*/
+	// Set the time step value
+	double *timeSteps = NULL; timeSteps = new double[this->ogsdata.ntsteps()];
+	for (int ii = 0; ii < this->ogsdata.ntsteps(); ii++)
+		timeSteps[ii] = ii;
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), 
+    	&timeSteps[0], this->ogsdata.ntsteps());
+    
+	// Set up the time range
+    double timeRange[2] = {timeSteps[0], timeSteps[this->ogsdata.ntsteps()-1]};
+	outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+
+	delete [] timeSteps;
+
+	this->UpdateProgress(0.25);
+	return 1;
+}
+
+//----------------------------------------------------------------------------
 int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
+	// Stop all threads except from the master to execute
 	#ifdef PARAVIEW_USE_MPI
-	  	if (this->Controller) {
-	  		if (this->Controller->GetNumberOfProcesses() > 1)
-	  			vtkWarningMacro("OGSReader is not parallel-aware: all pvserver processes will read the entire file!");
-	  	}
+	if (this->procId > 0) return 1;
 	#endif
 
 	if (this->abort) return 0;
@@ -345,197 +552,6 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	this->UpdateProgress(1.0);
 
 	// Function exit status successful
-	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-
-  	vtkInformation* outInfo = outputVector->GetInformationObject(0);
-
-  	/* SET UP THE MASKS
-
-  		 Set up the data array selection containing the masks to be loaded.
-
-  	*/
-  	this->MaskDataArraySelection->AddArray("Sub-basins");         // Mask containing the different sub-basins of the MED
-  	this->MaskDataArraySelection->AddArray("Continental shelf");  // Mask of the continental shelf
-
-  	this->UpdateProgress(0.0);
-
-  	/* READING THE MASTER FILE
-
-		The master file contains the information of the working directory and the
-		paths to the mesh and variable files. It also contains a relationship of all
-		the existing variables.
-
-		See OGSmesh for further details.
-	*/
-	this->ogsdata.SetFile(this->FileName);
-	if (ogsdata.readMainFile() == -1) { 
-		vtkErrorMacro("Cannot read <"<<this->FileName<<">!\nAborting");
-		return 0; this->abort = 1;
-	}
-
-	/* READING THE MESH FILE 
-		
-		The mesh data (dims, Lon2Meters, Lat2Meters and nav_lev) are inside
-		the .ogsmsh file containing the correct resolution of the meshmask for
-		the current simulation.
-
-		This is done in the RequestInformation to ensure it is only read once
-		and stored in memory.
-
-		See OGS.hpp/OGS.cpp for further details.
-
-	*/
-	if (this->ogsdata.readMesh() < 0) {
-		vtkErrorMacro("Problems reading the mesh!\nAborting.");
-		return 0; this->abort = 1;		
-	}
-
-	this->UpdateProgress(0.05);
-
-	/* CREATE RECTILINEAR GRID
-
-		The rectilinear grid is created here from the mesh data that has
-		been previously read. This is handled in the RequestInformation as it only needs to
-		be executed once. Moreover, the rectilinear grid is only created when the mesh 
-		dimensions are (0,0,0).
-
-	*/
-	VTK::createRectilinearGrid(this->ogsdata.nlon(),
-							   this->ogsdata.nlat(),
-							   this->ogsdata.nlev(),
-							   this->ogsdata.lon2meters(),
-							   this->ogsdata.lat2meters(),
-							   this->ogsdata.nav_lev(),
-							   this->DepthScale,
-							   this->Mesh
-							  );
-
-	this->UpdateProgress(0.10);
-
-	/* ADD MASK ARRAYS
-
-		Add the masks to the mesh. This process is handled here since it only needs to change when
-		the request information executes, and not with the time-steppin
-
-		Current masks are:
-			> Sub-basins: mask with all the basins of the MED.
-			> Continental shelf: area from 0 to 200 m of depth.
-
-	*/
-	vtkTypeUInt8Array *vtkmask;
-	VTKARRAY *vtkarray;
-
-	if (this->GetMaskArrayStatus("Sub-basins")) {
-		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("basins mask",this->ogsdata.mask(0));
-		this->Mesh->GetCellData()->AddArray(vtkmask);
-		vtkmask->Delete();
-	} else {
-		this->Mesh->GetCellData()->RemoveArray("basins mask");
-	}
-
-	// Continental shelf mask ("coast mask")
-	if (this->GetMaskArrayStatus("Continental shelf")) {
-		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("coast mask",this->ogsdata.mask(1));
-		this->Mesh->GetCellData()->AddArray(vtkmask);
-		vtkmask->Delete();
-	} else {
-		this->Mesh->GetCellData()->RemoveArray("coast mask");
-	}
-
-	this->UpdateProgress(0.15);
-
-	/* ADD MESHMASK STRETCHING ARRAYS
-
-		Add the stretching arrays e1, e2 and e3 found in the meshmask. These arrays are needed to
-		project the velocity from a face centered coordinates to cell centered coordinates as well
-		as to compute gradients.
-
-	*/
-	this->ogsdata.readMeshmask();
-
-	if (this->RMeshMask) {
-		// e1
-		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e1",this->ogsdata.e1());
-		this->Mesh->GetCellData()->AddArray(vtkarray);
-		vtkarray->Delete();
-		// e2
-		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e2",this->ogsdata.e2());
-		this->Mesh->GetCellData()->AddArray(vtkarray);
-		vtkarray->Delete();
-		// e3
-		vtkarray = VTK::createVTKfromField<VTKARRAY,double>("e3",this->ogsdata.e3());
-		this->Mesh->GetCellData()->AddArray(vtkarray);
-		vtkarray->Delete();
-	} else {
-		this->Mesh->GetCellData()->RemoveArray("e1");
-		this->Mesh->GetCellData()->RemoveArray("e2");
-		this->Mesh->GetCellData()->RemoveArray("e3");
-	}
-
-	this->UpdateProgress(0.20);
-
-	/* SCAN THE PHYSICAL VARIABLES
-
-		Detect which physical variables (AVE_PHYS) are present in the master
-		file and list them inside the array selection.
-
-	*/
-	for(int ii = 0; ii < this->ogsdata.var_n(0); ii++)
-		this->AvePhysDataArraySelection->AddArray(this->ogsdata.var_name(0,ii));
-
-	/* SCAN THE BIOGEOCHEMICAL VARIABLES
-
-		Detect which biogeochemical variables (AVE_FREQ) are present in the master
-		file and list them inside the array selection.
-
-	*/
-	for(int ii = 0; ii < this->ogsdata.var_n(1); ii++)
-		this->AveFreqDataArraySelection->AddArray(this->ogsdata.var_name(1,ii));
-
-	/* SCAN THE FORCING VARIABLES
-
-		Detect which forcing variables (FORCINGS) are present in the master
-		file and list them inside the array selection.
-
-	*/
-	for(int ii = 0; ii < this->ogsdata.var_n(2); ii++)
-		this->ForcingDataArraySelection->AddArray(this->ogsdata.var_name(2,ii));
-
-	/* SCAN THE GENERAL VARIABLES
-
-		Detect which general variables (GENERAL) are present in the master
-		file and list them inside the array selection.
-
-	*/
-	for(int ii = 0; ii < this->ogsdata.var_n(3); ii++)
-		this->GeneralDataArraySelection->AddArray(this->ogsdata.var_name(3,ii));
-
-
-	/* SET UP THE TIMESTEP
-
-		Time stepping information is contained inside the master file. Here we set
-		the time step and the time step range for paraview.
-
-	*/
-	// Set the time step value
-	double *timeSteps = NULL; timeSteps = new double[this->ogsdata.ntsteps()];
-	for (int ii = 0; ii < this->ogsdata.ntsteps(); ii++)
-		timeSteps[ii] = ii;
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), 
-    	&timeSteps[0], this->ogsdata.ntsteps());
-    
-	// Set up the time range
-    double timeRange[2] = {timeSteps[0], timeSteps[this->ogsdata.ntsteps()-1]};
-	outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-
-	delete [] timeSteps;
-
-	this->UpdateProgress(0.25);
 	return 1;
 }
 

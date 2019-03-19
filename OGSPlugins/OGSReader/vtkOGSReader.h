@@ -151,11 +151,10 @@ private:
 	vtkOGSReader(const vtkOGSReader&) = delete;
 	void operator=(const vtkOGSReader&) = delete;
 
+	int abort, procId, nProcs;
 	vtkRectilinearGrid* Mesh;
 
 	ogs::OGS ogsdata;
-
-	int abort;
 
 	void DeleteMesh();
 };
