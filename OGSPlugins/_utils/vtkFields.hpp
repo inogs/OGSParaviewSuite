@@ -23,6 +23,7 @@
 #include "vtkDoubleArray.h"
 #include "vtkStringArray.h"
 
+#include <string>
 #include <omp.h>
 int omp_get_num_threads();
 int omp_get_thread_num();
@@ -44,6 +45,23 @@ namespace VTK
 		// Create VTK array
 		ARRAY *vtkArray = ARRAY::New();
 		vtkArray->SetName(name);
+		vtkArray->SetNumberOfComponents(f.get_m());
+		vtkArray->SetNumberOfTuples(f.get_n());
+
+		if (f.data() != NULL)
+			// Fill the vtkArray with the values of the array
+			std::memcpy(vtkArray->GetPointer(0),f.data(),f.get_sz()*sizeof(P));
+		else
+			// Preallocate vtkArray to zero
+			vtkArray->Fill(0.);
+
+		return vtkArray;
+	}
+	template <class ARRAY, class P>
+	ARRAY *createVTKfromField(std::string name, field::Field<P> &f) {
+		// Create VTK array
+		ARRAY *vtkArray = ARRAY::New();
+		vtkArray->SetName(name.c_str());
 		vtkArray->SetNumberOfComponents(f.get_m());
 		vtkArray->SetNumberOfTuples(f.get_n());
 
