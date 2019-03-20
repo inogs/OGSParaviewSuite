@@ -129,6 +129,8 @@ namespace ogs
 			inline int         var_n(int i);
 			inline const char *var_name(int i, int j);
 			inline const char *var_vname(int i, int j);
+			inline const char *var_vname(const char *name);
+			inline const char *var_vname(std::string name);
 			inline std::string var_path(int i, int j, int t);
 			inline std::string var_path(const char *vname, int t);
 			inline std::string var_path(std::string vname, int t);
@@ -187,20 +189,26 @@ namespace ogs
 	inline field::Field<double>  &OGS::e1()        { return this->_e1; }
 	inline field::Field<double>  &OGS::e2()        { return this->_e2; }
 	inline field::Field<double>  &OGS::e3()        { return this->_e3; }
-	inline int     OGS::var_n(int i)               { return this->_vars[i].get_nvars(); }
+	inline int         OGS::ntsteps()              { return this->_ntsteps; }
+	inline const char *OGS::datetime(int i)        { return this->_datetime[i].c_str(); }
+	inline int         OGS::var_n(int i)           { return this->_vars[i].get_nvars(); }
 	inline const char *OGS::var_name(int i, int j) { return this->_vars[i].get_name(j); }
 	inline const char *OGS::var_vname(int i, int j){ return this->_vars[i].get_vname(j); }
-	inline int     OGS::ntsteps()                  { return this->_ntsteps; }
-	inline const char *OGS::datetime(int i)        { return this->_datetime[i].c_str(); }
+	inline const char *OGS::var_vname(const char *name) { 
+		for (int i = 0; i < 4; ++i) {
+			int j = this->_vars[i].find_name(name);
+			if (j >= 0) return this->_vars[i].get_vname(j);
+		}
+		return NULL; 
+	}
+	inline const char *OGS::var_vname(std::string name) { return this->var_vname(name.c_str()); }
 	inline std::string OGS::var_path(int i, int j, int t) { 
 		return(this->_wrkdir + std::string("/") + this->var_WritePath(i,j,this->datetime(t),"*"));
 	}
-	inline std::string OGS::var_path(const char *vname, int t) { 
-		return(this->_wrkdir + std::string("/") + this->var_WritePath(vname,this->datetime(t),"*"));
+	inline std::string OGS::var_path(const char *name, int t) { 
+		return(this->_wrkdir + std::string("/") + this->var_WritePath(name,this->datetime(t),"*"));
 	}
-		inline std::string OGS::var_path(std::string vname, int t) { 
-		return(this->_wrkdir + std::string("/") + this->var_WritePath(vname.c_str(),this->datetime(t),"*"));
-	}
+	inline std::string OGS::var_path(std::string name, int t) { return this->var_path(name.c_str(),t); }
 	inline void    OGS::Setlon2m(const int n, double *arr) {
 		this->_nlon = n;
 		this->_lon2m.resize(n); 
