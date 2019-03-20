@@ -26,6 +26,10 @@ public:
   vtkSetStringMacro(TimeFormat);
   vtkGetStringMacro(TimeFormat);
 
+  vtkGetMacro(useMetadata, int);
+  vtkSetMacro(useMetadata, int);
+  vtkBooleanMacro(useMetadata, int);
+
 protected:
   vtkOGSAnnotateDateTime();
   ~vtkOGSAnnotateDateTime();
@@ -37,6 +41,7 @@ private:
   void operator=(const vtkOGSAnnotateDateTime&) = delete;
 
   char *TimeFormat;
+  int useMetadata;
 };
 
 #endif

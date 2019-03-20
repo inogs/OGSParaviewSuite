@@ -32,6 +32,8 @@
 
 #include <string>
 #include <cstdint>
+#include <ctime>
+#include <algorithm>
 
 #include <vtksys/SystemTools.hxx>
 
@@ -293,11 +295,17 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		Time stepping information is contained inside the master file. Here we set
 		the time step and the time step range for paraview.
 
+		We store a time_t variable representing the current unix timestamp.
+
 	*/
 	// Set the time step value
 	double *timeSteps = NULL; timeSteps = new double[this->ogsdata.ntsteps()];
-	for (int ii = 0; ii < this->ogsdata.ntsteps(); ii++)
-		timeSteps[ii] = ii;
+	for (int ii = 0; ii < this->ogsdata.ntsteps(); ii++) {
+		struct tm tm = {0};
+		// Convert to struct tm
+		strptime(this->ogsdata.datetime(ii),"%Y%m%d-%H:%M:%S",&tm);
+		timeSteps[ii] = difftime(mktime(&tm),0);
+	}
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), 
     	&timeSteps[0], this->ogsdata.ntsteps());
     
@@ -337,16 +345,17 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 	*/
 	double requestedTimeValue = 0.;
+	double *timeSteps;
 	if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP())) {
 	    // Get the requested time step. We only support requests of a single time
 	    // step in this reader right now
 	    requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-
 	    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTimeValue);
+	    // Recover the timestep list
+	    timeSteps = outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 	}
-	int ii_tstep = 0;
-	if (this->ogsdata.ntsteps() > 1)
-		ii_tstep = (int)(requestedTimeValue);
+
+	int ii_tstep = std::distance(timeSteps,std::find(timeSteps,timeSteps+this->ogsdata.ntsteps(),requestedTimeValue));
 
 	this->UpdateProgress(0.25);
 	
