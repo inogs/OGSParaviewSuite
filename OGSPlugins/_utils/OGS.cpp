@@ -286,6 +286,20 @@ std::string OGS::var_WritePath(int i, int j, const char *str, const char *token)
 	return aux.replace(pos,1,str);
 }
 
+std::string OGS::var_WritePath(const char *vname, const char *str, const char *token) {
+	int i, j;
+
+	for (i = 0; i < 4; ++i) {
+		j = this->_vars[i].find_name(vname);
+		if (j >= 0) break;
+	}
+
+	std::string aux = std::string(this->_vars[i].get_path(j));
+	int pos = aux.find(token);
+
+	return aux.replace(pos,1,str);
+}
+
 void OGS::print() {
 	std::printf("OGS CLASS\n");
 	std::printf("---------\n");

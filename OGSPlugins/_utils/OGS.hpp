@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <algorithm>
 #include <string>
 
 #include "field.h"
@@ -65,6 +66,13 @@ namespace ogs
 			inline const char *get_vname(int i)      { return this->_vname[i].c_str(); }
 			inline const char *get_path(int i)       { return this->_path[i].c_str();  }
 
+			inline int find_name(const char *str) {
+				for (int ii = 0; ii < this->_name.size(); ++ii)
+					if (this->_name[ii] == std::string(str)) 
+						return  ii;
+				return -1;
+			}
+
 		private:
 			int _n = 0;
 			std::vector<std::string> _name, _vname, _path;
@@ -83,6 +91,7 @@ namespace ogs
 			// Constructors
 			inline OGS();
 			inline OGS(const char *fname);
+			inline OGS(std::string fname);
 
 			// Destructor
 			inline ~OGS();
@@ -121,6 +130,8 @@ namespace ogs
 			inline const char *var_name(int i, int j);
 			inline const char *var_vname(int i, int j);
 			inline std::string var_path(int i, int j, int t);
+			inline std::string var_path(const char *vname, int t);
+			inline std::string var_path(std::string vname, int t);
 
 			inline int         ntsteps();
 			inline const char *datetime(int i);
@@ -146,11 +157,13 @@ namespace ogs
 			field::Field<double> _e1, _e2, _e3;
 
 			std::string var_WritePath(int i, int j, const char *str, const char *token);
+			std::string var_WritePath(const char *vname, const char *str, const char *token);
 	};
 
 	// Constructions and destructors
 	inline         OGS::OGS()                           {}
 	inline         OGS::OGS(const char *fname)          { this->SetFile(fname); }
+	inline         OGS::OGS(std::string fname)          { this->SetFile(fname.c_str()); }
 	inline         OGS::~OGS()                          {}
 
 	// Set/Get methods
@@ -181,6 +194,12 @@ namespace ogs
 	inline const char *OGS::datetime(int i)        { return this->_datetime[i].c_str(); }
 	inline std::string OGS::var_path(int i, int j, int t) { 
 		return(this->_wrkdir + std::string("/") + this->var_WritePath(i,j,this->datetime(t),"*"));
+	}
+	inline std::string OGS::var_path(const char *vname, int t) { 
+		return(this->_wrkdir + std::string("/") + this->var_WritePath(vname,this->datetime(t),"*"));
+	}
+		inline std::string OGS::var_path(std::string vname, int t) { 
+		return(this->_wrkdir + std::string("/") + this->var_WritePath(vname.c_str(),this->datetime(t),"*"));
 	}
 	inline void    OGS::Setlon2m(const int n, double *arr) {
 		this->_nlon = n;
