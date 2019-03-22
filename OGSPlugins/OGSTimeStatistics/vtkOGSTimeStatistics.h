@@ -17,7 +17,13 @@
 
 #include "vtkDataSetAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 class vtkStringArray;
+
+#ifdef PARAVIEW_USE_MPI
+class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSTimeStatistics : public vtkDataSetAlgorithm
 {
@@ -30,27 +36,30 @@ public:
 
   vtkStringArray *GetTimeValues();
 
+  #ifdef PARAVIEW_USE_MPI
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  virtual void SetController(vtkMultiProcessController*);
+  #endif
+
 protected:
   vtkOGSTimeStatistics();
   ~vtkOGSTimeStatistics();
 
-  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-  int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
-  void InitializeStatistics(vtkDataSet *input, vtkDataSet *output);
-  void AccumulateStatistics(vtkDataSet *input, vtkDataSet *output);
-  void FinalizeStatistics(vtkDataSet *input, vtkDataSet *output);
-
   vtkStringArray *TimeValues;
+
+  #ifdef PARAVIEW_USE_MPI
+  vtkMultiProcessController* Controller;
+  #endif
 
 private:
   vtkOGSTimeStatistics(const vtkOGSTimeStatistics&) = delete;
   void operator=(const vtkOGSTimeStatistics&) = delete;
 
-  int current_time, start_time, end_time;
-  int abort;
-
+  int procId, nProcs;
+  int ii_start, ii_end;
 };
 
 #endif

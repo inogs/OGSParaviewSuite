@@ -20,8 +20,15 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
+
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSTimeStatistics "1.0"
   SERVER_MANAGER_XML OGSTimeStatistics.xml
-  SERVER_MANAGER_SOURCES vtkOGSTimeStatistics.cxx
+  SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp vtkOGSTimeStatistics.cxx
   REQUIRED_ON_SERVER
   )
