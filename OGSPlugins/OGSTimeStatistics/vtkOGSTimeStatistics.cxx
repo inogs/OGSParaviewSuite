@@ -324,7 +324,8 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 
 	/* REDUCTION PHASE
 
-		If run in parallel, the reduction of the fields is done here.
+		If run in parallel with more than one rank, 
+		the reduction of the fields is done here.
 
 	*/
 	#ifdef PARAVIEW_USE_MPI
@@ -358,6 +359,13 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 	}
 
 	#endif
+
+	/* FINALIZE
+
+		Finalization, the master process stores the arrays
+		inside the output.
+
+	*/
 
 	// Add arrays to output
 	if (this->procId == 0) {
