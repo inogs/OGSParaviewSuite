@@ -356,6 +356,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	}
 
 	int ii_tstep = std::distance(timeSteps,std::find(timeSteps,timeSteps+this->ogsdata.ntsteps(),requestedTimeValue));
+	if (ii_tstep >= this->ogsdata.ntsteps()) ii_tstep = 0;
 
 	this->UpdateProgress(0.25);
 	
@@ -404,7 +405,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	for (std::string var : vars2Load) {
 
 		if (var == std::string("Velocity")) {
-			array.clear(); array.set_dim(this->ogsdata.ncells(),3);
+			array.set_dim(this->ogsdata.ncells(),3);
 
 			if ( NetCDF::readNetCDF2F3(this->ogsdata.var_path(var,ii_tstep).c_str(),
 										"vozocrtx","vomecrty","vovecrtz",array ) != NETCDF_OK )	{					    								  
