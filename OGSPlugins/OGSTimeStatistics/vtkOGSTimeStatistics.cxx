@@ -90,7 +90,7 @@ vtkOGSTimeStatistics::~vtkOGSTimeStatistics() {
 int vtkOGSTimeStatistics::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
-  	// Grab the input
+	// Grab the input
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
 	// Handle the parallel controller
@@ -155,7 +155,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 
 		Recover (and broadcast) the file name of the OGS master file.
 
-		Initialize arrays for accumulating
+		Initialize arrays for accumulating.
 
 	*/
 	// Define a vector containing the names of the arrays to compute and to exclude
@@ -185,7 +185,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 		// Broadcast master file name
 		int str_len = FileName.length();
 		this->Controller->Broadcast(&str_len,1,0);
-		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str()); //strncpy(buff,FileName.c_str(),str_len);
+		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str());
 		this->Controller->Broadcast(buff,str_len,0);
 		FileName = std::string(buff);
 		
@@ -245,10 +245,11 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 		defined. Accumulate in the arrays from ii_start to ii_end.
 
 	*/
-	// Parallel partition
-	#ifdef PARAVIEW_USE_MPI
 	
 	int time_interval[2] = {this->ii_start,this->ii_end};
+
+	// Parallel partition
+	#ifdef PARAVIEW_USE_MPI
 
 	if (this->nProcs > 1) {
 		// Main thread (0) contains values for ii_start and ii_end
@@ -282,6 +283,13 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 	}
 
 	#endif
+
+	// Ensure the validity of the time range
+	if (time_interval[0] > time_interval[1]) {
+		if (this->procId == 0) 
+			vtkErrorMacro("End time is greater than initial time! Please select a valid time range.");
+		return 0;
+	}
 
 	// Loop the instants, prepare arrays and variables for the computation of the mean
 	field::Field<FLDARRAY> arrayTemp;
@@ -374,6 +382,10 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 			output->GetCellData()->AddArray(vtkArray);
 			vtkArray->Delete();
 		}
+		// Make sure the metadata array is passed to the output
+		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+			input->GetFieldData()->GetAbstractArray("Metadata"));
+		output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
 	this->UpdateProgress(1.);
