@@ -239,6 +239,8 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 		return 0;
 	}
 
+	this->UpdateProgress(0.1);
+
 	/* ACCUMULATE PHASE
 
 		Open and read the NetCDF files containing the variables that we previously
@@ -328,6 +330,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 			}
 			arrayTemp.clear();
 		}
+		this->UpdateProgress(0.1+0.7/(this->ii_end-this->ii_start)*(ii-this->ii_start));
 	}
 
 	/* REDUCTION PHASE
@@ -367,6 +370,8 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 	}
 
 	#endif
+
+	this->UpdateProgress(0.9);
 
 	/* FINALIZE
 
