@@ -16,19 +16,24 @@
 #ifndef vtkOGSHovmoeller_h
 #define vtkOGSHovmoeller_h
 
-#include "vtkDataSetAlgorithm.h"
 #include "vtkTableAlgorithm.h"
+//#include "vtkDataSetAlgorithm.h"
 #include "vtkDataSetAttributes.h"
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-class vtkTable;
+//class vtkTable;
 class vtkStringArray;
 class vtkAbstractCellLocator;
 
-class VTK_EXPORT vtkOGSHovmoeller : public vtkDataSetAlgorithm 
+#ifdef PARAVIEW_USE_MPI
+class vtkMultiProcessController;
+#endif
+
+class VTK_EXPORT vtkOGSHovmoeller : public vtkTableAlgorithm 
 {
 public:
   static vtkOGSHovmoeller* New();
-  vtkTypeMacro(vtkOGSHovmoeller, vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkOGSHovmoeller, vtkTableAlgorithm);
 
   // Description:
   //Specify the data set that will be probed at the input points.
@@ -48,31 +53,34 @@ public:
   void SetStartTime(const char *tstep);
   void SetEndTime(const char *tstep);
 
-  vtkStringArray *GetTimeValues();
-
   // Description:
   // Get the name of the variable field
   vtkSetStringMacro(field);
+  vtkGetStringMacro(field);
 
-  // Description:
-  // Lets the user select a multiplier factor for the depth
-  vtkGetMacro(DepthScale, double);
-  vtkSetMacro(DepthScale, double);
+  vtkStringArray *GetTimeValues();
+
+  #ifdef PARAVIEW_USE_MPI
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  virtual void SetController(vtkMultiProcessController*);
+  #endif
 
 protected:
   vtkOGSHovmoeller();
   ~vtkOGSHovmoeller() override;
 
-  int FillOutputPortInformation(int , vtkInformation*);
-  int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int FillInputPortInformation(int , vtkInformation *) override;
   int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
-  int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
-//  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
+  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
   void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTable *output);
 
   vtkStringArray *TimeValues;
+
+  #ifdef PARAVIEW_USE_MPI
+  vtkMultiProcessController* Controller;
+  #endif
 
 private:
   vtkOGSHovmoeller(const vtkOGSHovmoeller&) = delete;
@@ -83,11 +91,10 @@ private:
   vtkDataSetAttributes::FieldList* CellList;
   vtkDataSetAttributes::FieldList* PointList;
 
-  int current_time, start_time, end_time;
-  int abort;
+  int procId, nProcs;
+  int ii_start, ii_end;
 
   char *field;
-  double DepthScale;
 };
 
 #endif

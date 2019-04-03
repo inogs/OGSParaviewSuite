@@ -21,7 +21,7 @@
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet" />
-          <DataType value="vtkCompositeDataSet" />
+          <DataType value="vtkRectilinearGrid" />
         </DataTypeDomain>
         <InputArrayDomain name="input_array" />
         <Documentation>This property specifies the dataset from which to obtain
@@ -89,21 +89,8 @@
         </Documentation>
      </StringVectorProperty>
 
-     <!-- Selection of depth scale factor -->
-     <DoubleVectorProperty name="DepthScale"
-                           label="Scale factor for depth:"
-                           command="SetDepthScale"
-                           number_of_elements="1"
-                           default_values="1000."
-                           panel_visibility="advanced">
-        <Documentation>
-          Selection of the scale factor for depth.
-        </Documentation>
-     </DoubleVectorProperty>
-
      <PropertyGroup label="Variable to plot">
                  <Property name="field"/>
-                 <Property name="DepthScale"/>
      </PropertyGroup>
 
      <!-- Interpolating line info -->
@@ -126,7 +113,7 @@
       
       <Hints>
         <ShowInMenu category="OGS" />
-        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />       
+        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />
         <WarnOnCreate title="WARNING Potentially slow operation!">
           **OGS Hovmoeller** filter needs to process most of the timesteps
           available in your dataset and can potentially take a long time to complete.
