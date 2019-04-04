@@ -16,19 +16,23 @@
 #ifndef vtkOGSSpaghetti_h
 #define vtkOGSSpaghetti_h
 
-#include "vtkDataSetAlgorithm.h"
 #include "vtkTableAlgorithm.h"
 #include "vtkDataSetAttributes.h"
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-class vtkTable;
+//class vtkTable;
 class vtkStringArray;
 class vtkAbstractCellLocator;
 
-class VTK_EXPORT vtkOGSSpaghetti : public vtkDataSetAlgorithm 
+#ifdef PARAVIEW_USE_MPI
+class vtkMultiProcessController;
+#endif
+
+class VTK_EXPORT vtkOGSSpaghetti : public vtkTableAlgorithm 
 {
 public:
   static vtkOGSSpaghetti* New();
-  vtkTypeMacro(vtkOGSSpaghetti, vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkOGSSpaghetti, vtkTableAlgorithm);
 
   // Description:
   //Specify the data set that will be probed at the input points.
@@ -48,31 +52,34 @@ public:
   void SetStartTime(const char *tstep);
   void SetEndTime(const char *tstep);
 
-  vtkStringArray *GetTimeValues();
-
   // Description:
   // Get the name of the variable field
   vtkSetStringMacro(field);
+  vtkGetStringMacro(field);
 
-  // Description:
-  // Lets the user select a multiplier factor for the depth
-  vtkGetMacro(DepthScale, double);
-  vtkSetMacro(DepthScale, double);
+  vtkStringArray *GetTimeValues();
+
+  #ifdef PARAVIEW_USE_MPI
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  virtual void SetController(vtkMultiProcessController*);
+  #endif
 
 protected:
   vtkOGSSpaghetti();
   ~vtkOGSSpaghetti() override;
 
-  int FillOutputPortInformation(int , vtkInformation*);
-  int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int FillInputPortInformation(int , vtkInformation *) override;
   int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
-  int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
-//  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
+  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
   void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTable *output);
 
   vtkStringArray *TimeValues;
+
+  #ifdef PARAVIEW_USE_MPI
+  vtkMultiProcessController* Controller;
+  #endif
 
 private:
   vtkOGSSpaghetti(const vtkOGSSpaghetti&) = delete;
@@ -83,11 +90,10 @@ private:
   vtkDataSetAttributes::FieldList* CellList;
   vtkDataSetAttributes::FieldList* PointList;
 
-  int current_time, start_time, end_time;
-  int abort;
+  int procId, nProcs;
+  int ii_start, ii_end;
 
   char *field;
-  double DepthScale;
 };
 
 #endif
