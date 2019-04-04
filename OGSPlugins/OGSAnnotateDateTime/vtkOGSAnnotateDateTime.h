@@ -49,6 +49,10 @@ protected:
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSAnnotateDateTime(const vtkOGSAnnotateDateTime&) = delete;
   void operator=(const vtkOGSAnnotateDateTime&) = delete;
