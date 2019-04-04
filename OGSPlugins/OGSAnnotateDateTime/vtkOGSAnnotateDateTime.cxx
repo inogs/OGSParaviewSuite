@@ -62,19 +62,8 @@ int vtkOGSAnnotateDateTime::RequestData(vtkInformation* request,
 	// Recover the Date string
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 
-	/* SET UP THE PARALLEL CONTROLLER
-
-		The MPI threads come initialized by the ParaView server. Here
-		we set up the environment for this filter.
-
-	*/
-	#ifdef PARAVIEW_USE_MPI
-	if (this->Controller->GetNumberOfProcesses() > 1) {
-		this->nProcs = this->Controller->GetNumberOfProcesses();
-		this->procId = this->Controller->GetLocalProcessId();
-	}
-
 	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
 	if (this->procId > 0) return 1;
 	#endif
 
