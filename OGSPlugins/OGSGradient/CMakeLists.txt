@@ -20,6 +20,10 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
+
 set ( CMAKE_C_FLAGS   "-fopenmp")
 set ( CMAKE_CXX_FLAGS "-fopenmp")
 

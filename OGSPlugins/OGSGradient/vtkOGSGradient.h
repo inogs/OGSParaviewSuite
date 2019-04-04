@@ -47,6 +47,10 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkDataSetAlgorithm.h"
 
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
+
 class vtkOGSGradient : public vtkDataSetAlgorithm
 {
 public:
@@ -253,6 +257,15 @@ public:
   vtkGetMacro(ReplacementValueOption, int);
   //@}
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSGradient();
   ~vtkOGSGradient() override;
@@ -391,10 +404,15 @@ protected:
    */
   int ReplacementValueOption;
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSGradient(const vtkOGSGradient &) = delete;
   void operator=(const vtkOGSGradient &) = delete;
 
+  int procId, nProcs;
   double epsi;
 };
 

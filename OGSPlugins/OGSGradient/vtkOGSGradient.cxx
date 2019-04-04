@@ -51,6 +51,11 @@ int omp_get_thread_num();
 
 //-----------------------------------------------------------------------------
 
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSGradient, Controller, vtkMultiProcessController);
+#endif
+
 vtkStandardNewMacro(vtkOGSGradient);
 
 namespace
@@ -226,10 +231,17 @@ vtkOGSGradient::vtkOGSGradient()
   this->ComputeLambda2Criterion = 0;
   this->ComputeOmegaCriterion = 0;
   this->epsi = 1.e-3;
+  this->nProcs = 0;
+  this->procId = 0;
   this->ContributingCellOption = vtkOGSGradient::All;
   this->ReplacementValueOption = vtkOGSGradient::Zero;
   this->SetInputScalars(vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,
                         vtkDataSetAttributes::SCALARS);
+
+  #ifdef PARAVIEW_USE_MPI
+    this->Controller = NULL;
+    this->SetController(vtkMultiProcessController::GetGlobalController());
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -241,6 +253,10 @@ vtkOGSGradient::~vtkOGSGradient()
   this->SetQCriterionArrayName(nullptr);
   this->SetLambda2CriterionArrayName(nullptr);
   this->SetOmegaCriterionArrayName(nullptr);
+
+  #ifdef PARAVIEW_USE_MPI
+    this->SetController(NULL);  
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -340,6 +356,11 @@ int vtkOGSGradient::RequestData(vtkInformation *vtkNotUsed(request),
 
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+  // Stop all threads except from the master to execute
+  #ifdef PARAVIEW_USE_MPI
+  if (this->procId > 0) return 1;
+  #endif
 
   vtkDataSet *input
     = vtkDataSet::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
