@@ -12,6 +12,8 @@
 
 =========================================================================*/
 
+#include "vtkOGSDerivatives.h"
+
 #include "vtkCell.h"
 #include "vtkPoints.h"
 #include "vtkCellData.h"
@@ -25,12 +27,16 @@
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOGSDerivatives.h"
-
 #include "vtkObjectFactory.h"
 
 #include <string>
 #include <omp.h>
+
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSDerivatives, Controller, vtkMultiProcessController);
+#endif
 
 vtkStandardNewMacro(vtkOGSDerivatives);
 
@@ -48,22 +54,31 @@ vtkStandardNewMacro(vtkOGSDerivatives);
 #include "../_utils/vtkOperations.hpp"
 
 //----------------------------------------------------------------------------
-vtkOGSDerivatives::vtkOGSDerivatives()
-{
+vtkOGSDerivatives::vtkOGSDerivatives() {
 	this->field     = NULL;
 	this->grad_type = 0;
+	this->nProcs    = 0;
+	this->procId    = 0;
 
 	this->ComputeDivergence = false;
 	this->ComputeCurl       = false;
 	this->ComputeQ          = false;
 
 	this->isReqInfo = false;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSDerivatives::~vtkOGSDerivatives()
-{
+vtkOGSDerivatives::~vtkOGSDerivatives() {
 	this->Setfield(NULL);
+	
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -72,6 +87,11 @@ int vtkOGSDerivatives::RequestData( vtkInformation *vtkNotUsed(request),
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(
@@ -226,6 +246,22 @@ int vtkOGSDerivatives::RequestData( vtkInformation *vtkNotUsed(request),
 //----------------------------------------------------------------------------
 int vtkOGSDerivatives::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
 
   	this->isReqInfo = true;
 }
