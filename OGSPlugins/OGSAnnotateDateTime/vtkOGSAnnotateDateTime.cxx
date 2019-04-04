@@ -28,17 +28,31 @@
 
 vtkStandardNewMacro(vtkOGSAnnotateDateTime);
 
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSAnnotateDateTime, Controller, vtkMultiProcessController);
+#endif
+
 //----------------------------------------------------------------------------
-vtkOGSAnnotateDateTime::vtkOGSAnnotateDateTime()
-{
+vtkOGSAnnotateDateTime::vtkOGSAnnotateDateTime() {
 	this->TimeFormat  = NULL;
 	this->useMetadata = 0;
+	this->nProcs      = 0;
+	this->procId      = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSAnnotateDateTime::~vtkOGSAnnotateDateTime()
-{
+vtkOGSAnnotateDateTime::~vtkOGSAnnotateDateTime() {
 	this->SetTimeFormat(0);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -47,6 +61,22 @@ int vtkOGSAnnotateDateTime::RequestData(vtkInformation* request,
 
 	// Recover the Date string
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Decide how to write the time, whether to use metadata or to use a conversion
 	// from the timestep to a string format

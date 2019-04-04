@@ -17,6 +17,10 @@
 
 #include "vtkTimeToTextConvertor.h"
 
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
+
 class VTK_EXPORT vtkOGSAnnotateDateTime : public vtkTimeToTextConvertor
 {
 public:
@@ -30,6 +34,15 @@ public:
   vtkSetMacro(useMetadata, int);
   vtkBooleanMacro(useMetadata, int);
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSAnnotateDateTime();
   ~vtkOGSAnnotateDateTime();
@@ -41,7 +54,7 @@ private:
   void operator=(const vtkOGSAnnotateDateTime&) = delete;
 
   char *TimeFormat;
-  int useMetadata;
+  int useMetadata, procId, nProcs;
 };
 
 #endif
