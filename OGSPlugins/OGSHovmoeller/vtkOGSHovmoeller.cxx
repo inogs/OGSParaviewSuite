@@ -505,5 +505,3 @@ vtkDataObject *vtkOGSHovmoeller::GetSource() {
 
 	return this->GetExecutive()->GetInputData(1, 0);
 }
-
-//----------------------------------------------------------------------------

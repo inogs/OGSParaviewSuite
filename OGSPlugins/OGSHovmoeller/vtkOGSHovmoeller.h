@@ -17,7 +17,6 @@
 #define vtkOGSHovmoeller_h
 
 #include "vtkTableAlgorithm.h"
-//#include "vtkDataSetAlgorithm.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
