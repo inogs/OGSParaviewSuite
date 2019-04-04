@@ -40,6 +40,12 @@ int omp_get_thread_num();
 
 vtkStandardNewMacro(vtkOGSDepthProfile);
 vtkCxxSetObjectMacro(vtkOGSDepthProfile, CellLocatorPrototype, vtkAbstractCellLocator);
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSDepthProfile, Controller, vtkMultiProcessController);
+#endif
+
 //----------------------------------------------------------------------------
 
 /*
@@ -59,8 +65,15 @@ vtkOGSDepthProfile::vtkOGSDepthProfile() {
 
 	this->PointList  = nullptr;
 	this->CellList   = nullptr;
+	this->nProcs     = 0;
+	this->procId     = 0;
 
 	this->CellLocatorPrototype = nullptr;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -69,11 +82,20 @@ vtkOGSDepthProfile::~vtkOGSDepthProfile() {
 	delete this->CellList;
 
 	this->vtkOGSDepthProfile::SetCellLocatorPrototype(nullptr);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
 int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request), 
 	vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
@@ -111,6 +133,22 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 //----------------------------------------------------------------------------
 int vtkOGSDepthProfile::RequestInformation( vtkInformation *vtkNotUsed(request),
 	vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
+
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
 
 	// get the info objects
 	vtkInformation *inInfo     = inputVector[0]->GetInformationObject(0);
