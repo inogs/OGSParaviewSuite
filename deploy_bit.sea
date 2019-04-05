@@ -78,7 +78,7 @@ This scripts will be accessible with pvpython
 	os.system(\
 		"""
 cp -r bit.sea/commons bit.sea/basins %s
-		""" % os.path.join(args.pvpath,"lib","python2.7","site-packages")
+		""" % os.path.join(args.pvpath,"lib","python*","site-packages")
 		)
 
 	# Goodbye message
