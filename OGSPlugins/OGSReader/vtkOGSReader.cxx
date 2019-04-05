@@ -112,12 +112,12 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
   	vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
-  	/* SET UP THE PARALLEL CONTROLLER
+	/* SET UP THE PARALLEL CONTROLLER
 
-  		The MPI threads come initialized by the ParaView server. Here
-  		we set up the environment for this filter.
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
 
-  	*/
+	*/
 	#ifdef PARAVIEW_USE_MPI
 	if (this->Controller->GetNumberOfProcesses() > 1) {
 		this->nProcs = this->Controller->GetNumberOfProcesses();
