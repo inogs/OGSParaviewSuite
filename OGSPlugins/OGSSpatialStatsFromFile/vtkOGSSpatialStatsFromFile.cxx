@@ -42,6 +42,8 @@ vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 */
 #define FLDARRAY double
 #define VTKARRAY vtkDoubleArray
+#define FLDMASK uint8_t
+#define VTKMASK vtkTypeUInt8Array
 
 #define STTIND(bId,cId,kk,sId,ns,nz,nc) ( (ns)*(nz)*(nc)*(bId) + (ns)*(nz)*(cId) + (ns)*(kk) + (sId) )
 
@@ -114,19 +116,19 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Recover the basins and coasts mask
 	// and add them to the output
-	vtkTypeUInt8Array *vtkMask;
+	VTKMASK *vtkMask;
 	int nbasins = 21, ncoasts = 3;
-	field::Field<uint8_t> bmask, cmask;
+	field::Field<FLDMASK> bmask, cmask;
 	// Basins mask
-	vtkMask = vtkTypeUInt8Array::SafeDownCast( 
+	vtkMask = VTKMASK::SafeDownCast( 
 		input->GetCellData()->GetArray(this->bmask_field) );
 	output->GetCellData()->AddArray(vtkMask);
-	bmask = VTK::createFieldfromVTK<vtkTypeUInt8Array,uint8_t>(vtkMask);
+	bmask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
 	// Coast mask
-	vtkMask = vtkTypeUInt8Array::SafeDownCast( 
+	vtkMask = VTKMASK::SafeDownCast( 
 		input->GetCellData()->GetArray(this->cmask_field) );
 	output->GetCellData()->AddArray(vtkMask);
-	cmask = VTK::createFieldfromVTK<vtkTypeUInt8Array,uint8_t>(vtkMask);
+	cmask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
 
 	// Copy e1, e2 and e3
 	VTKARRAY *vtkArray;
