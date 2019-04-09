@@ -24,6 +24,7 @@
 #include "vtkDataSet.h"
 #include "vtkTable.h"
 #include "vtkDataArray.h"
+#include "vtkTypeUInt8Array.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkInformation.h"
@@ -34,10 +35,10 @@
 
 #include "vtkObjectFactory.h"
 
+#include <cstdint>
 #include <cmath>
 #include <ctime>
 #include <chrono>
-#include <vector>
 #include <string>
 #include <omp.h>
 int omp_get_num_threads();
@@ -60,13 +61,16 @@ vtkCxxSetObjectMacro(vtkOGSHovmoeller, Controller, vtkMultiProcessController);
 */
 #define FLDARRAY double
 #define VTKARRAY vtkDoubleArray
+#define FLDMASK uint8_t
+#define VTKMASK vtkTypeUInt8Array
 
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
 #include "../_utils/vtkFields.hpp"
 #include "../_utils/OGS.hpp"
 #include "../_utils/netcdfio.hpp"
+#include "../_utils/fieldOperations.hpp"
+#include "../_utils/vtkOperations.hpp"
 
+//----------------------------------------------------------------------------
 void strsplit(std::string str, std::string splitBy, std::vector<std::string> &tokens) {
     // Store the original string in the array, so we can loop the rest of the algorithm.
     tokens.push_back(str);
@@ -153,18 +157,26 @@ vtkOGSHovmoeller::vtkOGSHovmoeller() {
 	this->SetNumberOfInputPorts(2);
 	this->SetNumberOfOutputPorts(1);
 
-	this->PointList  = nullptr;
-	this->CellList   = nullptr;
-	this->field      = nullptr;
+	this->PointList   = nullptr;
+	this->CellList    = nullptr;
+	this->field       = nullptr;
+	this->field       = NULL;
+	this->FolderName  = NULL;
+	this->bmask_field = NULL;
+	this->cmask_field = NULL;
+	this->ii_start    = 0;
+	this->ii_end      = 0;
+	this->average     = 0;
+	this->sId         = 0;
+	this->per_coast   = 0;
+	this->procId      = 0;
+	this->nProcs      = 0;
+	this->isReqInfo   = false;
+	this->epsi        = 1.e-3;
+	this->dfact       = 1000.;
 
 	this->CellLocatorPrototype = nullptr;
 	this->TimeValues = vtkStringArray::New();
-
-	this->ii_start = 0;
-	this->ii_end   = 0;
-
-	this->procId = 0;
-	this->nProcs = 0;
 
 	#ifdef PARAVIEW_USE_MPI
 	this->Controller = nullptr;
@@ -177,8 +189,10 @@ vtkOGSHovmoeller::~vtkOGSHovmoeller() {
 	delete this->PointList;
 	delete this->CellList;
 
-	this->field = NULL;
 	this->Setfield(NULL);
+	this->SetFolderName(NULL);
+	this->Setbmask_field(NULL);
+	this->Setcmask_field(NULL);
 
 	this->vtkOGSHovmoeller::SetCellLocatorPrototype(nullptr);
 	this->TimeValues->Delete();
@@ -236,6 +250,7 @@ int vtkOGSHovmoeller::RequestInformation(vtkInformation* vtkNotUsed(request),
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
 
+	this->isReqInfo = true;
 	return 1;
 }
 
@@ -248,6 +263,8 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	vtkInformation *srcInfo = inputVector[1]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
+	int ntsteps = srcInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+
 	// input contains the interpolating line information (number of points, etc)
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -258,6 +275,15 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	// Decide which algorithm to use
+	if (this->average)
+		return this->HovmoellerAverage(ntsteps,input,source,output);
+	else
+		return this->Hovmoeller3DDataset(input,source,output);
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
 	/* INITIALIZATION PHASE
 
 		Master computes the cell list corresponding to the Hovmoller interpolating line.
@@ -458,6 +484,132 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 			vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
 			output->AddColumn(vtkColumn); vtkColumn->Delete();
 		}
+	}
+
+	this->UpdateProgress(1.);
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
+
+	// There is no need to parallelize this algorithm
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
+
+	// Recover Metadata array (depth factor)
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		source->GetFieldData()->GetAbstractArray("Metadata"));
+
+	// This section is only executed once, to populate the xyz and
+	// cId2zId arrays. Successive iterations should not execute.
+	// This section is included here since RequestInformation gives
+	// troubles when restarting.
+	if (this->xyz.isempty() || this->isReqInfo) {
+
+		this->isReqInfo = false;
+		
+		this->dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
+		
+		if (vtkmetadata == NULL) 
+			vtkWarningMacro("Field array Metadata not found! Depth factor set to 1000. automatically.");
+
+		// Recover cell or point coordinates
+		this->xyz = VTK::getVTKCellCenters(source,this->dfact);
+
+		// Up to this point we have the cell centers or point coordinates correctly
+		// stored under "xyz". Now we shall find the number of unique z coordinates or,
+		// depending on the user input, the coordinates of each depth level, as well as
+		// its mesh connectivity (cId2zId).
+		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi);
+	}
+
+	this->UpdateProgress(.1);
+
+	// Recover the basins and coasts mask
+	// and add them to the output
+	int nbasins = 21, ncoasts = 3, nStat = 9;
+	VTKMASK *vtkMask;
+	field::Field<FLDMASK> bmask, cmask;
+	// Basins mask
+	vtkMask = VTKMASK::SafeDownCast( source->GetCellData()->GetArray(this->bmask_field) );
+	bmask   = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
+	// Coast mask
+	vtkMask = VTKMASK::SafeDownCast( source->GetCellData()->GetArray(this->cmask_field) );
+	cmask   = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
+
+	// Load variable stat profile
+	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*zcoords.size()*nStat,1,0.);
+	std::string filename = std::string(this->FolderName) + std::string("/") + std::string(this->field) + std::string(".nc");
+
+	if ( NetCDF::readNetCDF2F(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
+		// If file cannot be read or variable does not exist
+		vtkErrorMacro("File <"<<filename.c_str()<<"> or variable <"<<this->field<<"> cannot be read!");
+		return 0;
+	}
+
+	// Retrieve cellIds from interpolating line
+	std::vector<int> cellList;
+	ComputeCellIds(cellList,input,source);
+
+	// Recover datevec
+	std::string datevec = vtkmetadata->GetValue(1);
+	std::vector<std::string> vdatevec;
+	strsplit(datevec,";",vdatevec);
+
+	this->UpdateProgress(.2);
+
+	// For each time instant, loop on the cell list and load the data into
+	// the table
+	#pragma omp parallel
+	{
+	field::Field<FLDARRAY> column(cellList.size(),1);
+	VTKARRAY *vtkColumn;
+
+	if (omp_get_thread_num() == 0) {
+		// Write the coordinates as the first column of the table
+		for (int pId = 0; pId < cellList.size(); ++pId) {
+			v3::V3 xyz; input->GetPoint(pId,&xyz[0]);
+			column[pId][0] = xyz[2]/this->dfact;
+		}
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("depth",column);
+		output->AddColumn(vtkColumn); vtkColumn->Delete();
+
+		this->UpdateProgress(.25);
+	}
+
+	for (int ii = ii_start+omp_get_thread_num(); ii < ii_end; ii += omp_get_num_threads()) {
+		for (int pId = 0; pId < cellList.size(); ++pId) {
+			// Retrieve the cell
+			int cellId = cellList[pId];
+			// Depth index
+			int zId = this->cId2zId[cellId][0];
+			// In which basin are we? (we need to loop the basins and find which is true)
+			int  bId = -1; 
+			bool isbasin = false;
+			for (bId = 0; bId < bmask.get_m(); ++bId) {
+				if (bmask[cellId][bId]) { isbasin = true; break; }
+			}
+			// In which coast are we?
+			int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
+			// Compute position on statArray
+			int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + 
+			          ncoasts*zcoords.size()*nStat*bId        + 
+			          zcoords.size()*nStat*cId                + 
+			          nStat*zId                               +
+			          this->sId;
+
+			// Retrieve value from array
+			column[pId][0] = (bId > 0 || cId > 0) ? statArray[pos][0] : 0;
+		}
+
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
+		output->AddColumn(vtkColumn); vtkColumn->Delete();
+
+		if (omp_get_thread_num() == 0)
+			this->UpdateProgress(0.25+0.75/(this->ii_end-this->ii_start)*(ii - this->ii_start));
+	}
 	}
 
 	this->UpdateProgress(1.);

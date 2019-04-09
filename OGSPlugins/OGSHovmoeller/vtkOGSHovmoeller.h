@@ -20,7 +20,11 @@
 #include "vtkDataSetAttributes.h"
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-//class vtkTable;
+#include <vector>
+
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
 class vtkStringArray;
 class vtkAbstractCellLocator;
 
@@ -56,6 +60,38 @@ public:
   // Get the name of the variable field
   vtkSetStringMacro(field);
   vtkGetStringMacro(field);
+  
+  // Description:
+  // Averaging algorithm
+  vtkGetMacro(average, int);
+  vtkSetMacro(average, int);
+  vtkBooleanMacro(average, int);
+
+  // Description:
+  // Folder to STATE_PROFILES
+  vtkSetStringMacro(FolderName);
+  vtkGetStringMacro(FolderName);
+
+  // Description:
+  // Statistic to plot
+  vtkGetMacro(sId, int);
+  vtkSetMacro(sId, int);
+
+  // Description:
+  // Statistics per coast
+  vtkGetMacro(per_coast, int);
+  vtkSetMacro(per_coast, int);
+  vtkBooleanMacro(per_coast, int);
+
+  // Description:
+  // Get the epsilon
+  vtkSetMacro(epsi, double);
+  vtkGetMacro(epsi, double);
+
+  // Description:
+  // Get the name of the mask fields to operate
+  vtkSetStringMacro(bmask_field);
+  vtkSetStringMacro(cmask_field);
 
   vtkStringArray *GetTimeValues();
 
@@ -91,9 +127,20 @@ private:
   vtkDataSetAttributes::FieldList* PointList;
 
   int procId, nProcs;
-  int ii_start, ii_end;
+  int ii_start, ii_end, sId, average, per_coast;
 
-  char *field;
+  char *field, *FolderName, *bmask_field, *cmask_field;
+  bool isReqInfo;
+
+  double epsi, dfact;
+
+  std::vector<double> zcoords;
+  v3::V3v xyz;               // Stores cell/point coordinates
+  field::Field<int> cId2zId; // Cell to depth level connectivity
+
+  int Hovmoeller3DDataset(vtkDataSet *, vtkDataSet *, vtkTable *);
+  int HovmoellerAverage(int, vtkDataSet *, vtkDataSet *, vtkTable *);
+
 };
 
 #endif

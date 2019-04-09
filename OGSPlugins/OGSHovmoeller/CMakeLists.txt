@@ -29,6 +29,6 @@ set ( CMAKE_CXX_FLAGS "-fopenmp")
 
 ADD_PARAVIEW_PLUGIN(OGSHovmoeller "1.0"
   SERVER_MANAGER_XML OGSHovmoeller.xml
-  SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp  vtkOGSHovmoeller.cxx
+  SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSHovmoeller.cxx
   REQUIRED_ON_SERVER
   )
