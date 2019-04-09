@@ -12,6 +12,8 @@
 
 =========================================================================*/
 
+#include "vtkOGSSelectCoast.h"
+
 #include "vtkTypeUInt8Array.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
@@ -22,8 +24,6 @@
 #include "vtkInformationVector.h"
 #include "vtkUnstructuredGrid.h"
 
-#include "vtkOGSSelectCoast.h"
-
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
@@ -31,6 +31,11 @@
 int omp_get_num_threads();
 int omp_get_thread_num();
 
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
 
 vtkStandardNewMacro(vtkOGSSelectCoast);
 
@@ -59,13 +64,23 @@ vtkOGSSelectCoast::vtkOGSSelectCoast() {
 	addCoasts(this->CoastsDataArraySelection);
 
 	this->mask_field = NULL;
+	this->nProcs     = 0;
+	this->procId     = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSSelectCoast::~vtkOGSSelectCoast()
-{
+vtkOGSSelectCoast::~vtkOGSSelectCoast() {
 	this->CoastsDataArraySelection->Delete();
 	this->Setmask_field(NULL);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -74,14 +89,16 @@ void vtkOGSSelectCoast::PrintSelf(ostream& os, vtkIndent indent) {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSSelectCoast::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
+int vtkOGSSelectCoast::RequestData(vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
