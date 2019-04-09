@@ -316,6 +316,7 @@ void vtkOGSDepthProfile::Interpolate(vtkDataSet *input, vtkDataSet *source, vtkD
 				}
 			}
 		}
+		this->UpdateProgress(0. + 1./(npoints-0.)*pId);
 	}
 	delete [] weights;
 	cellLocator->Delete();
