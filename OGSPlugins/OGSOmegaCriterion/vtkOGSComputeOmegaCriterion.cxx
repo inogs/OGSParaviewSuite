@@ -32,6 +32,12 @@
 
 #include <omp.h>
 
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
+
 vtkStandardNewMacro(vtkOGSComputeOmegaCriterion);
 
 //----------------------------------------------------------------------------
@@ -51,17 +57,50 @@ vtkStandardNewMacro(vtkOGSComputeOmegaCriterion);
 #include "../_utils/vtkOperations.hpp"
 
 //----------------------------------------------------------------------------
-vtkOGSComputeOmegaCriterion::vtkOGSComputeOmegaCriterion()
-{
+vtkOGSComputeOmegaCriterion::vtkOGSComputeOmegaCriterion() {
 	this->field     = NULL;
 	this->grad_type = 0;
 	this->epsi      = 1.e-3;
+	this->nProcs    = 0;
+	this->procId    = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSComputeOmegaCriterion::~vtkOGSComputeOmegaCriterion()
-{
+vtkOGSComputeOmegaCriterion::~vtkOGSComputeOmegaCriterion() {
 	this->Setfield(NULL);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSComputeOmegaCriterion::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
+
+  	this->isReqInfo = true;
+  	return 1;
 }
 
 //----------------------------------------------------------------------------
@@ -70,6 +109,11 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(
@@ -243,11 +287,4 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 	// Copy the input grid
 	this->UpdateProgress(1.);
 	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSComputeOmegaCriterion::RequestInformation(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-
-  	this->isReqInfo = true;
 }
