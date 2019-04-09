@@ -20,6 +20,8 @@
 #include "vtkFloatArray.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 #include "../_utils/V3.h"
 #include "../_utils/field.h"
 

@@ -47,6 +47,8 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkDataSetAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 #ifdef PARAVIEW_USE_MPI
   class vtkMultiProcessController;
 #endif

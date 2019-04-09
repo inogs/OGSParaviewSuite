@@ -16,6 +16,7 @@
 #define vtkOGSAnnotateDateTime_h
 
 #include "vtkTimeToTextConvertor.h"
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
 #ifdef PARAVIEW_USE_MPI
   class vtkMultiProcessController;

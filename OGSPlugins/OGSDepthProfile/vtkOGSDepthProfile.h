@@ -19,6 +19,8 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkDataSetAttributes.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 class vtkAbstractCellLocator;
 
 #ifdef PARAVIEW_USE_MPI
