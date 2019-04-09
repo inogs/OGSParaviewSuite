@@ -12,6 +12,8 @@
 
 =========================================================================*/
 
+#include "vtkOGSSelectOkuboWeiss.h"
+
 #include "vtkTypeUInt8Array.h"
 #include "vtkFloatArray.h"
 #include "vtkCellData.h"
@@ -21,12 +23,16 @@
 #include "vtkInformationVector.h"
 #include "vtkUnstructuredGrid.h"
 
-#include "vtkOGSSelectOkuboWeiss.h"
-
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
 #include <omp.h>
+
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
 
 vtkStandardNewMacro(vtkOGSSelectOkuboWeiss);
 
@@ -51,13 +57,23 @@ vtkOGSSelectOkuboWeiss::vtkOGSSelectOkuboWeiss() {
 	this->OWDataArraySelection->AddArray("Background field");
 
 	this->mask_field = NULL;
+	this->nProcs     = 0;
+	this->procId     = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSSelectOkuboWeiss::~vtkOGSSelectOkuboWeiss()
-{
+vtkOGSSelectOkuboWeiss::~vtkOGSSelectOkuboWeiss() {
 	this->OWDataArraySelection->Delete();
 	this->Setmask_field(NULL);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -66,14 +82,16 @@ void vtkOGSSelectOkuboWeiss::PrintSelf(ostream& os, vtkIndent indent) {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSSelectOkuboWeiss::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
+int vtkOGSSelectOkuboWeiss::RequestData( vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkDataSet *input = vtkDataSet::SafeDownCast(

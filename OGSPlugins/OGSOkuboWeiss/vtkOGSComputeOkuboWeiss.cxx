@@ -12,6 +12,8 @@
 
 =========================================================================*/
 
+#include "vtkOGSComputeOkuboWeiss.h"
+
 #include "vtkCell.h"
 #include "vtkPoints.h"
 #include "vtkCellData.h"
@@ -26,14 +28,18 @@
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOGSComputeOkuboWeiss.h"
-
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
 #include <omp.h>
 int omp_get_max_threads();
 int omp_get_thread_num();
+
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
 
 vtkStandardNewMacro(vtkOGSComputeOkuboWeiss);
 
@@ -53,25 +59,55 @@ vtkStandardNewMacro(vtkOGSComputeOkuboWeiss);
 #include "../_utils/vtkOperations.hpp"
 
 //----------------------------------------------------------------------------
-vtkOGSComputeOkuboWeiss::vtkOGSComputeOkuboWeiss()
-{
+vtkOGSComputeOkuboWeiss::vtkOGSComputeOkuboWeiss() {
 	this->field     = NULL;
 	this->coef      = 0.2;
 	this->grad_type = 0;
+	this->nProcs    = 0;
+	this->procId    = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSComputeOkuboWeiss::~vtkOGSComputeOkuboWeiss()
-{
+vtkOGSComputeOkuboWeiss::~vtkOGSComputeOkuboWeiss() {
 	this->Setfield(NULL);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeOkuboWeiss::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
+int vtkOGSComputeOkuboWeiss::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+	
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
+  	
+  	this->isReqInfo = true;
+  	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSComputeOkuboWeiss::RequestData(vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -81,6 +117,11 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
 	vtkRectilinearGrid *output = vtkRectilinearGrid::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	output->ShallowCopy(input);
 
@@ -285,11 +326,4 @@ int vtkOGSComputeOkuboWeiss::RequestData(
 	// Copy the input grid
 	this->UpdateProgress(1.);
 	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSComputeOkuboWeiss::RequestInformation(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-
-  	this->isReqInfo = true;
 }
