@@ -98,6 +98,7 @@ int vtkOGSComputeLambda2Criterion::RequestInformation(vtkInformation* vtkNotUsed
 	#endif
 
 	this->isReqInfo = true;
+	return 1;
 }
 
 //----------------------------------------------------------------------------
