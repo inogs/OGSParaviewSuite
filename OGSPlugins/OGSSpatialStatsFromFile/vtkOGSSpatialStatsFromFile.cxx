@@ -34,6 +34,12 @@
 #include <string>
 #include <omp.h>
 
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
+
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
 //----------------------------------------------------------------------------
@@ -69,6 +75,11 @@ vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
 	this->cmask_field = NULL;
 
 	this->per_coast = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -78,6 +89,10 @@ vtkOGSSpatialStatsFromFile::~vtkOGSSpatialStatsFromFile() {
 	this->SetFolderName(NULL);
 	this->Setbmask_field(NULL);
 	this->Setcmask_field(NULL);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -86,6 +101,11 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(

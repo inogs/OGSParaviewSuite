@@ -19,8 +19,14 @@
 #include "vtkDataSet.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAlgorithm.h"
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSSpatialStatsFromFile : public vtkRectilinearGridAlgorithm
 {
@@ -53,6 +59,15 @@ public:
   void DisableAllStatArrays();
   void EnableAllStatArrays();
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSSpatialStatsFromFile();
   ~vtkOGSSpatialStatsFromFile() override;
@@ -61,6 +76,10 @@ protected:
 
   vtkDataArraySelection* StatDataArraySelection;
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSSpatialStatsFromFile(const vtkOGSSpatialStatsFromFile&) = delete;
   void operator=(const vtkOGSSpatialStatsFromFile&) = delete;
@@ -68,7 +87,7 @@ private:
   char *FolderName;
   char *bmask_field, *cmask_field;
 
-  int per_coast;
+  int per_coast, procId, nProcs;
 };
 
 #endif
