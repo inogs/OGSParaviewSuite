@@ -21,10 +21,16 @@
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 #include <vector>
 
 #include "../_utils/V3.h"
 #include "../_utils/field.h"
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSSpatialStats : public vtkDataSetAlgorithm
 {
@@ -58,6 +64,15 @@ public:
   void DisableAllStatArrays();
   void EnableAllStatArrays();
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSSpatialStats();
   ~vtkOGSSpatialStats() override;
@@ -67,6 +82,10 @@ protected:
 
   vtkDataArraySelection* StatDataArraySelection;
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSSpatialStats(const vtkOGSSpatialStats&) = delete;
   void operator=(const vtkOGSSpatialStats&) = delete;
@@ -75,7 +94,7 @@ private:
   double epsi;
 
   // Depth levels and number of depth levels
-  int ndepths;
+  int ndepths, procId, nProcs;
   std::vector<double> zcoords;
 
   // Auxiliar variables worth conserving
