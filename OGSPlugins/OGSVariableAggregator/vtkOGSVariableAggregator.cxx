@@ -33,6 +33,12 @@ int omp_get_thread_num();
 #include "pugixml.hpp"
 namespace xml = pugi;
 
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
+
 vtkStandardNewMacro(vtkOGSVariableAggregator);
 
 //----------------------------------------------------------------------------
@@ -72,6 +78,11 @@ vtkOGSVariableAggregator::vtkOGSVariableAggregator() {
 	this->deleteVars = 0;
 	this->FileName   = NULL; 
 	this->XMLText    = NULL;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -80,6 +91,37 @@ vtkOGSVariableAggregator::~vtkOGSVariableAggregator() {
 
 	this->SetFileName(0);
 	this->SetXMLText(0);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSVariableAggregator::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+	
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
+
+	// Parse XML and TextBox
+	this->ParseXML();
+	this->SetAggrVarsText();
+
+	return 1;
 }
 
 //----------------------------------------------------------------------------
@@ -89,6 +131,11 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 	// get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// get the input and output
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
@@ -194,16 +241,6 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Update progress and leave
 	this->UpdateProgress(1.);
-	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSVariableAggregator::RequestInformation(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-	// Parse XML and TextBox
-	this->ParseXML();
-	this->SetAggrVarsText();
-
 	return 1;
 }
 

@@ -18,7 +18,13 @@
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 #include <map>
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSVariableAggregator : public vtkDataSetAlgorithm
 {
@@ -50,6 +56,15 @@ public:
   void DisableAllVarArrays();
   void EnableAllVarArrays();
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSVariableAggregator();
   ~vtkOGSVariableAggregator();
@@ -60,6 +75,10 @@ protected:
   vtkDataArraySelection* VarDataArraySelection; // Stores name of the aggregated variable
   std::map<std::string, std::string> AggrVar;   // Stores the variables to aggregate separated by ";"
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSVariableAggregator(const vtkOGSVariableAggregator&) = delete;
   void operator=(const vtkOGSVariableAggregator&) = delete;
@@ -67,7 +86,7 @@ private:
   void ParseXML();
   void SetAggrVarsText();
 
-  int deleteVars;
+  int deleteVars, procId, nProcs;
   char *FileName, *XMLText;
 };
 
