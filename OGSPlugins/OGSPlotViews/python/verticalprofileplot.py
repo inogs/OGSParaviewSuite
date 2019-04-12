@@ -104,12 +104,13 @@ def RequestData():
 		varlist = [s.split(';')[0] for s in variables.split('\n')] if not variables == '' else []
 
 		# Plot data
-		for objId in xrange(view.GetNumberOfVisibleDataObjects()):
+		for objId in range(view.GetNumberOfVisibleDataObjects()):
 			obj = view.GetVisibleDataObjectForRendering(objId)
 			# Recover the depth
-			z   = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/py_fact
+			dfact = float(obj.GetFieldData().GetAbstractArray('Metadata').GetValue(2))
+			z     = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/dfact
 			# For each variable, decide if the plot is needed
-			for varId in xrange(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         
+			for varId in range(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         
 				varname = view.GetAttributeArrayName(objId,vtk.vtkDataObject.POINT,varId)
 				# Filter some variables (Do not plot them)
 				if varname == 'basins mask':       continue
@@ -122,7 +123,7 @@ def RequestData():
 				do_plot = False if len(varlist) > 0 else True
 				args    = None
 				kwargs  = None
-				for ii in xrange(0,len(varlist)):
+				for ii in range(0,len(varlist)):
 					if "%s %d" % (varname,objId+1) == "%s %s" % (varlist[ii],objlist[ii]): 
 						do_plot = True
 						if (len(variables.split('\n')[ii].split(';'))>2):
