@@ -29,6 +29,19 @@
           for the display of the date.</Documentation>
       </StringVectorProperty>
 
+       <IntVectorProperty name="UseMetadata"
+                          label="Use Metadata"
+                          command="SetuseMetadata"
+                          number_of_elements="1"
+                          default_values="0"
+                          panel_visibility="advanced">
+          <BooleanDomain name="bool"/>
+          <Documentation>
+            If set to true, the metadata array will be used for writing the simulation time.
+            Else, the timestep is parsed.
+          </Documentation>
+       </IntVectorProperty>
+
       <!-- PROPERTIES FROM INHERITED CLASS -->
 
       <StringVectorProperty command="SetFormat"

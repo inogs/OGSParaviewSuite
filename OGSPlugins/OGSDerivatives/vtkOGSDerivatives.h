@@ -20,6 +20,15 @@
 #include "vtkFloatArray.h"
 #include "vtkRectilinearGridAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
+
 class VTK_EXPORT vtkOGSDerivatives : public vtkRectilinearGridAlgorithm
 {
 public:
@@ -53,21 +62,38 @@ public:
   // Get the name of the velocity field
   vtkSetStringMacro(field);
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSDerivatives();
   ~vtkOGSDerivatives() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  void ScalarArrayDerivatives(vtkFloatArray *, vtkRectilinearGrid *);
-  void VectorArrayDerivatives(vtkFloatArray *, vtkRectilinearGrid *);
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
 
 private:
   vtkOGSDerivatives(const vtkOGSDerivatives&) = delete;
   void operator=(const vtkOGSDerivatives&) = delete;
 
   char *field;
-  int grad_type, ComputeDivergence, ComputeCurl, ComputeQ;
+
+  int grad_type, procId, nProcs;
+  
+  bool isReqInfo;
+  bool ComputeDivergence, ComputeCurl, ComputeQ;
+
+  v3::V3v xyz; // Stores cell/point coordinates
 };
 
 #endif

@@ -18,24 +18,39 @@
 #include "vtkPointData.h"
 #include "vtkDataArray.h"
 #include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 
 #include <string>
 #include <sstream>
-#include <algorithm>
 #include <vector>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
 
 #include "pugixml.hpp"
 namespace xml = pugi;
 
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
+
 vtkStandardNewMacro(vtkOGSVariableAggregator);
 
-class vtkOGSVariableAggregator::vtkVectorOfArrays :
-  public std::vector<vtkFloatArray*>
-{
-};
+//----------------------------------------------------------------------------
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDARRAY double
+#define VTKARRAY vtkDoubleArray
+
+#include "../_utils/field.h"
+#include "../_utils/vtkFields.hpp"
 
 //----------------------------------------------------------------------------
 void addVar(vtkDataArraySelection *AggrVar, std::map<std::string, std::string> *Var2Aggr) {
@@ -63,6 +78,11 @@ vtkOGSVariableAggregator::vtkOGSVariableAggregator() {
 	this->deleteVars = 0;
 	this->FileName   = NULL; 
 	this->XMLText    = NULL;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -71,6 +91,37 @@ vtkOGSVariableAggregator::~vtkOGSVariableAggregator() {
 
 	this->SetFileName(0);
 	this->SetXMLText(0);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSVariableAggregator::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
+	
+	/* SET UP THE PARALLEL CONTROLLER
+
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
+	}
+
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
+
+	// Parse XML and TextBox
+	this->ParseXML();
+	this->SetAggrVarsText();
+
+	return 1;
 }
 
 //----------------------------------------------------------------------------
@@ -80,6 +131,11 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 	// get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// get the input and output
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
@@ -95,19 +151,16 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		the mesh and add the variables at each point. Assume all variables are scalar 
 		arrays.
 	*/
+	// Parallelization strategy MPI
 	for(int varId=0; varId<this->GetNumberOfVarArrays(); varId++) {
 		// Check if the variable has been enabled
 		if ( !this->GetVarArrayStatus(this->GetVarArrayName(varId)) ) continue;
-		// Create a new vtkFloatArray to store the new variable
-		vtkFloatArray *vtkArray = vtkFloatArray::New();
-		vtkArray->SetName(this->GetVarArrayName(varId));
-		vtkArray->SetNumberOfComponents(1); // Scalar field
+
 		// Obtain the variables to aggregate
+		VTKARRAY *vtkArray = NULL;
 		std::string vararray = this->AggrVar[this->GetVarArrayName(varId)];
-		int celldata = 1;
-		int current,previous=0;
-		vtkVectorOfArrays *AgrVarArray;
-		AgrVarArray = new vtkVectorOfArrays;
+		int celldata = 1, current = 0, previous = 0;
+		std::vector<field::Field<FLDARRAY>> arrayVector;
 		do {
 			// Find an occurence of the delimiter and split the string
 			current = vararray.find(';',previous);
@@ -115,32 +168,44 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 			if (varname == "") continue;
 			// Now varname contains the name of the variable to load
 			// Try to load the array as cell data
-			vtkDataArray *array;
-			array = input->GetCellData()->GetArray(varname.c_str());
-			if (!array) {// Then array might be point data
-				array    = input->GetPointData()->GetArray(varname.c_str());
+			vtkArray = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray(varname.c_str()));
+			// Then array might be point data
+			if (!vtkArray) { 
+				vtkArray = VTKARRAY::SafeDownCast(input->GetPointData()->GetArray(varname.c_str()));
 				celldata = 0;
 			}
-			if (!array) { // We couldn't find the array
+			// We couldn't find the array
+			if (!vtkArray) { 
 				vtkErrorMacro("Could not find variable <" << varname <<">");
 				return 0;
 			}
 			// Array should exist at this point, store it
-			AgrVarArray->push_back( vtkFloatArray::SafeDownCast(array) );
+			arrayVector.push_back( VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray) );
+			// Check we are dealing with scalar arrays
+			if (arrayVector.back().get_m() != 1) {
+				vtkErrorMacro("Variable <" << varname << "> is not a scalar array. Cannot proceed.");
+				return 0;				
+			}
 			previous = current + 1;
 		}while(current != std::string::npos);
+
 		// Here we have the array to aggregate and the arrays to aggregate from
-		// Get the size of the mesh
-		size_t meshsize = AgrVarArray->at(0)->GetNumberOfTuples();
-		vtkArray->SetNumberOfTuples(meshsize);
-		// Loop the mesh and create the new variable
-		for (int ii=0; ii<meshsize; ii++) {
-			double aux = 0.;
-			vtkVectorOfArrays::iterator iter;
-			for (iter=AgrVarArray->begin(); iter != AgrVarArray->end(); iter++)
-				aux += (*iter)->GetTuple1(ii);
-			vtkArray->SetTuple1(ii,aux);
+		// then create a new Field to store the new variable
+		field::Field<FLDARRAY> arrayNew(arrayVector[0]);
+		
+		// Loop the vectors and create the new variable (parallelization MPI)
+		field::Field<FLDARRAY>::iterator arrIter, auxIter;
+		std::vector<field::Field<FLDARRAY>>::iterator vecIter;
+		for (vecIter = arrayVector.begin()+1; vecIter != arrayVector.end(); ++vecIter) {
+			// Loop the mesh 
+			#pragma omp parallel
+			{
+			for (int ii=omp_get_thread_num(); ii<arrayNew.get_n(); ii+=omp_get_num_threads())
+				arrayNew[ii][0] += (*vecIter)[ii][0];
+			}
 		}
+		// Convert to vtkArray
+		vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->GetVarArrayName(varId),arrayNew);
 		// Add the new variable to the input
 		if (celldata)
 			output->GetCellData()->AddArray(vtkArray);
@@ -150,7 +215,6 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		this->UpdateProgress(1./(double)(this->GetNumberOfVarArrays())*varId);
 		// Delete
 		vtkArray->Delete();
-		delete AgrVarArray;
 	}
 
 	/*
@@ -177,16 +241,6 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Update progress and leave
 	this->UpdateProgress(1.);
-	return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkOGSVariableAggregator::RequestInformation(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
-	// Parse XML and TextBox
-	this->ParseXML();
-	this->SetAggrVarsText();
-
 	return 1;
 }
 

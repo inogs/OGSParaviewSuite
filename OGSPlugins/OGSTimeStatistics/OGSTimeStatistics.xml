@@ -18,9 +18,9 @@
              <Group name="filters"/>
            </ProxyGroupDomain>
            <DataTypeDomain name="input_type">
-             <DataType value="vtkDataSet"/>
+             <DataType value="vtkRectilinearGrid"/>
            </DataTypeDomain>
-     </InputProperty>
+      </InputProperty>
 
      <!-- BEGIN EXPOSED PROPERTIES -->
 
@@ -58,16 +58,6 @@
           Set the final timestep for the time statistics.
         </Documentation>
      </StringVectorProperty>
-
-     <!-- Time step information -->
-     <DoubleVectorProperty name="TimestepValues"
-                            repeatable="1"
-                            information_only="1">
-        <TimeStepsInformationHelper/>
-        <Documentation>
-          Available time step values.
-        </Documentation>
-     </DoubleVectorProperty>
 
      <!-- END EXPOSED PROPERTIES -->
 

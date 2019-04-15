@@ -27,10 +27,12 @@ vtkStandardNewMacro(vtkOGSSpaghettiPlot);
 //----------------------------------------------------------------------------
 vtkOGSSpaghettiPlot::vtkOGSSpaghettiPlot() {
 	this->Script    = NULL;
+	this->Variables = NULL;
 }
 
 vtkOGSSpaghettiPlot::~vtkOGSSpaghettiPlot() {
 	this->SetScript(NULL);
+	this->SetVariables(NULL);
 }
 
 //----------------------------------------------------------------------------

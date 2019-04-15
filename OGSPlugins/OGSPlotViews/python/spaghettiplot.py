@@ -99,7 +99,7 @@ def RequestData():
 
 		# Plot data
 		if not view.GetNumberOfVisibleDataObjects() > 0: return python_view.figure_to_image(figure)
-		for objId in xrange(view.GetNumberOfVisibleDataObjects()):
+		for objId in range(view.GetNumberOfVisibleDataObjects()):
 			# Get object that must be a vtkTable
 			obj = view.GetVisibleDataObjectForRendering(objId)
 			if not obj: continue
@@ -113,7 +113,7 @@ def RequestData():
 			do_plot = False if len(objlist) > 0 else True
 			args    = None
 			kwargs  = None
-			for ii in xrange(0,len(objlist)):
+			for ii in range(0,len(objlist)):
 				if "%d" % (objId+1) == "%s" % (objlist[ii]): 
 					do_plot = True
 					if (len(labels.split('\n')[ii].split(';'))>1):

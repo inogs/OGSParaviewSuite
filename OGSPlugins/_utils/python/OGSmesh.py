@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env pvpython
 #
 # Python class to deal with mesh conversion to ParaView
 #
@@ -14,9 +14,26 @@ from commons.mask import Mask
 from commons.submask import SubMask
 from basins import V2 as OGS
 
+# Definitions from CTYPES
+c_void_p   = ct.c_void_p
+c_char     = ct.c_char
+c_char_p   = ct.POINTER(ct.c_char)
+c_uint8    = ct.c_uint8
+c_uint8_p  = ct.POINTER(ct.c_uint8)
+c_int      = ct.c_int
+c_int_p    = ct.POINTER(ct.c_int)
+c_double   = ct.c_double
+c_double_p = ct.POINTER(ct.c_double)
 
 class OGSmesh(object):
-	def __init__(self,maskpath,maptype='merc',lib='./libOGSmesh.so'):
+	'''
+	Python wrapper to the OGS C++ class that lets us interface with the
+	OGS mesh (.ogsmsh) file.
+
+	This class needs the libOGS.so that is generally deployed along with
+	this class by the deployment scripts of the OGSParaView Suite.
+	'''
+	def __init__(self,maskpath,maskname="meshmask.nc",maptype='merc',lib='libOGS.so'):
 		'''
 		Class constructor for OGSmesh.
 
@@ -25,11 +42,15 @@ class OGSmesh(object):
 			> maptype:  Kind of map projection (default: merc).
 			> lib:      Full path to the OGSmesh.so library.
 		'''
+		# Class variables
 		self.maskpath = maskpath
+		self.maskname = maskname
 		self.mask     = None     # meshmask will update after being read
 		self.map      = maptype
-		self.lib      = lib
 
+		# Interface with the C functions
+		self.OGSlib   = ct.cdll.LoadLibrary(lib)
+		
 	def readMeshMask(self,fname):
 		'''
 		Reads the meshmask.nc file and extracts the dimensions of the mesh
@@ -76,7 +97,7 @@ class OGSmesh(object):
 
 		return None
 
-	def generateBasinsMask(self):
+	def generateBasinsMaskOld(self):
 		'''
 		Generate the basins_mask field where all basins are numbered from 1
 		to the number of basins.
@@ -99,31 +120,42 @@ class OGSmesh(object):
 
 		return basins_mask
 
+	def generateBasinsMask(self):
+		'''
+		Generate the basins_mask field where all basins are numbered from 1
+		to the number of basins.
+		'''
+		return np.array([SubMask(sub, maskobject=self.mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
+
 	def generateCoastsMask(self):
 		'''
-		Generate the coasts_mask field where coastal areas are separated
-		from the open sea.
+		Generate the continetnal shelf mask field where coastal areas 
+		are separated from the open sea (at depth 200m).
 
-		TODO: deal with annaCoast
+		FIX AMAL: the intersection with the med mask and mask_at_level
+		returns zero for the last value of the mask, even if the depth is less
+		than 200. To avoid that, we get the next depth value from 200.
 		'''
 		dims = self.mask.shape
-		# Extract mask at level 200
-		mask200_2D = self.mask.mask_at_level(200.0)
-		mask200_3D = np.zeros(dims,dtype=np.bool)
-		for ii in range(dims[0]):
-			mask200_3D[ii,:,:] = mask200_2D
 
+		# Extract mask at level 200
+		# This is all the places that have water at depth = 200 m
+		jk_m       = self.mask.getDepthIndex(200.)
+		mask200_2D = self.mask.mask[jk_m+1,:,:].copy() # FIX AMAL
+		mask200_3D = np.array([mask200_2D for i in xrange(dims[0])])
+		
 		# Extract mask for mediterranean sea
+		# We want all the places that belong to the MED and that are water from 0 to 200 m
 		s = SubMask(OGS.P.basin_list[-1], maskobject=self.mask)
 
 		# Define coasts mask
-		coasts_mask = np.zeros(dims)
+		coasts_mask = np.zeros(dims,dtype=c_uint8)
 		coasts_mask[~mask200_3D & s.mask] = 1 # Coast
 		coasts_mask[ mask200_3D & s.mask] = 2 # Open sea
 
 		return coasts_mask	
 
-	def applyProjection(self,dims,Lon,Lat):
+	def applyProjection(self,dims,Lon,Lat,Lon0=0.,Lat0=0.):
 		'''
 		Applies a map projection to the longitude and latitude
 		vectors. The kind of map projection is defined in the
@@ -135,15 +167,15 @@ class OGSmesh(object):
 			> Lat:  latitude vector.
 		'''
 		# Define map projection
-		mproj = Basemap(projection = self.map,
-						lat_0      = 0.,   \
-						lon_0      = 0.,   \
+		mproj = Basemap(projection = self.map, \
+						lat_0      = Lon0, \
+						lon_0      = Lat0, \
                         llcrnrlon  = -5.3, \
                         llcrnrlat  = 28.0, \
                         urcrnrlon  = 37,   \
                         urcrnrlat  = 46.0, \
                         resolution = 'l'
-                        )
+                       )
 		# Initialize arrays
 		nLon = dims[2]
 		nLat = dims[1]
@@ -157,12 +189,12 @@ class OGSmesh(object):
 			xpt,ypt        = mproj(Lon[0,nLon/2],Lat[jj,nLon/2])
 			Lat2Meters[jj] = ypt
 		# Return
-		return Lon2Meters, Lat2Meters
+		return np.sort(Lon2Meters), np.sort(Lat2Meters)
 
-	def writeOGSMesh(self,fname,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
+	def OGS(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
 		'''
-		Wrapper for the C function writeOGSMesh
-		inside the OGSmesh.so library. 
+		Interface with the C++ OGS class. Create a new object and return
+		the pointer to said object.
 
 		Inputs:
 			> fname:       Name of the file to write
@@ -171,21 +203,33 @@ class OGSmesh(object):
 			> nav_lev:     Depth (npy array)
 			> basins_mask: Mask contanining the sub basins
 			> coast_mask:  Mask contanining the coasts
-		'''	
-		c_double_p = ct.POINTER(ct.c_double)
-		OGSmesh    = ct.cdll.LoadLibrary(self.lib)
+		'''
+		OGSnew       = self.OGSlib.newOGS
+		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p]
+		OGS.restype  = c_void_p
 
 		# Compute sizes of vectors
-		nLon = np.shape(Lon2Meters)[0]
-		nLat = np.shape(Lat2Meters)[0]
-		nLev = np.shape(nav_lev)[0]
-		
-		OGSmesh.writeOGSMesh(fname,ct.c_int(nLon),ct.c_int(nLat),ct.c_int(nLev), \
-			Lon2Meters.ctypes.data_as(c_double_p),Lat2Meters.ctypes.data_as(c_double_p), \
-			nav_lev.ctypes.data_as(c_double_p),basins_mask.ctypes.data_as(c_double_p), \
-			coast_mask.ctypes.data_as(c_double_p))
+		nLon = Lon2Meters.shape[0]
+		nLat = Lat2Meters.shape[0]
+		nLev = nav_lev.shape[0]
 
-	def createOGSMesh(self,fname="mesh.ogsmsh"):
+		# Return class instance
+		return OGSnew(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
+					  Lat2Meters.ctypes.data_as(c_double_p), nav_lev.ctypes.data_as(c_double_p),\
+					  basins_mask.ctypes.data_as(c_uint8_p),coast_mask.ctypes.data_as(c_uint8_p)
+					 )
+
+	def OGSwriteMesh(self,OGScls):
+		'''
+		Wrapper for the C function writeOGSMesh inside the OGSmesh.so library. 
+		'''
+		writeMesh          = self.OGSlib.OGSWriteMesh
+		writeMesh.argtypes = [c_void_p]
+		writeMesh.restype  = c_int
+
+		return writeMesh(OGScls)
+
+	def createOGSMesh(self,fname="mesh.ogsmsh",path="."):
 		'''
 		creates a binary file containing all the mesh information for ParaView as well as
 		the basins and coasts masks.
@@ -195,7 +239,7 @@ class OGSmesh(object):
 			as the meshmask.nc file (Default: mesh.ogsmsh).
 		'''
 		# Read the mesh mask
-		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self.maskpath,"meshmask.nc"))
+		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self.maskpath,self.maskname))
 		# Obtain the coasts_mask and the basins_mask
 		basins_mask = self.generateBasinsMask().ravel()
 		coasts_mask = self.generateCoastsMask().ravel()
@@ -203,11 +247,11 @@ class OGSmesh(object):
 		# Project latitude and longitude according to map specifics
 		Lon2Meters, Lat2Meters = self.applyProjection(dims,Lon,Lat)
 
+		# Create an instance of the OGS class
+		OGScls = self.OGS(fname,path,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coasts_mask);
+
 		# Save into file
-		self.writeOGSMesh(os.path.join(self.maskpath,fname),
-						  Lon2Meters,Lat2Meters,nav_lev.astype(np.double),
-			              basins_mask.astype(np.double),coasts_mask.astype(np.double)
-			             )
+		self.OGSwriteMesh(OGScls)
 
 '''
 	MAIN
@@ -220,15 +264,13 @@ if __name__ == '__main__':
 	argpar.add_argument('-i','--input',type=str,help='Full path to meshmask directory',required=True,dest='inpath')
 	argpar.add_argument('-o','--output',type=str,help='Name of the output mesh file',dest='outfile')
 	argpar.add_argument('-m','--map',type=str,help='Projection type (default: merc)',dest='map')
-	argpar.add_argument('-l','--lib',type=str,help='Path to the libOGSmesh.so library',dest='lib')
 
 	# parse input arguments
 	args=argpar.parse_args()
 	if not args.map: args.map = 'merc'
-	if not args.lib: args.lib = './libOGSmesh.so'
 
 	# Define class instance
-	mesh = OGSmesh(args.inpath,args.map,args.lib)
+	mesh = OGSmesh(args.inpath,maptype=args.map)
 
 	# Generate the mesh file
 	if not args.outfile:

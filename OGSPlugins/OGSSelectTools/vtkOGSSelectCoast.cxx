@@ -12,7 +12,11 @@
 
 =========================================================================*/
 
+#include "vtkOGSSelectCoast.h"
+
+#include "vtkTypeUInt8Array.h"
 #include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkCellData.h"
 #include "vtkPointData.h"
 #include "vtkDataArraySelection.h"
@@ -20,15 +24,35 @@
 #include "vtkInformationVector.h"
 #include "vtkUnstructuredGrid.h"
 
-#include "vtkOGSSelectCoast.h"
-
 #include "vtkObjectFactory.h"
+
+#include <cstdint>
+#include <omp.h>
+int omp_get_num_threads();
+int omp_get_thread_num();
+
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+#endif
 
 vtkStandardNewMacro(vtkOGSSelectCoast);
 
 //----------------------------------------------------------------------------
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDMASK uint8_t
+#define VTKMASK vtkTypeUInt8Array
+
+#include "../_utils/field.h"
+#include "../_utils/vtkFields.hpp"
+
+//----------------------------------------------------------------------------
 void addCoasts(vtkDataArraySelection *CoastsDataArraySelection) {
-	CoastsDataArraySelection->AddArray("Coast");
+	CoastsDataArraySelection->AddArray("Continental shelf");
 	CoastsDataArraySelection->AddArray("Open Sea");
 }
 
@@ -40,13 +64,23 @@ vtkOGSSelectCoast::vtkOGSSelectCoast() {
 	addCoasts(this->CoastsDataArraySelection);
 
 	this->mask_field = NULL;
+	this->nProcs     = 0;
+	this->procId     = 0;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSSelectCoast::~vtkOGSSelectCoast()
-{
+vtkOGSSelectCoast::~vtkOGSSelectCoast() {
 	this->CoastsDataArraySelection->Delete();
 	this->Setmask_field(NULL);
+
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
@@ -55,14 +89,16 @@ void vtkOGSSelectCoast::PrintSelf(ostream& os, vtkIndent indent) {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSSelectCoast::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
+int vtkOGSSelectCoast::RequestData(vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
@@ -73,40 +109,51 @@ int vtkOGSSelectCoast::RequestData(
 	this->UpdateProgress(0.0);
 
 	// Get the basins mask
-	vtkFloatArray *coasts_mask = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->mask_field));
-	int npoints = input->GetNumberOfCells();
+	VTKMASK *vtkmask = NULL;
+	bool iscelld = true;
 
-	if (coasts_mask == NULL) {
-		vtkFloatArray *coasts_mask = vtkFloatArray::SafeDownCast(
-			input->GetPointData()->GetArray(this->mask_field));
-		int npoints = input->GetNumberOfPoints();	
+	vtkmask = VTKMASK::SafeDownCast(input->GetCellData()->GetArray(this->mask_field));
+
+	if (vtkmask == NULL) {
+		vtkmask = VTKMASK::SafeDownCast(input->GetPointData()->GetArray(this->mask_field));
+		iscelld = false;
 	}
 
-	// Generate a new vtkFloatArray that will be used for the mask
-	vtkFloatArray *mask = vtkFloatArray::New();
-	mask->SetName("CutMask");
-	mask->SetNumberOfComponents(1);   // Scalar field
-	mask->SetNumberOfTuples(npoints);
+	if (vtkmask == NULL) {
+		vtkErrorMacro("Cannot load mask field "<<this->mask_field<<"!");
+		return 0;
+	}
+
+	// Recover basins mask as a field
+	field::Field<FLDMASK> mask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkmask);
+
+	// Generate a new field (initialized at zero) that will be used as cutting mask
+	field::Field<FLDMASK> cutmask(mask.get_n(),1);
 
 	this->UpdateProgress(0.2);
 
-	// Loop the mesh and set the mask
-	for (int ii = 0; ii < npoints; ii++) {
-		// Recover value from basins mask
-		double cmask_val = coasts_mask->GetTuple1(ii);
-		// Initialize mask to zero
-		mask->SetTuple1(ii,0);
+	// Loop and update cutting mask (Mesh loop, can be parallelized)
+	#pragma omp parallel shared(mask,cutmask)
+	{
+	for (int ii = 0 + omp_get_thread_num(); ii < mask.get_n(); ii += omp_get_num_threads()) {
+		cutmask[ii][0] = 0;
 		// Loop on the basins array selection
-		for (int jj = 0; jj < this->GetNumberOfCoastsArrays();jj++) {
-			if (this->GetCoastsArrayStatus(this->GetCoastsArrayName(jj)) && 
-				fabs(cmask_val - (double)(jj+1)) < 1.e-3)
-				mask->SetTuple1(ii,1);
-		}
+		for (int bid=0; bid < this->GetNumberOfCoastsArrays(); ++bid)
+			// Test to zero is allowed when working with integers
+			if ( this->GetCoastsArrayStatus(this->GetCoastsArrayName(bid)) && (mask[ii][0] - (bid+1)) == 0 ) {
+				cutmask[ii][0] = 1; continue;
+			}
+	}
 	}
 
-	// Add array to input
-	input->GetCellData()->AddArray(mask);
+	// Convert field to vtkArray and add it to input
+	VTKMASK *vtkcutmask;
+	vtkcutmask = VTK::createVTKfromField<VTKMASK,FLDMASK>("CutMask",cutmask);
+
+	if (iscelld)
+		input->GetCellData()->AddArray(vtkcutmask);
+	else
+		input->GetPointData()->AddArray(vtkcutmask);
 
 	this->UpdateProgress(0.4);
 
@@ -124,13 +171,15 @@ int vtkOGSSelectCoast::RequestData(
 
 	this->UpdateProgress(0.8);
 
-	// Cleanup the output by deleting the CutMask and the coasts mask
-	output->GetCellData()->RemoveArray("CutMask");
-	output->GetCellData()->RemoveArray(this->mask_field);
-
-	// Cleanup
-	mask->Delete(); 
-//	coasts_mask->Delete();
+	// Cleanup the output by deleting the CutMask and the basins mask
+	if (iscelld) {
+		output->GetCellData()->RemoveArray("CutMask");
+		output->GetCellData()->RemoveArray(this->mask_field);
+	} else {
+		output->GetPointData()->RemoveArray("CutMask");
+		output->GetPointData()->RemoveArray(this->mask_field);		
+	}
+	vtkcutmask->Delete();
 
 	// Return
 	this->UpdateProgress(1.0);

@@ -1,0 +1,3 @@
+[submodule "bit.sea"]
+	path = bit.sea
+	url = https://github.com/inogs/bit.sea

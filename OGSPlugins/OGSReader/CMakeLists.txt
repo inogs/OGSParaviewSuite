@@ -24,12 +24,11 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSReader "1.0"
   SERVER_MANAGER_XML OGSReader.xml
-  SERVER_MANAGER_SOURCES vtkOGSReader.cxx
+  SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp vtkOGSReader.cxx
   REQUIRED_ON_SERVER
   )
-
-#if(PARAVIEW_USE_MPI)
-#  vtk_mpi_link(OGSReader)
-#endif()

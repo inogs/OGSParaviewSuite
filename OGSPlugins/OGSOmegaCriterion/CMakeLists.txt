@@ -20,8 +20,15 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
+
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSOmegaCriterion "1.0"
   SERVER_MANAGER_XML OGSOmegaCriterion.xml
-  SERVER_MANAGER_SOURCES vtkOGSComputeOmegaCriterion.cxx
+  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOmegaCriterion.cxx
   REQUIRED_ON_SERVER
   )

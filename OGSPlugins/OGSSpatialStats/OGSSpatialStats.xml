@@ -62,18 +62,19 @@
         </Documentation>
       </DoubleVectorProperty>
 
-      <!-- Depth Level -->
-      <DoubleVectorProperty name="DepthFactor"
-                            label="Depth multiplication factor: "
-                            command="Setdepth_factor"
-                            animateable="1"
-                            default_values="1000."
-                            number_of_elements="1"
-                            panel_visibility="advanced">
+     <!-- Use Volume -->
+     <IntVectorProperty name="UseVolume"
+                        label="Use Volume"
+                        command="SetuseVolume"
+                        number_of_elements="1"
+                        default_values="0"
+                        panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
         <Documentation>
-          Set the depth multiplication factor.
+          If this property is set to 1, the volume will be used as
+          weight instead of the area.
         </Documentation>
-      </DoubleVectorProperty>
+     </IntVectorProperty>
 
       <!-- Optional range of depths -->
       <DoubleVectorProperty command="SetDepthLevels"

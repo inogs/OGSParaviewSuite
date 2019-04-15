@@ -15,3 +15,6 @@ OGSPlugins/*/build
 
 # We also ignore all the Testing directories inside OGSPlugins
 OGSPlugins/*/Testing
+
+# We also ignore all the scalability tests directories inside OGSPlugins
+OGSPlugins/*/ScalabilityTests/

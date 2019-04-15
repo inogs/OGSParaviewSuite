@@ -21,7 +21,7 @@
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet" />
-          <DataType value="vtkCompositeDataSet" />
+          <DataType value="vtkRectilinearGrid" />
         </DataTypeDomain>
         <InputArrayDomain name="input_array" />
         <Documentation>This property specifies the dataset from which to obtain
@@ -89,21 +89,141 @@
         </Documentation>
      </StringVectorProperty>
 
-     <!-- Selection of depth scale factor -->
-     <DoubleVectorProperty name="DepthScale"
-                           label="Scale factor for depth:"
-                           command="SetDepthScale"
-                           number_of_elements="1"
-                           default_values="1000."
-                           panel_visibility="advanced">
+     <IntVectorProperty name="average"
+                        label="Average"
+                        command="Setaverage"
+                        default_values="0"
+                        number_of_elements="1">
+       <Documentation>
+        Use the averaged results?
+      </Documentation>
+      <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <StringVectorProperty animateable="0"
+                           command="SetFolderName"
+                           name="FolderName"
+                           label="Stat Profiles: "
+                           number_of_elements="1">
+        <FileListDomain name="files" />
         <Documentation>
-          Selection of the scale factor for depth.
+           This property points to the folder where the STAT_PROFILES
+           are stored.
         </Documentation>
+        <Hints>
+           <PropertyWidgetDecorator type="ShowWidgetDecorator">
+             <Property name="average" function="boolean" />
+           </PropertyWidgetDecorator>
+           <FileChooser extensions="nc" file_description="NetCDF 4"/>
+           <UseDirectoryName/> 
+        </Hints>
+     </StringVectorProperty>
+
+     <IntVectorProperty name="sId"
+                        command="SetsId"
+                        default_values="0"
+                        number_of_elements="1">
+       <EnumerationDomain name="enum">
+         <Entry text="Mean" value="0" />
+         <Entry text="Std"  value="1" />
+         <Entry text="min"  value="2" />
+         <Entry text="max"  value="8" />
+         <Entry text="p05"  value="3" />
+         <Entry text="p25"  value="4" />
+         <Entry text="p50"  value="5" />
+         <Entry text="p75"  value="6" />
+         <Entry text="p95"  value="7" />
+       </EnumerationDomain>
+        <Documentation>
+           Select which statistic to plot.
+        </Documentation>
+        <Hints>
+           <PropertyWidgetDecorator type="ShowWidgetDecorator">
+             <Property name="average" function="boolean" />
+           </PropertyWidgetDecorator>
+        </Hints>
+     </IntVectorProperty>
+
+     <IntVectorProperty name="PerCoast"
+                        label="Stats per Coast"
+                        command="Setper_coast"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 1, the statistics will be obtained per basin and per coast.
+        </Documentation>
+        <Hints>
+           <PropertyWidgetDecorator type="ShowWidgetDecorator">
+             <Property name="average" function="boolean" />
+           </PropertyWidgetDecorator>
+        </Hints>
+     </IntVectorProperty>
+
+     <DoubleVectorProperty name="Tolerance"
+                           label="Tolerance: "
+                           command="Setepsi"
+                           animateable="1"
+                           default_values="0.001"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+       <Documentation>
+         Tolerance for finding the different depth levels.
+       </Documentation>
+       <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="average" function="boolean" />
+          </PropertyWidgetDecorator>
+       </Hints>
      </DoubleVectorProperty>
+
+     <StringVectorProperty name="bmask_field"
+                           label="Basins mask: "
+                           command="Setbmask_field"
+                           animateable="1"
+                           default_values="basins mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the basins mask field
+         </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty name="cmask_field"
+                           label="Coast mask: "
+                           command="Setcmask_field"
+                           animateable="1"
+                           default_values="coast mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the coast mask field
+         </Documentation>
+     </StringVectorProperty>
 
      <PropertyGroup label="Variable to plot">
                  <Property name="field"/>
-                 <Property name="DepthScale"/>
+                 <Property name="average"/>
+                 <Property name="FolderName"/>
+                 <Property name="sId"/>
+                 <Property name="PerCoast"/>
+                 <Property name="Tolerance"/>
+                 <Property name="bmask_field"/>
+                 <Property name="cmask_field"/>
      </PropertyGroup>
 
      <!-- Interpolating line info -->
@@ -126,7 +246,7 @@
       
       <Hints>
         <ShowInMenu category="OGS" />
-        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />       
+        <View type="OGSHovmoellerPlot" also_show_in_current_view="1" />
         <WarnOnCreate title="WARNING Potentially slow operation!">
           **OGS Hovmoeller** filter needs to process most of the timesteps
           available in your dataset and can potentially take a long time to complete.

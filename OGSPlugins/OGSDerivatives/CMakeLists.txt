@@ -20,8 +20,15 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+endif()
+
+set ( CMAKE_C_FLAGS   "-fopenmp")
+set ( CMAKE_CXX_FLAGS "-fopenmp")
+
 ADD_PARAVIEW_PLUGIN(OGSDerivatives "1.0"
   SERVER_MANAGER_XML OGSDerivatives.xml
-  SERVER_MANAGER_SOURCES vtkOGSDerivatives.cxx
+  SERVER_MANAGER_SOURCES ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSDerivatives.cxx
   REQUIRED_ON_SERVER
   )

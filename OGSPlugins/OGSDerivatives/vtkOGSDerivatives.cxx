@@ -12,56 +12,86 @@
 
 =========================================================================*/
 
+#include "vtkOGSDerivatives.h"
+
 #include "vtkCell.h"
 #include "vtkPoints.h"
 #include "vtkCellData.h"
 #include "vtkPointData.h"
 #include "vtkFieldData.h"
 #include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
 #include "vtkCellData.h"
 #include "vtkDataArraySelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOGSDerivatives.h"
-
 #include "vtkObjectFactory.h"
 
-namespace VTK
-{
-// Include the VTK Operations
-#include "../_utils/vtkOperations.cpp"
-}
+#include <string>
+#include <omp.h>
+
+
+#ifdef PARAVIEW_USE_MPI
+#include "vtkMultiProcessController.h"
+vtkCxxSetObjectMacro(vtkOGSDerivatives, Controller, vtkMultiProcessController);
+#endif
 
 vtkStandardNewMacro(vtkOGSDerivatives);
 
 //----------------------------------------------------------------------------
-vtkOGSDerivatives::vtkOGSDerivatives()
-{
+
+/*
+	Macro to set the array precision 
+*/
+#define FLDARRAY double
+#define VTKARRAY vtkDoubleArray
+
+// V3.h and field.h defined in vtkOGSDerivatives.h
+#include "../_utils/fieldOperations.hpp"
+#include "../_utils/vtkFields.hpp"
+#include "../_utils/vtkOperations.hpp"
+
+//----------------------------------------------------------------------------
+vtkOGSDerivatives::vtkOGSDerivatives() {
 	this->field     = NULL;
 	this->grad_type = 0;
+	this->nProcs    = 0;
+	this->procId    = 0;
 
-	this->ComputeDivergence = 0;
-	this->ComputeCurl = 0;
-	this->ComputeQ = 0;
+	this->ComputeDivergence = false;
+	this->ComputeCurl       = false;
+	this->ComputeQ          = false;
+
+	this->isReqInfo = false;
+
+	#ifdef PARAVIEW_USE_MPI
+		this->Controller = NULL;
+		this->SetController(vtkMultiProcessController::GetGlobalController());
+	#endif
 }
 
 //----------------------------------------------------------------------------
-vtkOGSDerivatives::~vtkOGSDerivatives()
-{
+vtkOGSDerivatives::~vtkOGSDerivatives() {
 	this->Setfield(NULL);
+	
+	#ifdef PARAVIEW_USE_MPI
+		this->SetController(NULL);	
+	#endif
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSDerivatives::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
-{
+int vtkOGSDerivatives::RequestData( vtkInformation *vtkNotUsed(request),
+  vtkInformationVector **inputVector, vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(
@@ -75,28 +105,137 @@ int vtkOGSDerivatives::RequestData(
 
 	// Try to load the array, if we fail it is a point array and we should
 	// inform the user that point arrays are not treated in this function
-	vtkFloatArray *vtkArray = vtkFloatArray::SafeDownCast(
-		input->GetCellData()->GetArray(this->field));
+	VTKARRAY *vtkArray;
+	vtkArray = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray(this->field));
 	if (vtkArray == NULL) {
 		vtkErrorMacro("Input array "<<this->field<<"is not a cell array."<<
 			"This function can only deal with cell arrays!");
 		return 0;
 	}
 
-	// Here we have a valid vtkArray to process. We must decide whether to act as
-	// a scalar array or a vector array.
-	int ncomp = vtkArray->GetNumberOfComponents();
+	// Here we have a valid vtkArray. Convert it to a field.
+	field::Field<FLDARRAY> array;
+	array = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkArray);
+	std::string arrName = std::string(vtkArray->GetName());
+	
+	// Also, recover XYZ number of nodes
+	int nx = input->GetXCoordinates()->GetNumberOfTuples();
+	int ny = input->GetYCoordinates()->GetNumberOfTuples();
+	int nz = input->GetZCoordinates()->GetNumberOfTuples();
 
-	if (ncomp == 1)
-		// Scalar array
-		this->ScalarArrayDerivatives(vtkArray,output);
-	else if (ncomp == 3)
-		// Vector array
-		this->VectorArrayDerivatives(vtkArray,output);
-	else {
-		// I don't know what this is...
-		vtkErrorMacro("Input array "<<this->field<<"is neither a scalar or vector array!");
+	// Also, recover the weights
+	VTKARRAY *vtke1 = NULL, *vtke2 = NULL, *vtke3 = NULL;
+
+	vtke1 = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray("e1"));
+	vtke2 = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray("e2"));
+	vtke3 = VTKARRAY::SafeDownCast(input->GetCellData()->GetArray("e3"));
+
+	if (this->grad_type > 1 && (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL)) {
+		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
 		return 0;
+	}
+
+	// Convert to field arrays
+	field::Field<FLDARRAY> e1, e2, e3;
+	if (vtke1) e1 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke1);
+	if (vtke2) e2 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke2);
+	if (vtke3) e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
+
+	// Cell centers, update only when request info
+	if (this->isReqInfo) {
+		this->isReqInfo = false;
+		
+		// Recover Metadata array (depth factor)
+		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+			input->GetFieldData()->GetAbstractArray("Metadata"));
+		double dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
+		
+		if (vtkmetadata == NULL) 
+			vtkWarningMacro("Field array Metadata not found! Depth factor set to 1000. automatically.");
+
+		this->xyz = VTK::getVTKCellCenters(input,dfact);
+	}
+
+	// Gradient, Divergence, Curl and Q
+	field::Field<FLDARRAY> grad, div, curl, Q;
+
+	// Divergence computation
+	if (this->ComputeDivergence) {
+		if (array.get_m() == 3)
+			div.set_dim(array.get_n(),1);
+		else
+			vtkWarningMacro("Cannot compute the divergence of a scalar array!");
+	}
+	
+	// Curl computation
+	if (this->ComputeCurl) {
+		if (array.get_m() == 3)
+			curl.set_dim(array.get_n(),3);
+		else
+			vtkWarningMacro("Cannot compute the curl of a scalar array!");
+	}
+
+	// Q-criterion computation
+	if (this->ComputeQ) {
+		if (array.get_m() == 3)
+			Q.set_dim(array.get_n(),1);
+		else
+			vtkWarningMacro("Cannot compute the Q-criterion of a scalar array!");
+	}
+
+	// Selection of the gradient method
+	switch (this->grad_type) {
+		case 0: // Second order, face centered gradient
+				// This gradient is unsafe as it relies on the mesh projection
+			grad = field::gradXYZ2(nx-1,ny-1,nz-1,this->xyz,array,div,curl,Q);
+			break;
+		case 1: // Fourth order, face centered gradient
+				// This gradient is unsafe as it relies on the mesh projection
+			grad = field::gradXYZ4(nx-1,ny-1,nz-1,this->xyz,array,div,curl,Q);
+			break;
+		case 2:	// OGSTM-BFM approach according to the NEMO handbook
+				// This gradient is safe as it relies on the code implementation
+			grad = field::gradOGS1(nx-1,ny-1,nz-1,array,e1,e2,e3,div,curl,Q);
+			break;
+		case 3:	// 2nd order OGSTM-BFM approach
+				// This gradient is experimental
+			grad = field::gradOGS2(nx-1,ny-1,nz-1,array,e1,e2,e3,div,curl,Q);
+			break;
+		case 4:	// 4th order OGSTM-BFM approach
+				// This gradient is experimental
+			grad = field::gradOGS4(nx-1,ny-1,nz-1,array,e1,e2,e3,div,curl,Q);
+			break;
+		default:
+			vtkErrorMacro("Oops! Trouble selecting the gradient type! This should never have happened");
+			return 0;
+	}
+
+	// Add arrays to output
+	std::string gradName = std::string("grad(") + arrName + std::string(")");
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(gradName.c_str(),grad);
+	output->GetCellData()->AddArray(vtkArray);
+	vtkArray->Delete();
+
+	// Add Divergence, Curl and Q if computed
+	if (!div.isempty()) {
+		std::string divName = std::string("div(") + arrName + std::string(")");
+		vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(divName.c_str(),div);
+		output->GetCellData()->AddArray(vtkArray);
+		vtkArray->Delete();		
+	}
+
+	if (!curl.isempty()) {
+		std::string curlName = std::string("curl(") + arrName + std::string(")");
+		vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(curlName.c_str(),curl);
+		output->GetCellData()->AddArray(vtkArray);
+		vtkArray->Delete();		
+	}
+
+	if (!Q.isempty()) {
+		std::string QName = std::string("Q(") + arrName + std::string(")");
+		vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(QName.c_str(),Q);
+		output->GetCellData()->AddArray(vtkArray);
+		vtkArray->Delete();		
 	}
 
 	// Copy the input grid
@@ -105,231 +244,24 @@ int vtkOGSDerivatives::RequestData(
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSDerivatives::ScalarArrayDerivatives(vtkFloatArray *vtkArray, vtkRectilinearGrid *mesh) {
-	// Recover XYZ number of nodes
-	int nx = mesh->GetXCoordinates()->GetNumberOfTuples();
-	int ny = mesh->GetYCoordinates()->GetNumberOfTuples();
-	int nz = mesh->GetZCoordinates()->GetNumberOfTuples();
+int vtkOGSDerivatives::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
-	// Recover weights
-	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
-		mesh->GetCellData()->GetArray("e1"));
-	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
-		mesh->GetCellData()->GetArray("e2"));
-	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
-		mesh->GetCellData()->GetArray("e3"));
+	/* SET UP THE PARALLEL CONTROLLER
 
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
-		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
-		return;
+		The MPI threads come initialized by the ParaView server. Here
+		we set up the environment for this filter.
+
+	*/
+	#ifdef PARAVIEW_USE_MPI
+	if (this->Controller->GetNumberOfProcesses() > 1) {
+		this->nProcs = this->Controller->GetNumberOfProcesses();
+		this->procId = this->Controller->GetLocalProcessId();
 	}
 
-	// Compute the cell centers
-	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell Centers",mesh);
+	// Stop all threads except from the master to execute
+	if (this->procId > 0) return 1;
+	#endif
 
-	// Preallocate output array, which will be a vector array
-	char varname[256];
-	sprintf(varname,"grad(%s)",vtkArray->GetName());
-	vtkFloatArray *vtkGradArray = VTK::createVTKvecf3(varname,nx-1,ny-1,nz-1,NULL,NULL,NULL);
-
-	// Divergence computation
-	if (this->ComputeDivergence)
-		vtkWarningMacro("Cannot compute the divergence of a scalar array!");
-
-	// Curl computation
-	if (this->ComputeCurl)
-		vtkWarningMacro("Cannot compute the curl of a scalar array!");
-
-	// Q-criterion computation
-	if (this->ComputeQ)
-		vtkWarningMacro("Cannot compute the Q-criterion of a scalar array!");
-
-	// Loop the mesh cells
-	double deri[3]     = {0.,0.,0.};
-	double deri_old[3] = {0.,0.,0.};
-	
-	for (int kk = 0; kk < nz-1; kk++) {
-		for (int jj = 0; jj < ny-1; jj++) {
-			for (int ii = 0; ii < nx-1; ii++) {
-				// Store the previous derivative
-				if (this->grad_type > 1) {
-					for (int dd = 0; dd < 3; dd++) 
-						deri_old[dd] = deri[dd];
-				}
-				// Recover e1u, e2v and e3w
-				double e1[4], e2[4], e3[4];
-				vtke1->GetTuple(CLLIND(ii,jj,0,nx,ny),e1);
-				vtke2->GetTuple(CLLIND(ii,jj,0,nx,ny),e2);
-				vtke3->GetTuple(CLLIND(ii,jj,0,nx,ny),e3);
-				// Selection of the gradient method
-				switch (this->grad_type) {
-					case 0: // Second order, face centered gradient
-							// This gradient is unsafe as it relies on the mesh projection
-						VTK::vtkGradXY2(ii,jj,kk,nx-1,ny-1,nz-1,vtkArray,vtkCellCenters,deri);
-						break;
-					case 1: // Fourth order, face centered gradient
-							// This gradient is unsafe as it relies on the mesh projection
-						VTK::vtkGradXY4(ii,jj,kk,nx-1,ny-1,nz-1,vtkArray,vtkCellCenters,deri);
-						break;
-					case 2:	// OGSTM-BFM approach according to the NEMO handbook
-							// This gradient is safe as it relies on the code implementation
-						VTK::vtkGradOGS1(ii,jj,kk,nx-1,ny-1,nz-1,
-							vtkArray,e1[1],e2[2],e3[3],deri);
-						break;
-					case 3:	// 2nd order OGSTM-BFM approach
-							// This gradient is experimental
-						VTK::vtkGradOGS2(ii,jj,kk,nx-1,ny-1,nz-1,
-							vtkArray,e1[1],e2[2],e3[3],deri);
-						break;
-					case 4:	// 4th order OGSTM-BFM approach
-							// This gradient is experimental
-						VTK::vtkGradOGS4(ii,jj,kk,nx-1,ny-1,nz-1,
-							vtkArray,e1[1],e2[2],e3[3],deri);
-						break;
-				}
-				// Interpolate on the centered grid
-				if (this->grad_type > 1)
-					VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
-						deri_old,deri,vtke1,vtke2,vtke3,deri);
-				// Add to array
-				vtkGradArray->SetTuple(CLLIND(ii,jj,kk,nx,ny),deri);
-			}
-		}
-		this->UpdateProgress(0.+1./(nz-1.)*kk);
-	}
-	// Add array to mesh
-	mesh->GetCellData()->AddArray(vtkGradArray); 
-	vtkGradArray->Delete();
-	vtkCellCenters->Delete();
-}
-
-//----------------------------------------------------------------------------
-void vtkOGSDerivatives::VectorArrayDerivatives(vtkFloatArray *vtkArray, vtkRectilinearGrid *mesh) {
-	// Recover XYZ number of nodes
-	int nx = mesh->GetXCoordinates()->GetNumberOfTuples();
-	int ny = mesh->GetYCoordinates()->GetNumberOfTuples();
-	int nz = mesh->GetZCoordinates()->GetNumberOfTuples();
-
-	// Recover weights
-	vtkFloatArray *vtke1 = vtkFloatArray::SafeDownCast(
-		mesh->GetCellData()->GetArray("e1"));
-	vtkFloatArray *vtke2 = vtkFloatArray::SafeDownCast(
-		mesh->GetCellData()->GetArray("e2"));
-	vtkFloatArray *vtke3 = vtkFloatArray::SafeDownCast(
-		mesh->GetCellData()->GetArray("e3"));
-
-	if (vtke1 == NULL || vtke2 == NULL || vtke3 == NULL) {
-		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
-		return;
-	}
-
-	// Compute the cell centers
-	vtkFloatArray *vtkCellCenters = VTK::getCellCoordinates("Cell Centers",mesh);
-
-	// Preallocate output array, which will be a vector array
-	char varname[256];
-	sprintf(varname,"grad(%s)",vtkArray->GetName());
-	vtkFloatArray *vtkGradArray = VTK::createVTKtenf9(varname,nx-1,ny-1,nz-1,
-		NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
-
-	sprintf(varname,"div(%s)",vtkArray->GetName());
-	vtkFloatArray *vtkDivArray = VTK::createVTKscaf(varname,nx-1,ny-1,nz-1,NULL);
-
-	sprintf(varname,"curl(%s)",vtkArray->GetName());
-	vtkFloatArray *vtkCurlArray = VTK::createVTKvecf3(varname,nx-1,ny-1,nz-1,
-		NULL,NULL,NULL);
-
-	sprintf(varname,"Q(%s)",vtkArray->GetName());
-	vtkFloatArray *vtkQArray = VTK::createVTKscaf(varname,nx-1,ny-1,nz-1,NULL);
-
-	// Loop the mesh cells
-	double deri[9]     = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
-	double deri_old[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
-	
-	for (int kk = 0; kk < nz-1; kk++) {
-		for (int jj = 0; jj < ny-1; jj++) {
-			for (int ii = 0; ii < nx-1; ii++) {
-				// Store the previous derivative
-				if (this->grad_type > 1) {
-					for (int dd = 0; dd < 9; dd++) 
-						deri_old[dd] = deri[dd];
-				}
-				// Recover e1u, e2v and e3w
-				double e1[4], e2[4], e3[4];
-				vtke1->GetTuple(CLLIND(ii,jj,0,nx,ny),e1);
-				vtke2->GetTuple(CLLIND(ii,jj,0,nx,ny),e2);
-				vtke3->GetTuple(CLLIND(ii,jj,0,nx,ny),e3);
-				// Selection of the gradient method
-				switch (this->grad_type) {
-					case 0: // Second order, face centered gradient
-							// This gradient is unsafe as it relies on the mesh projection
-						VTK::vtkGrad3XY2(ii,jj,kk,nx-1,ny-1,nz-1,vtkArray,vtkCellCenters,deri);
-						break;
-					case 1: // Fourth order, face centered gradient
-							// This gradient is unsafe as it relies on the mesh projection
-						VTK::vtkGrad3XY4(ii,jj,kk,nx-1,ny-1,nz-1,vtkArray,vtkCellCenters,deri);
-						break;
-					case 2:	// OGSTM-BFM approach according to the NEMO handbook
-							// This gradient is safe as it relies on the code implementation
-						VTK::vtkGrad3OGS1(ii,jj,kk,nx-1,ny-1,nz-1,
-							vtkArray,e1[1],e2[2],e3[3],deri);
-						break;
-					case 3:	// 2nd order OGSTM-BFM approach
-							// This gradient is experimental
-						VTK::vtkGrad3OGS2(ii,jj,kk,nx-1,ny-1,nz-1,
-							vtkArray,e1[1],e2[2],e3[3],deri);
-						break;
-					case 4:	// 4th order OGSTM-BFM approach
-							// This gradient is experimental
-						VTK::vtkGrad3OGS4(ii,jj,kk,nx-1,ny-1,nz-1,
-							vtkArray,e1[1],e2[2],e3[3],deri);
-						break;
-				}
-				// Interpolate on the centered grid
-				if (this->grad_type > 1) {
-					VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
-						deri_old,deri,vtke1,vtke2,vtke3,deri);
-					VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
-						deri_old+3,deri+3,vtke1,vtke2,vtke3,deri+3);
-					VTK::facecen2cellcen(ii,jj,0,nx-1,ny-1,
-						deri_old+6,deri+6,vtke1,vtke2,vtke3,deri+6);
-				}
-				// Add to array
-				vtkGradArray->SetTuple(CLLIND(ii,jj,kk,nx,ny),deri);
-				// Computation of the divergence
-				if (this->ComputeDivergence) 
-					vtkDivArray->SetTuple1(CLLIND(ii,jj,kk,nx,ny),
-							deri[0] + deri[4] + deri[8]);
-				// Computation of the curl
-				if (this->ComputeCurl)
-					vtkCurlArray->SetTuple3(CLLIND(ii,jj,kk,nx,ny),
-						deri[7] - deri[5],
-						deri[2] - deri[6],
-						deri[3] - deri[1]);
-				// Computation of the Q-criterion
-				if (this->ComputeQ)
-					vtkQArray->SetTuple1(CLLIND(ii,jj,kk,nx,ny),
-						-0.5*(deri[0]*deri[0] + deri[4]*deri[4] + deri[8]*deri[8])
-						-deri[1]*deri[3]-deri[2]*deri[6]-deri[5]*deri[7]
-						);
-			}
-		}
-		this->UpdateProgress(0.+1./(nz-1.)*kk);
-	}
-	// Add array to mesh
-	mesh->GetCellData()->AddArray(vtkGradArray); vtkGradArray->Delete();
-	
-	if (this->ComputeDivergence)
-		mesh->GetCellData()->AddArray(vtkDivArray);
-	vtkDivArray->Delete(); 
-
-	if (this->ComputeCurl)
-		mesh->GetCellData()->AddArray(vtkCurlArray);
-	vtkCurlArray->Delete();
-
-	if (this->ComputeQ)
-		mesh->GetCellData()->AddArray(vtkQArray);
-	vtkQArray->Delete();
-	
-	vtkCellCenters->Delete();
+  	this->isReqInfo = true;
 }

@@ -21,7 +21,16 @@
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAlgorithm.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 #include <vector>
+
+#include "../_utils/V3.h"
+#include "../_utils/field.h"
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSSpatialStats : public vtkDataSetAlgorithm
 {
@@ -35,12 +44,13 @@ public:
   vtkGetMacro(epsi, double);
 
   // Description:
-  // Get the depth_factor
-  vtkSetMacro(depth_factor, double);
-  vtkGetMacro(depth_factor, double);
+  // Decide to use the volume for statistics
+  vtkGetMacro(useVolume, int);
+  vtkSetMacro(useVolume, int);
+  vtkBooleanMacro(useVolume, int);
 
-  //
-  //
+  // Description:
+  // Number of user inputed depths
   void SetNumberOfDepthLevels(int n);
   void SetDepthLevels(int i, double value);
 
@@ -54,26 +64,48 @@ public:
   void DisableAllStatArrays();
   void EnableAllStatArrays();
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSSpatialStats();
   ~vtkOGSSpatialStats() override;
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
-
-  void CellStats(vtkDataSet *, vtkDataSet *, double );
-  void PointStats(vtkDataSet *, vtkDataSet *, double );
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   vtkDataArraySelection* StatDataArraySelection;
+
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
 
 private:
   vtkOGSSpatialStats(const vtkOGSSpatialStats&) = delete;
   void operator=(const vtkOGSSpatialStats&) = delete;
 
-  double epsi, depth_factor;
+  // Tolerance for finding the depth levels
+  double epsi;
 
-  int ndepths;
+  // Depth levels and number of depth levels
+  int ndepths, procId, nProcs;
   std::vector<double> zcoords;
 
+  // Auxiliar variables worth conserving
+  // they are read once in the RequestInformation and used in the
+  // RequestData
+  bool iscelld;              // Whether we have cell or point data 
+  v3::V3v xyz;               // Stores cell/point coordinates
+  field::Field<int> cId2zId; // Cell to depth level connectivity
+
+  bool isReqInfo;            // Set true when request information
+  int  useVolume;            // Use the volume as weight instead of the area
 };
 
 #endif

@@ -19,7 +19,13 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkDataSetAttributes.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 class vtkAbstractCellLocator;
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSDepthProfile : public vtkDataSetAlgorithm 
 {
@@ -42,6 +48,15 @@ public:
    virtual void SetCellLocatorPrototype(vtkAbstractCellLocator*);
    vtkGetObjectMacro(CellLocatorPrototype, vtkAbstractCellLocator);
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSDepthProfile();
   ~vtkOGSDepthProfile() override;
@@ -53,9 +68,15 @@ protected:
   void Initialize(vtkDataSet* input,vtkDataSet* source, vtkDataSet* output);
   void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkDataSet *output);
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSDepthProfile(const vtkOGSDepthProfile&) = delete;
   void operator=(const vtkOGSDepthProfile&) = delete;
+
+  int procId, nProcs;
 
   vtkAbstractCellLocator* CellLocatorPrototype;
   

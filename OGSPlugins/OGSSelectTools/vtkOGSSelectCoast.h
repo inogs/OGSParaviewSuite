@@ -19,7 +19,13 @@
 #include "vtkDataSet.h"
 #include "vtkThreshold.h"
 
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
+
 class vtkDataArraySelection;
+
+#ifdef PARAVIEW_USE_MPI
+  class vtkMultiProcessController;
+#endif
 
 class VTK_EXPORT vtkOGSSelectCoast : public vtkThreshold {
 public:
@@ -42,6 +48,15 @@ public:
   void DisableAllCoastsArrays();
   void EnableAllCoastsArrays();
 
+  #ifdef PARAVIEW_USE_MPI
+    // Description:
+    // Set the controller use in compositing (set to
+    // the global controller by default)
+    // If not using the default, this must be called before any
+    // other methods.
+    virtual void SetController(vtkMultiProcessController* controller);
+  #endif
+
 protected:
   vtkOGSSelectCoast();
   ~vtkOGSSelectCoast();
@@ -50,10 +65,15 @@ protected:
 
   vtkDataArraySelection* CoastsDataArraySelection;
 
+  #ifdef PARAVIEW_USE_MPI
+    vtkMultiProcessController* Controller;
+  #endif
+
 private:
   vtkOGSSelectCoast(const vtkOGSSelectCoast&) = delete;
   void operator=(const vtkOGSSelectCoast&) = delete;
 
+  int procId, nProcs;
   char *mask_field;
 };
 
