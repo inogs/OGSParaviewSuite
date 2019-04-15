@@ -705,7 +705,7 @@
 
                <!-- Plot Properties -->
                <StringVectorProperty name="Variables"
-                                     label="Variables"
+                                     label="Labels"
                                      command="SetVariables"
                                      default_values=""
                                      number_of_elements="1"
