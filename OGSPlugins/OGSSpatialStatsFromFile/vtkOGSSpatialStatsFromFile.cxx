@@ -37,7 +37,7 @@
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSSpatialStatsFromFile, Controller, vtkMultiProcessController);
 #endif
 
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);

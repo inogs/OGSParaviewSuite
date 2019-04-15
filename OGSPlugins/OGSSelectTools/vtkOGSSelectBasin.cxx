@@ -34,7 +34,7 @@ int omp_get_thread_num();
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSSelectBasin, Controller, vtkMultiProcessController);
 #endif
 
 vtkStandardNewMacro(vtkOGSSelectBasin);
