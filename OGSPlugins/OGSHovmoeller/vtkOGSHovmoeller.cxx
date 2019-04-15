@@ -275,6 +275,14 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	// Check input field
+	if (std::string(this->field) == std::string("coast mask"))  { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("basins mask")) { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("e2"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("e3"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+
 	// Decide which algorithm to use
 	if (this->average)
 		return this->HovmoellerAverage(ntsteps,input,source,output);

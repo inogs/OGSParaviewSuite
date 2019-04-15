@@ -36,7 +36,7 @@ namespace xml = pugi;
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSVariableAggregator, Controller, vtkMultiProcessController);
 #endif
 
 vtkStandardNewMacro(vtkOGSVariableAggregator);

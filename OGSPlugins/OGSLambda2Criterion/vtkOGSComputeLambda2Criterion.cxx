@@ -34,7 +34,7 @@
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSComputeLambda2Criterion, Controller, vtkMultiProcessController);
 #endif
 
 vtkStandardNewMacro(vtkOGSComputeLambda2Criterion);

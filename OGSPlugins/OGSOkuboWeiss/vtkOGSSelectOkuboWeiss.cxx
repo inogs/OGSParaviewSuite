@@ -31,7 +31,7 @@
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSSelectOkuboWeiss, Controller, vtkMultiProcessController);
 #endif
 
 vtkStandardNewMacro(vtkOGSSelectOkuboWeiss);
