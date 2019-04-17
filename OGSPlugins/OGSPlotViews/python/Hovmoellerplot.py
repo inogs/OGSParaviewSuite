@@ -56,6 +56,7 @@ def RequestData():
 		Performs Hovmoeller plots from data.
 		'''
 		from paraview import python_view
+		from matplotlib import __version__ as plt_vers
 		from matplotlib import pyplot as plt
 		from matplotlib.ticker import MaxNLocator
 		
@@ -74,11 +75,18 @@ def RequestData():
 			title_loc = 'left'
 		if hplot_title_alig == 2:
 			title_loc = 'right'
-		ax.set_title(hplot_title,
-			fontsize=hplot_title_font,
-			fontweight='bold'    if hplot_title_bold else None,
-			style='italic'  if hplot_title_ital else None,
-			loc=title_loc)
+		# Fix concerning matplotlib 1.1.1 that is shipped with the superbuild
+		if plt_vers > '1.3.1':
+			ax.set_title(hplot_title,
+				fontsize=hplot_title_font,
+				fontweight='bold'    if hplot_title_bold else None,
+				style='italic'  if hplot_title_ital else None,
+				loc=title_loc)
+		else:
+			ax.set_title(hplot_title,
+				fontsize=hplot_title_font,
+				fontweight='bold'    if hplot_title_bold else None,
+				style='italic'  if hplot_title_ital else None)
 		# X Axes properties
 		ax.set_xlabel(hx_label,
 			fontsize=hx_font,

@@ -56,6 +56,7 @@ def RequestData():
 		Performs spaghetti plots from data.
 		'''
 		from paraview import python_view
+		from matplotlib import __version__ as plt_vers
 		from matplotlib import pyplot as plt
 		from matplotlib.ticker import MaxNLocator
 		
@@ -74,11 +75,17 @@ def RequestData():
 			title_loc = 'left'
 		if splot_title_alig == 2:
 			title_loc = 'right'
-		ax.set_title(splot_title,
-			fontsize=splot_title_font,
-			fontweight='bold'    if splot_title_bold else None,
-			style='italic'  if splot_title_ital else None,
-			loc=title_loc)
+		if plt_vers > '1.3.1':
+			ax.set_title(splot_title,
+				fontsize=splot_title_font,
+				fontweight='bold'    if splot_title_bold else None,
+				style='italic'  if splot_title_ital else None,
+				loc=title_loc)
+		else:
+			ax.set_title(splot_title,
+				fontsize=splot_title_font,
+				fontweight='bold'    if splot_title_bold else None,
+				style='italic'  if splot_title_ital else None)			
 		# X Axes properties
 		ax.set_xlabel(sx_label,
 			fontsize=sx_font,

@@ -56,6 +56,7 @@ def RequestData():
 		Performs vertical plots from data.
 		'''
 		from paraview import python_view
+		from matplotlib import __version__ as plt_vers
 		from matplotlib import pyplot as plt
 		
 		import vtk, numpy as np
@@ -76,11 +77,18 @@ def RequestData():
 			title_loc = 'left'
 		if pplot_title_alig == 2:
 			title_loc = 'right'
-		ax.set_title(pplot_title,
-			fontsize=pplot_title_font,
-			fontweight='bold'    if pplot_title_bold else None,
-			style='italic'  if pplot_title_ital else None,
-			loc=title_loc)
+		if plt_vers > '1.3.1':
+			ax.set_title(pplot_title,
+				fontsize=pplot_title_font,
+				fontweight='bold'    if pplot_title_bold else None,
+				style='italic'  if pplot_title_ital else None,
+				loc=title_loc)
+		else:
+			ax.set_title(pplot_title,
+				fontsize=pplot_title_font,
+				fontweight='bold'    if pplot_title_bold else None,
+				style='italic'  if pplot_title_ital else None,
+				loc=title_loc)
 		# X Axes properties
 		ax.set_xlabel(px_label,
 			fontsize=px_font,
