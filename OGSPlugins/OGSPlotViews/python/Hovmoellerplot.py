@@ -56,9 +56,7 @@ def RequestData():
 		Performs Hovmoeller plots from data.
 		'''
 		from paraview import python_view
-		from matplotlib import __version__ as plt_vers
-		from matplotlib import pyplot as plt
-		from matplotlib.ticker import MaxNLocator
+		from matplotlib import cm as cm
 		
 		import vtk, numpy as np
 		from vtk.util import numpy_support as npvtk
@@ -75,18 +73,10 @@ def RequestData():
 			title_loc = 'left'
 		if hplot_title_alig == 2:
 			title_loc = 'right'
-		# Fix concerning matplotlib 1.1.1 that is shipped with the superbuild
-		if plt_vers > '1.3.1':
-			ax.set_title(hplot_title,
-				fontsize=hplot_title_font,
-				fontweight='bold'    if hplot_title_bold else None,
-				style='italic'  if hplot_title_ital else None,
-				loc=title_loc)
-		else:
-			ax.set_title(hplot_title,
-				fontsize=hplot_title_font,
-				fontweight='bold'    if hplot_title_bold else None,
-				style='italic'  if hplot_title_ital else None)
+		ax.set_title(hplot_title,
+			fontsize=hplot_title_font,
+			fontweight='bold'    if hplot_title_bold else None,
+			style='italic'  if hplot_title_ital else None)
 		# X Axes properties
 		ax.set_xlabel(hx_label,
 			fontsize=hx_font,
@@ -137,21 +127,21 @@ def RequestData():
 		xNames = np.array(xNames)
 
 		# Colormap selection
-		cm = plt.cm.coolwarm
-		if hsel_colormap == 0: cm = plt.cm.jet
-		if hsel_colormap == 1: cm = plt.cm.rainbow
-		if hsel_colormap == 2: cm = plt.cm.hsv
-		if hsel_colormap == 3: cm = plt.cm.ocean
-		if hsel_colormap == 4: cm = plt.cm.terrain
-		if hsel_colormap == 5: cm = plt.cm.coolwarm
-		if hsel_colormap == 6: cm = plt.cm.viridis
-		if hsel_colormap == 7: cm = plt.cm.plasma
-		if hsel_colormap == 8: cm = plt.cm.inferno
+		cmap = cm.coolwarm
+		if hsel_colormap == 0: cmap = cm.jet
+		if hsel_colormap == 1: cmap = cm.rainbow
+		if hsel_colormap == 2: cmap = cm.hsv
+		if hsel_colormap == 3: cmap = cm.ocean
+		if hsel_colormap == 4: cmap = cm.terrain
+		if hsel_colormap == 5: cmap = cm.coolwarm
+		if hsel_colormap == 6: cmap = cm.viridis
+		if hsel_colormap == 7: cmap = cm.plasma
+		if hsel_colormap == 8: cmap = cm.inferno
 
 		# Plot and colorbar
 		z_min = np.nanmin(z)
 		z_max = np.nanmax(z)
-		ctf = ax.contourf(xIds,depth,z,cmap=cm,levels=np.linspace(z_min,z_max,256))
+		ctf = ax.contourf(xIds,depth,z,cmap=cmap,levels=np.linspace(z_min,z_max,256))
 		if hdraw_colorbar: 
 			cbar = figure.colorbar(ctf)
 			cbar.set_ticks(np.linspace(z_min,z_max,10))
