@@ -75,6 +75,8 @@ vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
 	this->cmask_field = NULL;
 
 	this->per_coast = 0;
+	this->nProcs    = 0;
+	this->procId    = 0;
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;

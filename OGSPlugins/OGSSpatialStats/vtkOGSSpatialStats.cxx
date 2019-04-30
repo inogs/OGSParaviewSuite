@@ -77,6 +77,8 @@ vtkOGSSpatialStats::vtkOGSSpatialStats(){
 	this->epsi      = 1.e-3;
 	this->ndepths   = 0;
 	this->useVolume = 0;
+	this->nProcs    = 0;
+	this->procId    = 0;
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;

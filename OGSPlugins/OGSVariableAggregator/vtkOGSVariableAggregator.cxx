@@ -78,6 +78,8 @@ vtkOGSVariableAggregator::vtkOGSVariableAggregator() {
 	this->deleteVars = 0;
 	this->FileName   = NULL; 
 	this->XMLText    = NULL;
+	this->nProcs     = 0;
+	this->procId     = 0;
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;
