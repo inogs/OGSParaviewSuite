@@ -359,84 +359,140 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	if (ii_tstep >= this->ogsdata.ntsteps()) ii_tstep = 0;
 
 	this->UpdateProgress(0.25);
-	
+
+
 	VTKARRAY *vtkarray;
-	field::Field<FLDARRAY> array;
+	field::Field<FLDARRAY> array, array1;
+	int n_vars_loaded = 0;
 
-	/* READING THE VARIABLES
-
-		Variables inside AVE_PHYS, AVE_FREQ, FORCINGS and GENERALS are read
-		here. Velocity is outputed asa vector while the others are scalar 
-		arrays. User can select which variables to load by using a panel.
-
+	/* READING THE PHYSICAL VARIABLES
+		Variables inside AVE_PHYS are read here. Velocity is outputed as
+		a vector while the others are scalar arrays. User can select which
+		variables to load by using a panel.
 	*/
-	std::vector<std::string> vars2Load;
-
-	// Physical variables (AVE_PHYS)
-	for (int ii = 0; ii < this->GetNumberOfAvePhysArrays(); ++ii) {
-		const char *arrName = GetAvePhysArrayName(ii);
-		if (this->GetAvePhysArrayStatus(arrName))
-			vars2Load.push_back(arrName);
-	}
-
-	// Biogeochemical variables (AVE_FREQ)
-	for (int ii = 0; ii < this->GetNumberOfAveFreqArrays(); ++ii) {
-		const char *arrName = GetAveFreqArrayName(ii);
-		if (this->GetAveFreqArrayStatus(arrName))
-			vars2Load.push_back(arrName);
-	}
-
-	// Forcings variables (FORCINGS)
-	for (int ii = 0; ii < this->GetNumberOfForcingArrays(); ++ii) {
-		const char *arrName = GetForcingArrayName(ii);
-		if (this->GetForcingArrayStatus(arrName))
-			vars2Load.push_back(arrName);
-	}
-
-	// General variables (GENERALS)
-	for (int ii = 0; ii < this->GetNumberOfGeneralArrays(); ++ii) {
-		const char *arrName = GetGeneralArrayName(ii);
-		if (this->GetGeneralArrayStatus(arrName))
-			vars2Load.push_back(arrName);
-	}
-
-	// Load the data into the mesh
 	// Parallelization strategy MPI
-	for (std::string var : vars2Load) {
+	for (int ii = 0; ii < this->ogsdata.var_n(0); ii++) {
+		// Test if the variable has been activated
+		if (this->GetAvePhysArrayStatus(this->ogsdata.var_name(0,ii))) {
+			if (std::string(this->ogsdata.var_name(0,ii)) == "Velocity") {
+				array.clear(); array.set_dim(this->ogsdata.ncells(),3);
 
-		if (var == std::string("Velocity")) {
-			array.set_dim(this->ogsdata.ncells(),3);
+				if ( NetCDF::readNetCDF2F3(this->ogsdata.var_path(0,ii,ii_tstep).c_str(),
+											"vozocrtx","vomecrty","vovecrtz",array ) != NETCDF_OK )	{					    								  
+					vtkErrorMacro("Cannot read NetCDF <Velocity>!Aborting!"); return 0; 
+				}
 
-			if ( NetCDF::readNetCDF2F3(this->ogsdata.var_path(var,ii_tstep).c_str(),
-										"vozocrtx","vomecrty","vovecrtz",array ) != NETCDF_OK )	{					    								  
-				vtkErrorMacro("Cannot read variable <"<<var<<"> in NetCDF! Aborting!"); return 0;
+				// We need to project the velocity field from a face centered grid to a cell centered grid
+				array1 = field::UVW2T(array,
+							 		  this->ogsdata.e1(),
+							 		  this->ogsdata.e2(),
+							 		  this->ogsdata.e3(),
+							 		  this->ogsdata.nlon()-1,
+							 		  this->ogsdata.nlat()-1,
+							 		  this->ogsdata.nlev()-1
+									 );
+
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array1);
+				this->Mesh->GetCellData()->AddArray(vtkarray);
+				vtkarray->Delete(); array1.clear();
+
+				n_vars_loaded++;
+			} else {
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(0,ii,ii_tstep).c_str(), this->ogsdata.var_vname(0,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">!Aborting!"); return 0;
+				}
+
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array);
+				this->Mesh->GetCellData()->AddArray(vtkarray);
+				vtkarray->Delete();
+
+				n_vars_loaded++;
 			}
-
-			// We need to project the velocity field from a face centered grid to a cell centered grid
-			field::Field<FLDARRAY> arrayProjected = field::UVW2T(array,
-																 this->ogsdata.e1(),
-																 this->ogsdata.e2(),
-																 this->ogsdata.e3(),
-																 this->ogsdata.nlon()-1,
-																 this->ogsdata.nlat()-1,
-																 this->ogsdata.nlev()-1
-																);
-			vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(var,arrayProjected);
-			this->Mesh->GetCellData()->AddArray(vtkarray);
-			vtkarray->Delete(); array.clear(); arrayProjected.clear();
 		} else {
-			array.set_dim(this->ogsdata.ncells(),1);
-
-			if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(var,ii_tstep).c_str(), this->ogsdata.var_vname(var), array) != NETCDF_OK ) {
-				vtkErrorMacro("Cannot read variable <"<<var<<"> in NetCDF! Aborting!"); return 0;
-			}
-
-			vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(var,array);
-			this->Mesh->GetCellData()->AddArray(vtkarray);
-			vtkarray->Delete();	array.clear();	
+			this->Mesh->GetCellData()->RemoveArray(this->ogsdata.var_name(0,ii));
 		}
-
+		this->UpdateProgress(0.25 + ii*(0.175/this->ogsdata.var_n(0)));		
 	}
+
+	/* READING THE BIOGEOCHEMICAL VARIABLES
+		Variables inside AVE_FREQ are read here. User can select which
+		variables to load by using a panel.
+	*/
+	// Parallelization strategy MPI
+	for (int ii = 0; ii < this->ogsdata.var_n(1); ii++) {
+		// Test if the variable has been activated
+		if (this->GetAveFreqArrayStatus(this->ogsdata.var_name(1,ii))) {
+
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(1,ii,ii_tstep).c_str(), this->ogsdata.var_vname(1,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(1,ii)<<">!Aborting!"); return 0;
+				}
+
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(1,ii),array);
+				this->Mesh->GetCellData()->AddArray(vtkarray);
+				vtkarray->Delete();
+
+				n_vars_loaded++;
+		} else {
+			this->Mesh->GetCellData()->RemoveArray(this->ogsdata.var_name(1,ii));
+		}
+		this->UpdateProgress(0.425 + ii*(0.175/this->ogsdata.var_n(1)));		
+	}
+
+	/* READING THE FORCINGS VARIABLES
+		Variables inside FORCINCS are read here. User can select which
+		variables to load by using a panel.
+	*/
+	// Parallelization strategy MPI
+	for (int ii = 0; ii < this->ogsdata.var_n(2); ii++) {
+		// Test if the variable has been activated
+		if (this->GetForcingArrayStatus(this->ogsdata.var_name(2,ii))) {
+
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(2,ii,ii_tstep).c_str(), this->ogsdata.var_vname(2,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(2,ii)<<">!Aborting!"); return 0;
+				}
+
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(2,ii),array);
+				this->Mesh->GetCellData()->AddArray(vtkarray);
+				vtkarray->Delete();
+
+				n_vars_loaded++;
+		} else {
+			this->Mesh->GetCellData()->RemoveArray(this->ogsdata.var_name(2,ii));
+		}
+		this->UpdateProgress(0.6 + ii*(0.175/this->ogsdata.var_n(2)));		
+	}
+
+	/* READING THE GENERAL VARIABLES
+		Variables inside GENERAL are read here. User can select which
+		variables to load by using a panel.
+	*/
+	// Parallelization strategy MPI
+	for (int ii = 0; ii < this->ogsdata.var_n(3); ii++) {
+		// Test if the variable has been activated
+		if (this->GetGeneralArrayStatus(this->ogsdata.var_name(3,ii))) {
+
+				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
+
+				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(3,ii,ii_tstep).c_str(), this->ogsdata.var_vname(3,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(3,ii)<<">!Aborting!"); return 0;
+				}
+
+				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(3,ii),array);
+				this->Mesh->GetCellData()->AddArray(vtkarray);
+				vtkarray->Delete();
+
+				n_vars_loaded++;
+		} else {
+			this->Mesh->GetCellData()->RemoveArray(this->ogsdata.var_name(3,ii));
+		}
+		this->UpdateProgress(0.775 + ii*(0.175/this->ogsdata.var_n(3)));
+	}		
 
 	/* SET THE METADATA ARRAY
 		Set the metadata, an array that contains multiple information for
@@ -465,11 +521,25 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	vtkmetadata->SetValue(2,aux_str.c_str());
 
 	// Set the number of variables loaded
-	aux_str = std::to_string(vars2Load.size()) + std::string(";");
-	for (std::string var : vars2Load)
-		aux_str += var + std::string(";");
+	aux_str = std::to_string(n_vars_loaded) + std::string(";");
+	// AVE_PHYS
+	for (int ii = 0; ii < this->ogsdata.var_n(0); ii++) 
+		if (this->GetAvePhysArrayStatus(this->ogsdata.var_name(0,ii)))
+			aux_str += std::string(this->ogsdata.var_name(0,ii)) + std::string(";");
+	// AVE_FREQ
+	for (int ii = 0; ii < this->ogsdata.var_n(1); ii++) 
+		if (this->GetAveFreqArrayStatus(this->ogsdata.var_name(1,ii)))
+			aux_str += std::string(this->ogsdata.var_name(1,ii)) + std::string(";");
+	// FORCINGS
+	for (int ii = 0; ii < this->ogsdata.var_n(2); ii++) 
+		if (this->GetForcingArrayStatus(this->ogsdata.var_name(2,ii)))
+			aux_str += std::string(this->ogsdata.var_name(2,ii)) + std::string(";");
+	// GENERALS
+	for (int ii = 0; ii < this->ogsdata.var_n(3); ii++) 
+		if (this->GetGeneralArrayStatus(this->ogsdata.var_name(3,ii)))
+			aux_str += std::string(this->ogsdata.var_name(3,ii)) + std::string(";");
 	vtkmetadata->SetValue(3,aux_str.c_str());
-
+	
 	// Set the file name
 	vtkmetadata->SetValue(4,this->FileName);
 
