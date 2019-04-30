@@ -542,15 +542,13 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 	std::vector<std::string> vdatevec;
 	strsplit(datevec,";",vdatevec);
 
-	this->UpdateProgress(.2);
+	this->UpdateProgress(.25);
 
 	// For each time instant, loop on the cell list and load the data into
 	// the table
-	#pragma omp parallel
-	{
 	field::Field<FLDARRAY> column(1,1);
 	VTKARRAY *vtkColumn;
-	for (int ii = ii_start+omp_get_thread_num(); ii < ii_end; ii += omp_get_num_threads()) {
+	for (int ii = ii_start; ii < ii_end; ii += 1) {
 		// Depth index
 		int zId = this->cId2zId[cellId][0];
 		// In which basin are we? (we need to loop the basins and find which is true)
@@ -568,12 +566,11 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		          nStat*zId                               +
 		          this->sId;
 		// Retrieve value from array
-		column[0][0] = (bId > 0 || cId > 0) ? statArray[pos][0] : 0;
+		column[0][0] = (bId > 0 || cId > 0) ? statArray[pos][0] : 0.;
 		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
 		output->AddColumn(vtkColumn); vtkColumn->Delete();
-		if (omp_get_thread_num() == 0)
-			this->UpdateProgress(0.25+0.75/(this->ii_end-this->ii_start)*(ii - this->ii_start));
-	}
+
+		this->UpdateProgress(0.25+0.75/(this->ii_end-this->ii_start)*(ii - this->ii_start));
 	}
 
 	this->UpdateProgress(1.);

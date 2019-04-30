@@ -570,8 +570,6 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 
 	// For each time instant, loop on the cell list and load the data into
 	// the table
-	#pragma omp parallel
-	{
 	field::Field<FLDARRAY> column(cellList.size(),1);
 	VTKARRAY *vtkColumn;
 
@@ -587,7 +585,7 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 		this->UpdateProgress(.25);
 	}
 
-	for (int ii = ii_start+omp_get_thread_num(); ii < ii_end; ii += omp_get_num_threads()) {
+	for (int ii = ii_start; ii < ii_end; ii += 1) {
 		for (int pId = 0; pId < cellList.size(); ++pId) {
 			// Retrieve the cell
 			int cellId = cellList[pId];
@@ -615,9 +613,7 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
 		output->AddColumn(vtkColumn); vtkColumn->Delete();
 
-		if (omp_get_thread_num() == 0)
-			this->UpdateProgress(0.25+0.75/(this->ii_end-this->ii_start)*(ii - this->ii_start));
-	}
+		this->UpdateProgress(0.25+0.75/(this->ii_end-this->ii_start)*(ii - this->ii_start));
 	}
 
 	this->UpdateProgress(1.);
