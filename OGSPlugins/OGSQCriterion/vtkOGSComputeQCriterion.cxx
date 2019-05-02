@@ -32,6 +32,11 @@
 #ifdef __linux__
 // Include OpenMP when working with GCC
 #include <omp.h>
+#define OMP_MAX_THREADS omp_get_max_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_MAX_THREADS 1
+#define OMP_THREAD_NUM  0
 #endif
 
 #ifdef PARAVIEW_USE_MPI
@@ -194,7 +199,7 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 	// COMPSTAT 1982 5th Symposium held at Toulouse 1982. Physica, Heidelberg, 1982.
 	// To compute the statistics. For a bit of memory and maybe a fairly slower first loop
 	// we are able to avoid doing a second mesh loop.
-	field::Field<FLDARRAY> Q(array.get_n(),1,0.), Q_stats(3,omp_get_max_threads(),0.);
+	field::Field<FLDARRAY> Q(array.get_n(),1,0.), Q_stats(3,OMP_MAX_THREADS,0.);
 
 	this->UpdateProgress(0.1);
 
@@ -247,7 +252,7 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 				Q[ind][0]*= -2.; // Scaling fix so that Q == OW
 
 				// Compute the statistics
-				int        tId = omp_get_thread_num();  // Which thread are we
+				int        tId = OMP_THREAD_NUM;  // Which thread are we
 				FLDARRAY     w = e1[ind][0]*e2[ind][0]; // Weight
 				FLDARRAY m_old = Q_stats[1][tId];      // Mean Old
 
@@ -261,7 +266,7 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 	// Q_stats is a shared array containing the statistics per each thread. We must now
 	// reduce to obtain the mean and standard deviation
 	FLDARRAY sum_weights = 0., Q_mean = 0., Q_std = 0.;
-	for (int ii = 0; ii < omp_get_max_threads(); ++ii) {
+	for (int ii = 0; ii < OMP_MAX_THREADS; ++ii) {
 		FLDARRAY sum_weights_old = sum_weights;
 		// Weights
 		sum_weights += Q_stats[0][ii];
