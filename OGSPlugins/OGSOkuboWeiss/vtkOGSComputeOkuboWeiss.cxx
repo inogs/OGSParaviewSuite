@@ -32,7 +32,7 @@
 
 #include <cstdint>
 
-#ifdef __GNUC__
+#ifdef __linux__
 // Include OpenMP when working with GCC
 #include <omp.h>
 #endif
