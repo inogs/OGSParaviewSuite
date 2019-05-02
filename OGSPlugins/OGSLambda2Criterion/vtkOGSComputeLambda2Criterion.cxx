@@ -30,7 +30,10 @@
 
 #include "vtkObjectFactory.h"
 
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
+#endif
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"

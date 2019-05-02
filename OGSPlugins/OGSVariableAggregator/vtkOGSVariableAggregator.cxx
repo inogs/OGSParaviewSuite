@@ -26,9 +26,16 @@
 #include <string>
 #include <sstream>
 #include <vector>
+
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 #include "pugixml.hpp"
 namespace xml = pugi;
@@ -202,7 +209,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 			// Loop the mesh 
 			#pragma omp parallel
 			{
-			for (int ii=omp_get_thread_num(); ii<arrayNew.get_n(); ii+=omp_get_num_threads())
+			for (int ii=OMP_THREAD_NUM; ii<arrayNew.get_n(); ii+=OMP_NUM_THREADS)
 				arrayNew[ii][0] += (*vecIter)[ii][0];
 			}
 		}

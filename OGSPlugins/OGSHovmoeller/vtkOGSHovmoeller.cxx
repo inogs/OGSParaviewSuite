@@ -40,9 +40,6 @@
 #include <ctime>
 #include <chrono>
 #include <string>
-#include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
 
 vtkStandardNewMacro(vtkOGSHovmoeller);
 vtkCxxSetObjectMacro(vtkOGSHovmoeller, CellLocatorPrototype, vtkAbstractCellLocator);
@@ -573,17 +570,15 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 	field::Field<FLDARRAY> column(cellList.size(),1);
 	VTKARRAY *vtkColumn;
 
-	if (omp_get_thread_num() == 0) {
-		// Write the coordinates as the first column of the table
-		for (int pId = 0; pId < cellList.size(); ++pId) {
-			v3::V3 xyz; input->GetPoint(pId,&xyz[0]);
-			column[pId][0] = xyz[2]/this->dfact;
-		}
-		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("depth",column);
-		output->AddColumn(vtkColumn); vtkColumn->Delete();
-
-		this->UpdateProgress(.25);
+	// Write the coordinates as the first column of the table
+	for (int pId = 0; pId < cellList.size(); ++pId) {
+		v3::V3 xyz; input->GetPoint(pId,&xyz[0]);
+		column[pId][0] = xyz[2]/this->dfact;
 	}
+	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("depth",column);
+	output->AddColumn(vtkColumn); vtkColumn->Delete();
+
+	this->UpdateProgress(.25);
 
 	for (int ii = ii_start; ii < ii_end; ii += 1) {
 		for (int pId = 0; pId < cellList.size(); ++pId) {

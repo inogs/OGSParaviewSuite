@@ -24,9 +24,11 @@
 #include "vtkStringArray.h"
 
 #include <string>
+
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#endif
 
 #include "field.h"
 

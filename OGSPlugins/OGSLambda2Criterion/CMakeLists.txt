@@ -24,8 +24,11 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
-set ( CMAKE_C_FLAGS   "-fopenmp")
-set ( CMAKE_CXX_FLAGS "-fopenmp")
+if(NOT APPLE)
+# OpenMP does not work with Apple's clang so we deactivate it.
+	set ( CMAKE_C_FLAGS   "-fopenmp")
+	set ( CMAKE_CXX_FLAGS "-fopenmp")
+endif()
 
 ADD_PARAVIEW_PLUGIN(OGSLambda2Criterion "1.0"
   SERVER_MANAGER_XML OGSLambda2Criterion.xml

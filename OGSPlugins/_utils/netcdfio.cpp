@@ -21,9 +21,15 @@
 #include "vtknetcdf/include/netcdf.h"
 #include "netcdfio.hpp"
 
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 #define MAXVAL 1.e15
 
@@ -54,7 +60,7 @@ namespace NetCDF
 		// Eliminate the missing variables
 		#pragma omp parallel
 		{
-		for (int ii = omp_get_thread_num(); ii < n; ii += omp_get_num_threads())
+		for (int ii = OMP_THREAD_NUM; ii < n; ii += OMP_NUM_THREADS)
 			if(out[ii] > MAXVAL) out[ii] = 0.;
 		}
 		// Return
@@ -85,7 +91,7 @@ namespace NetCDF
 		// Eliminate the missing variables
 		#pragma omp parallel
 		{
-		for (int ii = omp_get_thread_num(); ii < f.get_n(); ii += omp_get_num_threads())
+		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS)
 			if (f[ii][0] > MAXVAL) f[ii][0] = 0.;
 		}
 
@@ -109,7 +115,7 @@ namespace NetCDF
 		// Eliminate the missing variables
 		#pragma omp parallel
 		{
-		for (int ii = omp_get_thread_num(); ii < f.get_n(); ii += omp_get_num_threads())
+		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS)
 			if (f[ii][0] > MAXVAL) f[ii][0] = 0.;
 		}
 
@@ -184,7 +190,7 @@ namespace NetCDF
 		// Set field and eliminate the missing variables
 		#pragma omp parallel
 		{
-		for (int ii = omp_get_thread_num(); ii < f.get_n(); ii += omp_get_num_threads()) {
+		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS) {
 			f[ii][0] = u[ii]; if(f[ii][0] > MAXVAL) f[ii][0] = 0.;
 			f[ii][1] = v[ii]; if(f[ii][1] > MAXVAL) f[ii][1] = 0.;
 			f[ii][2] = w[ii]; if(f[ii][2] > MAXVAL) f[ii][2] = 0.;

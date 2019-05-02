@@ -23,9 +23,15 @@
 #include "vtkFieldData.h"
 #include "vtkSmartPointer.h"
 
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 #include "vtkOperations.hpp"
 
@@ -46,7 +52,7 @@ namespace VTK
 		// Loop the mesh and get the point coordinates
 		#pragma omp parallel shared(mesh,xyz)
 		{
-		for (int ii=omp_get_thread_num(); ii < xyz.len(); ii+=omp_get_num_threads()) {
+		for (int ii=OMP_THREAD_NUM; ii < xyz.len(); ii+=OMP_NUM_THREADS) {
 			// Obtain point from VTK structure
 			double pnt[3]; mesh->GetPoint(ii,pnt);
 			// Set the V3 structure
@@ -73,7 +79,7 @@ namespace VTK
 		#pragma omp parallel shared(mesh,xyz) firstprivate(fact)
 		{
 		vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-		for (int ii=omp_get_thread_num(); ii < xyz.len(); ii+=omp_get_num_threads()) {
+		for (int ii=OMP_THREAD_NUM; ii < xyz.len(); ii+=OMP_NUM_THREADS) {
 			// Preallocate to zero
 			xyz[ii] = v3::V3(0.,0.,0.);
 			// Get number of points per cell

@@ -21,9 +21,11 @@
 #include "field.h"
 
 #include <vector>
+
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#endif
 
 #define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 

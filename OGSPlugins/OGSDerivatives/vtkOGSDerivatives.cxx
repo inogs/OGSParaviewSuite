@@ -30,8 +30,6 @@
 #include "vtkObjectFactory.h"
 
 #include <string>
-#include <omp.h>
-
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"

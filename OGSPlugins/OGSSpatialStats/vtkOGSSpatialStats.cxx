@@ -36,10 +36,16 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
 
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
+#include <omp.h>
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
@@ -273,7 +279,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 
 		#pragma omp parallel
 		{
-		for (int ii=omp_get_thread_num(); ii < array.get_n(); ii+=omp_get_num_threads()) {
+		for (int ii=OMP_THREAD_NUM; ii < array.get_n(); ii+=OMP_NUM_THREADS) {
 			// Set maps
 			double w = (this->useVolume) ? e1[ii][0]*e2[ii][0]*e3[ii][0] : e1[ii][0]*e2[ii][0];
 			int ind  = cId2zId[ii][0];
@@ -290,7 +296,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		#pragma omp barrier
 		
 		// For each depth layer, compute the statistics
-		for (int zId = omp_get_thread_num(); zId < this->zcoords.size(); zId += omp_get_num_threads()) {
+		for (int zId = OMP_THREAD_NUM; zId < this->zcoords.size(); zId += OMP_NUM_THREADS) {
 
 			std::vector<std::pair<FLDARRAY,int>> sortedValues(mValuesPerLayer[zId].size());
 

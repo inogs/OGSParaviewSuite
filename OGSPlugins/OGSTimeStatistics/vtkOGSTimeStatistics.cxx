@@ -32,9 +32,16 @@
 #include <chrono>
 #include <vector>
 #include <string>
+
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 vtkStandardNewMacro(vtkOGSTimeStatistics);
 
@@ -322,7 +329,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 			// Accumulate, implement 1 pass averaging algorithm
 			#pragma omp parallel shared(arrFields,arrayTemp) firstprivate(ii_range)
 			{
-			for (int nId = omp_get_thread_num(); nId < arrFields[varId].get_n(); nId += omp_get_num_threads()) {
+			for (int nId = OMP_THREAD_NUM; nId < arrFields[varId].get_n(); nId += OMP_NUM_THREADS) {
 				for (int mId = 0; mId < arrFields[varId].get_m(); ++mId) { 
 					arrFields[varId][nId][mId] += (1./ii_range)*(arrayTemp[nId][mId] - arrFields[varId][nId][mId]);
 				}
@@ -357,7 +364,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 			if (this->procId == 0) {
 				#pragma omp parallel shared(arrFields,arrayTemp) firstprivate(time_interval)
 				{
-				for (int nId = omp_get_thread_num(); nId < arrFields[varId].get_n(); nId += omp_get_num_threads()) {
+				for (int nId = OMP_THREAD_NUM; nId < arrFields[varId].get_n(); nId += OMP_NUM_THREADS) {
 					for (int mId = 0; mId < arrayTemp.get_m(); ++mId) { 
 						arrFields[varId][nId][mId] = arrayTemp[nId][mId]/( (FLDARRAY)(time_interval[1] - time_interval[0]) );
 					}

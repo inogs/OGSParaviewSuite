@@ -31,10 +31,11 @@
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
-#include <omp.h>
-int omp_get_max_threads();
-int omp_get_thread_num();
 
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
+#include <omp.h>
+#endif
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"

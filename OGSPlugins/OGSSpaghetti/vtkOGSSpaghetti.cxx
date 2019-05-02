@@ -40,9 +40,6 @@
 #include <ctime>
 #include <chrono>
 #include <string>
-#include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
 
 vtkStandardNewMacro(vtkOGSSpaghetti);
 vtkCxxSetObjectMacro(vtkOGSSpaghetti, CellLocatorPrototype, vtkAbstractCellLocator);

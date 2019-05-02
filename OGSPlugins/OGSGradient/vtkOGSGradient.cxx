@@ -43,9 +43,16 @@
 
 #include <limits>
 #include <vector>
+
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
 #include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 #include "../_utils/matrixMN.h"
 
@@ -1112,7 +1119,7 @@ namespace {
 
     vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
 
-    for (vtkIdType point = omp_get_thread_num(); point < numpts; point+=omp_get_num_threads())
+    for (vtkIdType point = OMP_THREAD_NUM; point < numpts; point+=OMP_NUM_THREADS)
     {
       currentPoint->SetId(0, point);
       double pointcoords[3];
@@ -1225,7 +1232,7 @@ namespace {
       epsi *= eps0;
       #pragma omp parallel firstprivate(epsi)
       {
-      for (vtkIdType point = omp_get_thread_num(); point < numpts; point+=omp_get_num_threads())
+      for (vtkIdType point = OMP_THREAD_NUM; point < numpts; point+=OMP_NUM_THREADS)
         OCriterion[point] /= (aux[point] + OCriterion[point] + epsi);
       }
     }
@@ -1279,7 +1286,7 @@ namespace {
     std::vector<double> values(8);
     std::vector<data_type> cellGradients(3*numberOfInputComponents);
 
-    for (vtkIdType cellid = omp_get_thread_num(); cellid < numcells; cellid+=omp_get_num_threads())
+    for (vtkIdType cellid = OMP_THREAD_NUM; cellid < numcells; cellid+=OMP_NUM_THREADS)
     {
       structure->GetCell(cellid,cell);
       double cellCenter[3];
@@ -1343,7 +1350,7 @@ namespace {
 
       #pragma omp parallel firstprivate(epsi)
       {
-      for (vtkIdType cellid = omp_get_thread_num(); cellid < numcells; cellid+=omp_get_num_threads())
+      for (vtkIdType cellid = OMP_THREAD_NUM; cellid < numcells; cellid+=OMP_NUM_THREADS)
         OCriterion[cellid] /= (aux[cellid] + OCriterion[cellid] + epsi);
       }
     }

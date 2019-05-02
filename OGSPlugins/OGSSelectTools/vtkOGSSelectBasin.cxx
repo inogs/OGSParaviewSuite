@@ -27,10 +27,16 @@
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
-#include <omp.h>
-int omp_get_num_threads();
-int omp_get_thread_num();
 
+#ifdef __GNUC__
+// Include OpenMP when working with GCC
+#include <omp.h>
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#else
+#define OMP_NUM_THREADS 1
+#define OMP_THREAD_NUM  0
+#endif
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
@@ -148,7 +154,7 @@ int vtkOGSSelectBasin::RequestData(vtkInformation *vtkNotUsed(request),
 	// Loop and update cutting mask (Mesh loop, can be parallelized)
 	#pragma omp parallel shared(mask,cutmask)
 	{
-	for (int ii = 0 + omp_get_thread_num(); ii < mask.get_n(); ii += omp_get_num_threads()) {
+	for (int ii = 0 + OMP_THREAD_NUM; ii < mask.get_n(); ii += OMP_NUM_THREADS) {
 		cutmask[ii][0] = 0;
 		// Loop on the basins array selection
 		for (int bid=0; bid < this->GetNumberOfBasinsArrays(); ++bid)
