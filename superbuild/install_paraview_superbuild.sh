@@ -113,4 +113,8 @@ ln -s $PWD/install/lib/python2.7/site-packages/matplotlib-2.2.3-py2.7-linux-x86_
 # Install
 make -j $NPROCS install
 
+# FIX: matplotlib depends on backports and kiwisolver
+cp -r install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp install/lib/python2.7/site-packages/kiwisolver-1.1.0-py2.7-linux-x86_64.egg/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
+
 cd ..
