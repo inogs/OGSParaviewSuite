@@ -154,6 +154,11 @@ def RequestData():
 		# Invert the Y axis
 		ax.invert_yaxis()
 
+		# Set tick size
+		ax.tick_params(axis='x', which='major', labelsize=hx_font)
+		ax.tick_params(axis='y', which='major', labelsize=hy_font)
+		cbar.ax.tick_params(labelsize=hy_font)
+
 		# Fit figure
 		figure.tight_layout()
 

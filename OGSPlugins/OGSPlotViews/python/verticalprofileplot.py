@@ -143,6 +143,10 @@ def RequestData():
 		# Invert the Y axis
 		ax.invert_yaxis()
 
+		# Set tick size
+		ax.tick_params(axis='x', which='major', labelsize=px_font)
+		ax.tick_params(axis='y', which='major', labelsize=py_font)
+
 		# Set legend
 		if pshow_legend: 
 			legend_prop = dict(size=plegend_font)

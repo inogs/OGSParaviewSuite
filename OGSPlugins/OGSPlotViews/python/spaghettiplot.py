@@ -153,6 +153,10 @@ def RequestData():
 		ax.set_xticks(x_ticks)
 		ax.set_xticklabels(xNamesg[x_ticks],rotation=sx_rot)
 
+		# Set tick size
+		ax.tick_params(axis='x', which='major', labelsize=sx_font)
+		ax.tick_params(axis='y', which='major', labelsize=sy_font)
+
 		# Set legend
 		if sshow_legend: 
 			legend_prop = dict(size=slegend_font)
