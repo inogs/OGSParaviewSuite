@@ -105,8 +105,8 @@ def RequestData():
 			dfact = float(obj.GetFieldData().GetAbstractArray('Metadata').GetValue(2))
 			z     = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/dfact
 			# For each variable, decide if the plot is needed
-			for varId in range(view.GetNumberOfAttributeArrays(objId,vtk.vtkDataObject.POINT)):         
-				varname = view.GetAttributeArrayName(objId,vtk.vtkDataObject.POINT,varId)
+			for varId in range(obj.GetPointData().GetNumberOfArrays()):         
+				varname = obj.GetPointData().GetArray(varId).GetName()
 				# Filter some variables (Do not plot them)
 				if varname == 'basins mask':       continue
 				if varname == 'coast mask':        continue
