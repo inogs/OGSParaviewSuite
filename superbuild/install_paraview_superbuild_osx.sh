@@ -109,6 +109,7 @@ cmake ../paraview-superbuild/ \
    -DCMAKE_Fortran_COMPILER=gfortran
 
 # Prompt user to check configuration
+printf "Deploying ParaView $PV_VERS in $INSTALL_PREFIX.\n"
 read -s -p "Please check install configuration and press [enter]..."
 
 # Make
@@ -127,4 +128,19 @@ tar xvzf kiwisolver-1.1.0.tar.gz && cd kiwisolver-1.1.0
 python2.7 setup.py build && cd ..
 cp kiwisolver-1.1.0/build/lib.macosx-10.14-intel-2.7/kiwisolver.so $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 
+# Also copy ffmpeg
+cp install/bin/ffmpeg $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
+
 cd ..
+printf "Install done successfully!\n"
+
+# Deploy img2video
+printf "Deploying img2video... "
+cp paraview-superbuild/$SUITEDIR/bin/img2video paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/bin/
+printf "OK\n"
+
+# Deploy bit.sea inside the ParaView installation
+printf "Deploying bit.sea... "
+cp -r paraview-superbuild/$SUITEDIR/bit.sea/commons paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
+cp -r paraview-superbuild/$SUITEDIR/bit.sea/basins  paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
+printf "OK\n"
