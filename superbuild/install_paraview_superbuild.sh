@@ -32,8 +32,7 @@ NPROCS=28
 # Load modules
 # provide a basic building environment
 module purge
-#module load cuda cmake
-module load gcc openmpi cuda cmake
+module load gcc openmpi cmake
 
 # Obtain superbuild
 git clone --recursive https://gitlab.kitware.com/paraview/paraview-superbuild.git
@@ -104,6 +103,7 @@ cmake ../paraview-superbuild/ \
    -Dparaview_PLUGIN_OGSVariableAggregator_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVariableAggregator 
 
 # Prompt user to check configuration
+printf "Deploying ParaView $PV_VERS in $INSTALL_PREFIX.\n"
 read -s -p "Please check install configuration and press [enter]..."
 
 # Make
@@ -117,4 +117,40 @@ make -j $NPROCS install
 cp -r install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp install/lib/python2.7/site-packages/kiwisolver-1.1.0-py2.7-linux-x86_64.egg/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
 
+# Also copy ffmpeg
+cp install/bin/ffmpeg $INSTALL_PREFIX/bin
+
 cd ..
+printf "Install done successfully!\n"
+
+# Deploy img2video
+printf "Deploying img2video... "
+cp paraview-superbuild/$SUITEDIR/bin/img2video paraview-$PV_VERS/bin
+printf "OK\n"
+
+# Deploy bit.sea inside the ParaView installation
+printf "Deploying bit.sea... "
+cp -r paraview-superbuild/$SUITEDIR/bit.sea/commons paraview-$PV_VERS/lib/python*/site-packages
+cp -r paraview-superbuild/$SUITEDIR/bit.sea/basins  paraview-$PV_VERS/lib/python*/site-packages
+printf "OK\n"
+
+# Compile OGSMesh
+printf "Compiling OGSMesh... "
+cd paraview-superbuild/$SUITEDIR/OGSPlugins/_utils
+g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC OGS.cpp netcdfio.cpp -I../../../../paraview-build/install/include/paraview-5.6
+cd ../../../../
+printf "OK\n"
+
+# Deploy OGSMesh and OGS2Paraview inside the installation
+printf "Deploying OGSMesh and OGS2Paraview... "
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/libOGS.so paraview-$PV_VERS/lib
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py paraview-$PV_VERS/lib/python*/site-packages
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py paraview-$PV_VERS/lib/python*/site-packages
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/default.ini paraview-$PV_VERS/bin
+
+cd paraview-$PV_VERS/bin
+ln -s ../lib/python*/site-packages/OGS2Paraview.py OGS2Paraview
+chmod +x ../lib/python*/site-packages/OGS2Paraview.py
+
+cd ../..
+printf "OK\n"
