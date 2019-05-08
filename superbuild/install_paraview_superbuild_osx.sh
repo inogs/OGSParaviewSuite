@@ -11,9 +11,9 @@
 #    CHAR_WIDTH by CHAR_SIZE, as described in:
 #    https://github.com/fmtlib/fmt/commit/abbefd71666055daac9e14e78262620f9e845850
 #
-#  - vrpn issue with union wait; the solution is to change union wait
-#    to int, as described in:
-#    https://github.com/opensgct/sgct/issues/13
+#  - vrpn issue with union wait; the solution is to change union wait to int, 
+#    as described in: https://github.com/opensgct/sgct/issues/13
+#    This has been solved using the release version 07.34
 #
 #  - paraviewsdk is incompatible with building qt5
 #
