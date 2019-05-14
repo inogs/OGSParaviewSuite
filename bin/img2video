@@ -10,13 +10,15 @@ argpar = argparse.ArgumentParser(prog="img2video",description="creates video fro
 argpar.add_argument("-i","--input",required=True,type=str,help="full path to the image sequence files",dest="files")
 argpar.add_argument("-o","--output",required=True,type=str,help="output file name",dest="out")
 argpar.add_argument("-f","--framerate",type=int,help="frames per second (defaults is 24)",dest="fps")
-argpar.add_argument("-s","--size",type=str,help="size of output video, must be divisible by 2 (default is 1280x720)",dest="size");
+argpar.add_argument("-s","--size",type=str,help="size of output video, must be divisible by 2 (default is 1920x1080)",dest="size");
+argpar.add_argument("--start",type=int,help="start number of the frame",dest="start");
 
 # Parse inputs
 args = argpar.parse_args()
-if not args.size: args.size = "1920x1080"
-if not args.fps:  args.fps  = 24
+if not args.size:  args.size  = "1920x1080"
+if not args.fps:   args.fps   = 24
+if not args.start: args.start = 0
 
 # Command to execute
-cmd = "ffmpeg -framerate %d -i %s -s:v %s -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p %s" % (args.fps,args.files,args.size,args.out)
+cmd = "ffmpeg -start_number %d -framerate %d -i %s -s:v %s -c:v libx264 -profile:v high -vb 20M -crf 20 -pix_fmt yuv420p %s" % (args.start,args.fps,args.files,args.size,args.out)
 os.system(cmd);
