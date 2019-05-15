@@ -24,6 +24,29 @@
         </Documentation>
      </StringVectorProperty>
 
+     <!-- Projection -->
+
+     <StringVectorProperty name="ProjInfo"
+                           command="GetProjections"
+                           information_only="1">
+       <StringArrayHelper />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="Projection"
+                           command="SetProjection"
+                           number_of_elements="1"
+                           label="Projection: "
+                           panel_visibility="advanced">
+        <StringListDomain name="array_list">
+            <RequiredProperties>
+                <Property name="ProjInfo" function="ArrayList" />
+            </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the projection to use.
+        </Documentation>
+     </StringVectorProperty>
+
      <!-- MeshMask e1t and e2t -->
      <IntVectorProperty name="MeshMask"
                          label="Include meshmask weights"
