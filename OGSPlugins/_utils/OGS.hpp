@@ -158,6 +158,7 @@ namespace ogs
 			inline std::string var_path(const char *vname, int t);
 			inline std::string var_path(std::string vname, int t);
 
+			inline int         n_projs();
 			inline int         ntsteps();
 			inline const char *datetime(int i);
 
@@ -214,6 +215,7 @@ namespace ogs
 	inline field::Field<double>  &OGS::e1()        { return this->_e1; }
 	inline field::Field<double>  &OGS::e2()        { return this->_e2; }
 	inline field::Field<double>  &OGS::e3()        { return this->_e3; }
+	inline int         OGS::n_projs()              { return (int)(this->mesh_data.size()); }
 	inline int         OGS::ntsteps()              { return this->_ntsteps; }
 	inline const char *OGS::datetime(int i)        { return this->_datetime[i].c_str(); }
 	inline int         OGS::var_n(int i)           { return this->_vars[i].get_nvars(); }
