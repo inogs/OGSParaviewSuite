@@ -4,16 +4,23 @@
 # required mesh files to open simulation in ParaView.
 #
 # Usage: 
-#	OGS2ParaView [-h] -n NAME -p PATH [--ave_freq_1 AVE_FREQ_1]
-#                    [--gen-mesh] [-m MAP] [-l LIB]
+#	OGS2ParaView [-h] -n NAME -p PATH [-m MODE] [-c CONF] [--gen-mesh]
+#                    [--meshmask MESH]
 #
 # Arguments:
 #		-n NAME, --name NAME    	Name of the simulation
 #		-p PATH, --path PATH    	Path to the simulation files
-#		--ave_freq_1 AVE_FREQ_1 	Read AVE_FREQ_1 instead of AVE_FREQ_2
+#       -m MODE, --mode MODE        Mode of operation
+#		-c CONF, --config CONF      Configuration file for the simulation
 #		--gen-mesh              	Force generation of the mesh file
-#		-m MAP, --map MAP       	Projection type (default: merc)
-#		-l LIB, --lib LIB       	Path to the libOGSmesh.so library
+#		--meshmask MESH             Name of the meshmask to use
+#
+# Modes of operation:
+#	> 0: Generate the mesh and exit
+#	> 1: Use AVE_PHYS to generate the timesteps
+#	> 2: Use AVE_FREQ_1 to generate the timesteps
+#	> 3: Use FORCINGS to generate the timesteps
+#	> 4: Use GENERALS to generate the timesteps
 #
 # Arnau Miro, OGS (2018)
 
