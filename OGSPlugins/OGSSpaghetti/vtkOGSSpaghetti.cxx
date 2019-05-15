@@ -291,13 +291,18 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 
 	*/
 	std::string FileName;
-	int cellList;
+	int cellList, projId = 0;
+	vtkStringArray *vtkmetadata;
 
 	#ifdef PARAVIEW_USE_MPI
 
 	// Thread 0 has all the information in input and output, therefore is the
 	// only computing the array which will later be broadcasted to all ranks
 	if (this->procId == 0) {
+		// Recover metadata array
+		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
+		// Recover projection Id
+		projId = std::stod( vtkmetadata->GetValue(6) );
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
 		cellList = ComputeCellId(input,source);
 		// Recover the master file name from source
@@ -306,6 +311,8 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 
 	// Broadcast the information to all other threads if applicable
 	if (this->nProcs > 1) {
+		// Broadcast projection ID
+		this->Controller->Broadcast(&projId,1,0);
 		// Broadcast master file name
 		int str_len = FileName.length();
 		this->Controller->Broadcast(&str_len,1,0);
@@ -317,6 +324,11 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 	}
 
 	#else
+
+	// Recover metadata array
+	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
+	// Recover projection Id
+	projId = std::stod( vtkmetadata->GetValue(6) );
 
 	// This is the normal non-parallel algorithm
 	cellList = ComputeCellId(input,source);
@@ -332,7 +344,7 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 	}
 
 	// Read the mesh data (necessary to load the files)
-	if (ogsdata.readMesh() < 0) {
+	if (ogsdata.readMesh(projId) < 0) {
 		vtkErrorMacro("Problems reading the mesh!\nAborting.");
 		return 0;	
 	}
@@ -449,8 +461,8 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 	// Build output table
 	if (this->procId == 0) {
 		// Recover metadata array
-		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-			source->GetFieldData()->GetAbstractArray("Metadata"));
+/*		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+			source->GetFieldData()->GetAbstractArray("Metadata"));*/
 		// Recover datevec
 		std::string datevec = vtkmetadata->GetValue(1);
 		std::vector<std::string> vdatevec;
