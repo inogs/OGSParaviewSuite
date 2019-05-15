@@ -42,8 +42,9 @@ class OGS2ParaView:
 		# Mode
 		self._mode = mode
 		# Dictionaries
-		self.vardicts = [dict() for i in xrange(5)]
-		self.time_list = None
+		self.vardicts    = [dict() for i in xrange(5)]
+		self.time_list   = None
+		self.projections = None
 		# Open file for reading
 		self.fid = open(self.masterfile,"w")
 
@@ -75,6 +76,7 @@ class OGS2ParaView:
 		cfgpar = cp.ConfigParser()
 		cfgpar.read(self.cfgfile)
 
+		# Read variables
 		ii = 0
 		for sect in ["AVE_PHYS","AVE_FREQ_1","AVE_FREQ_2","FORCINGS","GENERALS"]:
 			self.vardicts[ii]["format"] = cfgpar.get(sect,"file format")
@@ -83,13 +85,22 @@ class OGS2ParaView:
 			self.vardicts[ii]["varlis"] = [var.split(',') for var in cfgpar.get(sect,"variable list").split('\n')]
 			ii += 1
 
+		# Read projections
+		self.projections = [proj.split(',') for proj in cfgpar.get('PROJECTIONS','projection list').split('\n')]
+
 	def genMesh(self,force_mesh=False):
 		'''
 		Generate the binary .ogsmsh file.
 		'''
-		if not os.path.exists(self.meshfile) or force_mesh:
-			mesh = OGSmesh.OGSmesh(self._path,maskname=self._meshmask)
-			mesh.createOGSMesh("%s.ogsmsh" % self._name,self._path)
+		mesh = OGSmesh.OGSmesh(self._path,maskname=self._meshmask)
+		for proj in self.projections:
+			# Projection name and map
+			pname = proj[0].strip()
+			pmap  = proj[1].strip()
+			# Generate projection if it does not exist
+			if not os.path.exists(self.meshfile + '.' + pmap) or force_mesh:
+				mesh.map = pmap
+				mesh.createOGSMesh(os.path.basename(self.meshfile) + '.' + pmap,self._path)
 
 	def readTimeInstants(self):
 		'''
@@ -140,7 +151,13 @@ class OGS2ParaView:
 		mesh information and the basins and coasts mask.
 		'''
 		self.fid.write("MESH\n")
-		self.fid.write("%s.ogsmsh : %s\n\n" % (self._name,self._meshmask))
+		self.fid.write("%d\n" % len(self.projections))
+		for proj in self.projections:
+			# Projection name and map
+			pname = proj[0].strip()
+			pmap  = proj[1].strip()			
+			self.fid.write("%s : %s.ogsmsh.%s : %s\n" % (pname,self._name,pmap,self._meshmask))
+		self.fid.write("\n")
 
 	def writeVars(self,header,idx):
 		'''
@@ -196,18 +213,18 @@ class OGS2ParaView:
 		'''
 		Writes OGS file according to the mode the user has inputted.
 		'''
+		# Mode = 0 just generate the mesh
+		self.readConfig()
+		if self._mode > 0:
+			self.readTimeInstants()	
+
 		# First write the header and the working directory
 		self.writeHeader()
 		self.writeWorkdir()
 		
 		# Then generate and write the mesh
 		self.genMesh(True if self._mode == 0 else force_mesh)
-		self.writeMesh()
-
-		# Mode = 0 just generate the mesh
-		self.readConfig()
-		if self._mode > 0:
-			self.readTimeInstants()		
+		self.writeMesh()	
 
 		# Write the variables
 		self.writeVars("AVE_PHYS",0)
@@ -242,6 +259,5 @@ if __name__ == '__main__':
 
 	# Create an instance of the class
 	OGS2P = OGS2ParaView(name=args.name,path=args.path,mode=args.mode,meshmask=args.mesh,config=args.conf)
-	OGS2P.genMesh(force_mesh=args.gen_mesh)
-
 	OGS2P.writeOGSFile()
+	OGS2P.genMesh(force_mesh=args.gen_mesh)

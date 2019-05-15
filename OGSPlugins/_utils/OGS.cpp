@@ -74,11 +74,19 @@ int OGS::readMainFile() {
 
 		/* MESH SECTION */
 		if (sec == 2 && !bmesh) {
-			// Read mesh file
-			strtok(line,":");         this->_meshfile = std::string(trim(line));
-			// Read meshmask file
-			linep = strtok(NULL," "); this->_meshmask = std::string(trim(linep));
-			bmesh = true;
+			if (n_var_r >= 0) {
+				if (n_var_r > this->mesh_data.size() - 1) { bmesh = true; n_var_r = -1; continue; }
+				// Read projection name
+				strtok(line,":");         this->mesh_data[n_var_r].set_name(trim(line));
+				// Read mesh file
+				linep = strtok(NULL,":"); this->mesh_data[n_var_r].set_meshfile(trim(linep));
+				// Read meshmask file
+				linep = strtok(NULL," "); this->mesh_data[n_var_r].set_meshmask(trim(linep));
+				n_var_r++;
+			} else {
+				this->mesh_data.resize( std::atoi(line) );
+				n_var_r++;
+			}
 		}
 
 		/* AVE PHYS SECTION */
@@ -170,10 +178,10 @@ int OGS::readMainFile() {
 	return 1;
 }
 
-int OGS::readMesh() {
+int OGS::readMesh(const int i) {
 	// Open file for reading
 	FILE *myfile;
-	myfile = std::fopen(this->meshfile().c_str(),"rb"); if (myfile == NULL) ERROR("Cannot open file.",1)
+	myfile = std::fopen(this->meshfile(i).c_str(),"rb"); if (myfile == NULL) ERROR("Cannot open file.",1)
 
 	// Read the dimensions
 	if (std::fread(&this->_nlon,INTSZ,1,myfile) != 1) ERROR("Error reading file",2) 
@@ -201,10 +209,10 @@ int OGS::readMesh() {
 	return 1;
 }
 
-int OGS::writeMesh() {
+int OGS::writeMesh(const int i) {
 	// Open file for writing
 	FILE *myfile;
-	myfile = std::fopen(this->meshfile().c_str(),"wb"); if (myfile == NULL) ERROR("Cannot open file.",1)
+	myfile = std::fopen(this->meshfile(i).c_str(),"wb"); if (myfile == NULL) ERROR("Cannot open file.",1)
 
 	// Write the dimensions
 	if (std::fwrite(&this->_nlon,INTSZ,1,myfile) != 1) ERROR("Error writing file",2) 
@@ -227,25 +235,25 @@ int OGS::writeMesh() {
 	return 1;
 }
 
-void OGS::readMeshmask() {
+void OGS::readMeshmask(const int i) {
 	// Read the fields as double arrays
 	double *e1t, *e1u, *e1v, *e1f;
-	e1t = NetCDF::readNetCDF(this->meshmask().c_str(),"e1t",1*(this->_nlon-1)*(this->_nlat-1));
-	e1u = NetCDF::readNetCDF(this->meshmask().c_str(),"e1u",1*(this->_nlon-1)*(this->_nlat-1));
-	e1v = NetCDF::readNetCDF(this->meshmask().c_str(),"e1v",1*(this->_nlon-1)*(this->_nlat-1));
-	e1f = NetCDF::readNetCDF(this->meshmask().c_str(),"e1f",1*(this->_nlon-1)*(this->_nlat-1));
+	e1t = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1t",1*(this->_nlon-1)*(this->_nlat-1));
+	e1u = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1u",1*(this->_nlon-1)*(this->_nlat-1));
+	e1v = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1v",1*(this->_nlon-1)*(this->_nlat-1));
+	e1f = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1f",1*(this->_nlon-1)*(this->_nlat-1));
 
 	double *e2t, *e2u, *e2v, *e2f;
-	e2t = NetCDF::readNetCDF(this->meshmask().c_str(),"e2t",1*(this->_nlon-1)*(this->_nlat-1));
-	e2u = NetCDF::readNetCDF(this->meshmask().c_str(),"e2u",1*(this->_nlon-1)*(this->_nlat-1));
-	e2v = NetCDF::readNetCDF(this->meshmask().c_str(),"e2v",1*(this->_nlon-1)*(this->_nlat-1));
-	e2f = NetCDF::readNetCDF(this->meshmask().c_str(),"e2f",1*(this->_nlon-1)*(this->_nlat-1));
+	e2t = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2t",1*(this->_nlon-1)*(this->_nlat-1));
+	e2u = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2u",1*(this->_nlon-1)*(this->_nlat-1));
+	e2v = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2v",1*(this->_nlon-1)*(this->_nlat-1));
+	e2f = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2f",1*(this->_nlon-1)*(this->_nlat-1));
 
 	double *e3t, *e3u, *e3v, *e3w;
-	e3t = NetCDF::readNetCDF(this->meshmask().c_str(),"e3t_0",this->_ncells);
-	e3u = NetCDF::readNetCDF(this->meshmask().c_str(),"e3u_0",this->_ncells);
-	e3v = NetCDF::readNetCDF(this->meshmask().c_str(),"e3v_0",this->_ncells);
-	e3w = NetCDF::readNetCDF(this->meshmask().c_str(),"e3w_0",this->_ncells);
+	e3t = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3t_0",this->_ncells);
+	e3u = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3u_0",this->_ncells);
+	e3v = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3v_0",this->_ncells);
+	e3w = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3w_0",this->_ncells);
 
 	// Allocate the fields
 	this->_e1.set_dim(this->_ncells,4);
@@ -307,13 +315,19 @@ void OGS::print() {
 	std::printf("---------\n");
 	std::printf("Main file:          %s\n", this->_ogsfile.c_str());
 	std::printf("Working directory:  %s\n", this->_wrkdir.c_str());
+
 	std::printf("Mesh information\n");
-	std::printf("    Mesh file:      %s\n", this->_meshfile.c_str());
-	std::printf("    Meshmask file:  %s\n", this->_meshmask.c_str());
-	std::printf("    Dimensions:     (%d,%d,%d)\n", this->_nlon,this->_nlat,this->_nlev);
+	for (OGS_MESH mesh : this->mesh_data) {
+		std::printf("    Projection:     %s\n", mesh.get_name().c_str());
+		std::printf("    Mesh file:      %s\n", mesh.get_meshfile().c_str());
+		std::printf("    Meshmask file:  %s\n", mesh.get_meshmask().c_str());
+	}
+	this->readMesh(0);
+	std::printf("    Dimensions:     (%d,%d,%d)\n", this->_nlon, this->_nlat, this->_nlev);
 	std::printf("    Longitude [m]:  (%.2f,%.2f)\n", this->lon2meters(0), this->lon2meters(-1));
-	std::printf("    Latitude [m]:   (%.2f,%.2f)\n", this->lat2meters(0),this->lat2meters(-1));
+	std::printf("    Latitude [m]:   (%.2f,%.2f)\n", this->lat2meters(0), this->lat2meters(-1));
 	std::printf("    Depth [m]:      (%.2f,%.2f)\n", this->nav_lev(0),    this->nav_lev(-1));
+
 	std::printf("Variables information\n");
 	for (int ii = 0; ii < 4; ii++) {
 		std::printf("    Variables %d:    %d\n",ii,this->var_n(ii));
@@ -344,7 +358,7 @@ extern "C"
 		// Return
 		return ogscls;
 	}
-	int OGSWriteMesh(OGS *ogscls) { return ogscls->writeMesh(); }
+	int OGSWriteMesh(OGS *ogscls) { return ogscls->writeMesh(0); }
 }
 
 /* AUXILIARY FUNCTIONS */

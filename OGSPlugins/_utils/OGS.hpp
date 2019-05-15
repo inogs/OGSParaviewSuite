@@ -58,9 +58,9 @@ namespace ogs
 			inline int  get_nvars()                  { return this->_n; }
 			inline void set_nvars(int n)             { this->_n = n; this->allocate(); }
 
-			inline void  set_name(int i, char* str)  { this->_name[i]  = std::string(str); }
-			inline void  set_vname(int i, char* str) { this->_vname[i] = std::string(str); }
-			inline void  set_path(int i, char* str)  { this->_path[i]  = std::string(str); }
+			inline void  set_name(int i, char *str)  { this->_name[i]  = std::string(str); }
+			inline void  set_vname(int i, char *str) { this->_vname[i] = std::string(str); }
+			inline void  set_path(int i, char *str)  { this->_path[i]  = std::string(str); }
 
 			inline const char *get_name(int i)       { return this->_name[i].c_str();  }
 			inline const char *get_vname(int i)      { return this->_vname[i].c_str(); }
@@ -78,6 +78,28 @@ namespace ogs
 			std::vector<std::string> _name, _vname, _path;
 
 			inline void allocate() { this->_name.resize(this->_n); this->_vname.resize(this->_n); this->_path.resize(this->_n); }
+	};
+
+	/* OGS MESH
+
+		Stores information on the mesh and the projection used
+
+	*/
+	class OGS_MESH {
+		public:
+			inline OGS_MESH()                         {};
+			inline ~OGS_MESH()                        {};
+
+			inline void set_name(const char *str)     { this->_name     = std::string(str); }
+			inline void set_meshfile(const char *str) { this->_meshfile = std::string(str); }
+			inline void set_meshmask(const char *str) { this->_meshmask = std::string(str); }
+
+			inline std::string get_name()             { return this->_name;     }
+			inline std::string get_meshfile()         { return this->_meshfile; }
+			inline std::string get_meshmask()         { return this->_meshmask; }
+
+		private:
+			std::string _name, _meshfile, _meshmask;
 	};
 
 	/* OGS CLASS
@@ -106,8 +128,9 @@ namespace ogs
 			inline void SetMask(const int i, const int m, uint8_t *mask);
 			inline void Setncells();
 
-			inline std::string meshfile();
-			inline std::string meshmask();
+			inline std::string projection(const int i);
+			inline std::string meshfile(const int i);
+			inline std::string meshmask(const int i);
 
 			inline int  nlon();
 			inline int  nlat();
@@ -140,17 +163,18 @@ namespace ogs
 
 			// Functions
 			int  readMainFile();
-			int  readMesh();
-			int  writeMesh();
-			void readMeshmask();
+			int  readMesh(const int i);
+			int  writeMesh(const int i);
+			void readMeshmask(const int i);
 
 			void print();
 
 		private:
-			std::string _ogsfile, _wrkdir, _meshfile, _meshmask;
+			std::string _ogsfile, _wrkdir;
 			OGS_VAR _vars[4]; // Variables information
 			int _ntsteps;
 			std::vector<std::string> _datetime;
+			std::vector<OGS_MESH> mesh_data;
 
 			// Mesh size information
 			int _nlat, _nlon, _nlev, _ncells;
@@ -171,10 +195,11 @@ namespace ogs
 	// Set/Get methods
 	inline void    OGS::SetFile(const char *fname) { this->_ogsfile = std::string(fname); }
 	inline void    OGS::SetWdir(const char *fname) { this->_wrkdir = std::string(fname); }
-	inline void    OGS::SetMfile(const char *fname){ this->_meshfile = std::string(fname); }
+	inline void    OGS::SetMfile(const char *fname){ this->mesh_data.resize(1); this->mesh_data[0].set_meshfile(fname); }
 	inline void    OGS::Setncells()                { this->_ncells = (this->_nlon-1)*(this->_nlat-1)*(this->_nlev-1); }
-	inline std::string OGS::meshfile()             { return (this->_wrkdir + std::string("/") + this->_meshfile); }
-	inline std::string OGS::meshmask()             { return (this->_wrkdir + std::string("/") + this->_meshmask); }
+	inline std::string OGS::projection(const int i){ return mesh_data[i].get_name(); }
+	inline std::string OGS::meshfile(const int i)  { return (this->_wrkdir + std::string("/") + mesh_data[i].get_meshfile()); }
+	inline std::string OGS::meshmask(const int i)  { return (this->_wrkdir + std::string("/") + mesh_data[i].get_meshmask()); }
 	inline int     OGS::nlon()                     { return this->_nlon; }
 	inline int     OGS::nlat()                     { return this->_nlat; }
 	inline int     OGS::nlev()                     { return this->_nlev; }

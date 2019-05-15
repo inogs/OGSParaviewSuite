@@ -43,14 +43,21 @@ class OGSmesh(object):
 			> lib:      Full path to the OGSmesh.so library.
 		'''
 		# Class variables
-		self.maskpath = maskpath
-		self.maskname = maskname
-		self.mask     = None     # meshmask will update after being read
-		self.map      = maptype
+		self._maskpath = maskpath
+		self._maskname = maskname
+		self._mask     = None     # meshmask will update after being read
+		self._map      = maptype
 
 		# Interface with the C functions
-		self.OGSlib   = ct.cdll.LoadLibrary(lib)
-		
+		self._OGSlib   = ct.cdll.LoadLibrary(lib)
+
+	@property
+	def map(self):
+		return self._map
+	@map.setter
+	def map(self,maptype):
+		self._map = maptype
+			
 	def readMeshMask(self,fname):
 		'''
 		Reads the meshmask.nc file and extracts the dimensions of the mesh
@@ -63,7 +70,7 @@ class OGSmesh(object):
 		'''
 		# Load the meshmask (requires bit.sea)
 		# This first mask is for loading the cell centered masks
-		self.mask = Mask(fname,zlevelsvar="nav_lev",ylevelsmatvar="gphit", xlevelsmatvar="glamt")
+		self._mask = Mask(fname,zlevelsvar="nav_lev",ylevelsmatvar="gphit", xlevelsmatvar="glamt")
 		# This mask is for generating the mesh points
 		mask = Mask(fname,zlevelsvar="gdepw",ylevelsmatvar="gphif", xlevelsmatvar="glamf")
 		# Set variables
@@ -104,7 +111,7 @@ class OGSmesh(object):
 		'''
 		# Initialize 
 		SUBlist     = [ sub.name for sub in OGS.P.basin_list ]
-		basins_mask = np.zeros(self.mask.shape)
+		basins_mask = np.zeros(self._mask.shape)
 
 		# Run for each sub basin
 		for sub in SUBlist:
@@ -114,7 +121,7 @@ class OGSmesh(object):
 			index = SUBlist.index(sub)
 			basin = OGS.P.basin_list[index]
 			# Extract the sub mask
-			s = SubMask(basin, maskobject=self.mask)
+			s = SubMask(basin, maskobject=self._mask)
 			# Build the basins mask for ParaView
 			basins_mask[s.mask] = index + 1
 
@@ -125,7 +132,7 @@ class OGSmesh(object):
 		Generate the basins_mask field where all basins are numbered from 1
 		to the number of basins.
 		'''
-		return np.array([SubMask(sub, maskobject=self.mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
+		return np.array([SubMask(sub, maskobject=self._mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
 
 	def generateCoastsMask(self):
 		'''
@@ -136,17 +143,17 @@ class OGSmesh(object):
 		returns zero for the last value of the mask, even if the depth is less
 		than 200. To avoid that, we get the next depth value from 200.
 		'''
-		dims = self.mask.shape
+		dims = self._mask.shape
 
 		# Extract mask at level 200
 		# This is all the places that have water at depth = 200 m
-		jk_m       = self.mask.getDepthIndex(200.)
-		mask200_2D = self.mask.mask[jk_m+1,:,:].copy() # FIX AMAL
+		jk_m       = self._mask.getDepthIndex(200.)
+		mask200_2D = self._mask.mask[jk_m+1,:,:].copy() # FIX AMAL
 		mask200_3D = np.array([mask200_2D for i in xrange(dims[0])])
 		
 		# Extract mask for mediterranean sea
 		# We want all the places that belong to the MED and that are water from 0 to 200 m
-		s = SubMask(OGS.P.basin_list[-1], maskobject=self.mask)
+		s = SubMask(OGS.P.basin_list[-1], maskobject=self._mask)
 
 		# Define coasts mask
 		coasts_mask = np.zeros(dims,dtype=c_uint8)
@@ -167,7 +174,7 @@ class OGSmesh(object):
 			> Lat:  latitude vector.
 		'''
 		# Define map projection
-		mproj = Basemap(projection = self.map, \
+		mproj = Basemap(projection = self._map, \
 						lat_0      = Lon0, \
 						lon_0      = Lat0, \
                         llcrnrlon  = -5.3, \
@@ -184,10 +191,10 @@ class OGSmesh(object):
 		# Perform projection
 		for ii in xrange(0,nLon):
 			xpt,ypt        = mproj(Lon[60,ii],Lat[60,0]) # FIXED NEW
-			Lon2Meters[ii] = xpt
+			Lon2Meters[ii] = xpt if not self._map == 'cyl' else 6371e3*np.deg2rad(xpt)
 		for jj in xrange(0,nLat):
 			xpt,ypt        = mproj(Lon[0,nLon/2],Lat[jj,nLon/2])
-			Lat2Meters[jj] = ypt
+			Lat2Meters[jj] = ypt if not self._map == 'cyl' else 6371e3*np.deg2rad(ypt)
 		# Return
 		return np.sort(Lon2Meters), np.sort(Lat2Meters)
 
@@ -204,7 +211,7 @@ class OGSmesh(object):
 			> basins_mask: Mask contanining the sub basins
 			> coast_mask:  Mask contanining the coasts
 		'''
-		OGSnew       = self.OGSlib.newOGS
+		OGSnew       = self._OGSlib.newOGS
 		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p]
 		OGS.restype  = c_void_p
 
@@ -223,7 +230,7 @@ class OGSmesh(object):
 		'''
 		Wrapper for the C function writeOGSMesh inside the OGSmesh.so library. 
 		'''
-		writeMesh          = self.OGSlib.OGSWriteMesh
+		writeMesh          = self._OGSlib.OGSWriteMesh
 		writeMesh.argtypes = [c_void_p]
 		writeMesh.restype  = c_int
 
@@ -239,7 +246,7 @@ class OGSmesh(object):
 			as the meshmask.nc file (Default: mesh.ogsmsh).
 		'''
 		# Read the mesh mask
-		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self.maskpath,self.maskname))
+		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
 		# Obtain the coasts_mask and the basins_mask
 		basins_mask = self.generateBasinsMask().ravel()
 		coasts_mask = self.generateCoastsMask().ravel()
