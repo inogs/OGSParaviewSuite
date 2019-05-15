@@ -27,6 +27,7 @@
 class vtkDataSet;
 class vtkDataArraySelection;
 class vtkCallbackCommand;
+class vtkStringArray;
 
 #ifdef PARAVIEW_USE_MPI
 	class vtkMultiProcessController;
@@ -116,6 +117,9 @@ public:
 	void DisableAllGeneralArrays();
 	void EnableAllGeneralArrays();
 
+	vtkStringArray * GetProjections();
+	void SetProjection(const char *proj);
+
 	#ifdef PARAVIEW_USE_MPI
 		// Description:
 		// Set the controller use in compositing (set to
@@ -143,6 +147,8 @@ protected:
 	vtkDataArraySelection* ForcingDataArraySelection;
 	vtkDataArraySelection* GeneralDataArraySelection;
 
+	vtkStringArray *Projections;
+
 	#ifdef PARAVIEW_USE_MPI
 		vtkMultiProcessController* Controller;
 	#endif
@@ -151,7 +157,7 @@ private:
 	vtkOGSReader(const vtkOGSReader&) = delete;
 	void operator=(const vtkOGSReader&) = delete;
 
-	int abort, procId, nProcs;
+	int abort, procId, nProcs, projId;
 	vtkRectilinearGrid* Mesh;
 
 	ogs::OGS ogsdata;

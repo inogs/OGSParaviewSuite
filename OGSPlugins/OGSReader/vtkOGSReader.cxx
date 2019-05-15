@@ -72,6 +72,7 @@ vtkOGSReader::vtkOGSReader() {
 	this->abort      = 0;
 	this->nProcs     = 0;
 	this->procId     = 0;
+	this->projId     = 0;
 
 	this->Mesh = vtkRectilinearGrid::New();
 
@@ -80,6 +81,8 @@ vtkOGSReader::vtkOGSReader() {
 	this->AveFreqDataArraySelection = vtkDataArraySelection::New();
 	this->ForcingDataArraySelection = vtkDataArraySelection::New();
 	this->GeneralDataArraySelection = vtkDataArraySelection::New();
+
+	this->Projections = vtkStringArray::New();
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;
@@ -98,6 +101,8 @@ vtkOGSReader::~vtkOGSReader() {
 	this->AveFreqDataArraySelection->Delete();
 	this->ForcingDataArraySelection->Delete();
 	this->GeneralDataArraySelection->Delete();
+
+	this->Projections->Delete();
 
 	this->DeleteMesh();
 
@@ -156,7 +161,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		See OGS.hpp/OGS.cpp for further details.
 
 	*/
-	if (this->ogsdata.readMesh() < 0) {
+	if (this->ogsdata.readMesh(this->projId) < 0) {
 		vtkErrorMacro("Problems reading the mesh!\nAborting.");
 		return 0; this->abort = 1;		
 	}
@@ -230,7 +235,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		as to compute gradients.
 
 	*/
-	this->ogsdata.readMeshmask();
+	this->ogsdata.readMeshmask(this->projId);
 
 	if (this->RMeshMask) {
 		// e1
@@ -505,7 +510,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			5 -> Meshmask
 	*/
 	std::string aux_str;
-	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",6,NULL);
+	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",7,NULL);
 
 	// Set the current file date
 	vtkmetadata->SetValue(0,this->ogsdata.datetime(ii_tstep));
@@ -544,8 +549,11 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	vtkmetadata->SetValue(4,this->FileName);
 
 	// Set the mesh name
-	aux_str = this->ogsdata.meshmask() + std::string(";") + this->ogsdata.meshfile();
+	aux_str = this->ogsdata.meshmask(this->projId) + std::string(";") + this->ogsdata.meshfile(this->projId);
 	vtkmetadata->SetValue(5,aux_str.c_str());
+
+	// Set the projection id
+	vtkmetadata->SetValue(6,std::to_string(this->projId));
 
 	// Add array to mesh
 	this->Mesh->GetFieldData()->AddArray(vtkmetadata);
@@ -784,5 +792,27 @@ void vtkOGSReader::SetGeneralArrayStatus(const char* name, int status)
 	else
 		this->GeneralDataArraySelection->DisableArray(name);
 
+	this->Modified();
+}
+
+//----------------------------------------------------------------------------
+vtkStringArray *vtkOGSReader::GetProjections() {
+
+	this->Projections->Delete();
+	this->Projections = VTK::createVTKstrf("Projections",this->ogsdata.n_projs(),NULL);
+
+	for (int ii = 0; ii < this->ogsdata.n_projs(); ++ii)
+		this->Projections->SetValue(ii,this->ogsdata.projection(ii));
+
+	return this->Projections;
+}
+
+void vtkOGSReader::SetProjection(const char *proj) {
+	// Obtain the projection index
+	for (int ii = 0; ii < this->Projections->GetNumberOfTuples(); ++ii) {
+		if (std::string(this->Projections->GetValue(ii)) == std::string(proj)) {
+			this->projId = ii; break;
+		}
+	}
 	this->Modified();
 }
