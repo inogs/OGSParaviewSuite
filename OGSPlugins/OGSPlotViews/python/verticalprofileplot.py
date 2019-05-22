@@ -134,10 +134,11 @@ def RequestData():
 					if psmoothdata: var = smooth(var,psmoothorder)
 					# Plot
 					if args == None:
-						ax.plot(var,-z,label=varname)
+						ax.plot(var,-z,label=varname,linewidth=plinewidth)
 					elif kwargs == None:
-						ax.plot(var,-z,args,label=varname)
+						ax.plot(var,-z,args,label=varname,linewidth=plinewidth)
 					else:
+						kwargs['linewidth'] = plinewidth
 						ax.plot(var,-z,args,**kwargs)
 
 		# Invert the Y axis

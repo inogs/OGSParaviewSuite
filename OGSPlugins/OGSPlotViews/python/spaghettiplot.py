@@ -139,10 +139,11 @@ def RequestData():
 				if ssmoothdata: z = smooth(z,ssmoothorder)
 				# Plot
 				if args == None:
-					ax.plot(xIds,z)
+					ax.plot(xIds,z,linewidth=slinewidth)
 				elif kwargs == None:
-					ax.plot(xIds,z,args)
+					ax.plot(xIds,z,args,linewidth=slinewidth)
 				else:
+					kwargs['linewidth'] = slinewidth
 					ax.plot(xIds,z,args,**kwargs)
 				# Update global variables
 				xIdsg   = xIds   if xIds.shape[0]   > xIdsg.shape[0]   else xIdsg
