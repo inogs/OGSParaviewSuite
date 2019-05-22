@@ -141,16 +141,19 @@ g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC OGS.cpp netcdfio.cpp -I../../.
 cd ../../../../
 printf "OK\n"
 
-# Deploy OGSMesh and OGS2Paraview inside the installation
-printf "Deploying OGSMesh and OGS2Paraview... "
+# Deploy OGStools inside the installation
+printf "Deploying OGS tools... "
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/libOGS.so paraview-$PV_VERS/lib
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py paraview-$PV_VERS/lib/python*/site-packages
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py paraview-$PV_VERS/lib/python*/site-packages
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py paraview-$PV_VERS/lib/python*/site-packages
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/default.ini paraview-$PV_VERS/bin
 
 cd paraview-$PV_VERS/bin
 ln -s ../lib/python*/site-packages/OGS2Paraview.py OGS2Paraview
 chmod +x ../lib/python*/site-packages/OGS2Paraview.py
+ln -s ../lib/python*/site-packages/OGSlonlat2m.py OGSlonlat2m
+chmod +x ../lib/python*/site-packages/OGSlonlat2m.py
 
 cd ../..
 printf "OK\n"

@@ -144,3 +144,12 @@ printf "Deploying bit.sea... "
 cp -r paraview-superbuild/$SUITEDIR/bit.sea/commons paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
 cp -r paraview-superbuild/$SUITEDIR/bit.sea/basins  paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
 printf "OK\n"
+
+# Deploy OGStools inside the installation
+printf "Deploying OGS tools... "
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
+
+ln -s paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/OGSlonlat2m.py paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/bin/OGSlonlat2m
+chmod +x paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/bin/OGSlonlat2m
+
+printf "OK\n"
