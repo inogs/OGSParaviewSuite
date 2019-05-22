@@ -104,28 +104,28 @@ class OGSmesh(object):
 
 		return None
 
-	def generateBasinsMaskOld(self):
-		'''
-		Generate the basins_mask field where all basins are numbered from 1
-		to the number of basins.
-		'''
-		# Initialize 
-		SUBlist     = [ sub.name for sub in OGS.P.basin_list ]
-		basins_mask = np.zeros(self._mask.shape)
-
-		# Run for each sub basin
-		for sub in SUBlist:
-			# Avoid dealing with the whole Mediterranean sea
-			if sub == "med": continue
-			# Obtain index and basin name
-			index = SUBlist.index(sub)
-			basin = OGS.P.basin_list[index]
-			# Extract the sub mask
-			s = SubMask(basin, maskobject=self._mask)
-			# Build the basins mask for ParaView
-			basins_mask[s.mask] = index + 1
-
-		return basins_mask
+#	def generateBasinsMask(self):
+#		'''
+#		Generate the basins_mask field where all basins are numbered from 1
+#		to the number of basins.
+#		'''
+#		# Initialize 
+#		SUBlist     = [ sub.name for sub in OGS.P.basin_list ]
+#		basins_mask = np.zeros(self._mask.shape)
+#
+#		# Run for each sub basin
+#		for sub in SUBlist:
+#			# Avoid dealing with the whole Mediterranean sea
+#			if sub == "med": continue
+#			# Obtain index and basin name
+#			index = SUBlist.index(sub)
+#			basin = OGS.P.basin_list[index]
+#			# Extract the sub mask
+#			s = SubMask(basin, maskobject=self._mask)
+#			# Build the basins mask for ParaView
+#			basins_mask[s.mask] = index + 1
+#
+#		return basins_mask
 
 	def generateBasinsMask(self):
 		'''
@@ -175,8 +175,8 @@ class OGSmesh(object):
 		'''
 		# Define map projection
 		mproj = Basemap(projection = self._map, \
-						lat_0      = Lon0, \
-						lon_0      = Lat0, \
+						lat_0      = Lat0, \
+						lon_0      = Lon0, \
                         llcrnrlon  = -5.3, \
                         llcrnrlat  = 28.0, \
                         urcrnrlon  = 37,   \
