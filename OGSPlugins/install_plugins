@@ -105,6 +105,7 @@ cd -
 	# Copy
 	os.system("cp %s/libOGS.so %s" % (plugin_dir,install_dir))
 	os.system("cp %s/python/OGSmesh.py %s" % (plugin_dir,os.path.join(install_dir,"python*","site-packages")))
+	os.system("cp %s/python/ParaViewBlender.py %s" % (plugin_dir,os.path.join(install_dir,"python*","site-packages")))
 	os.system("cp %s/python/OGSlonlat2m.py %s" % (plugin_dir,os.path.join(install_dir,"python*","site-packages")))
 	os.system("cp %s/python/OGS2Paraview.py %s" % (plugin_dir,os.path.join(install_dir,"python*","site-packages")))
 	os.system("cp %s/python/default.ini %s" % (plugin_dir,os.path.join(install_dir,"..","bin")))
