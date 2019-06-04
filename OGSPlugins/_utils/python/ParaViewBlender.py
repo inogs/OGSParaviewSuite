@@ -456,6 +456,9 @@ class ParaViewToBlender:
         cd2pd = pv.CellDatatoPointData(Input=tsfm)
         # Fetch the data from a Proxy
         vtkObj = pv.servermanager.Fetch(cd2pd)
+        # In case of a MultiBlockDataSet, extract block
+        if vtkObj.IsA('vtkMultiBlockDataSet'):
+            vtkObj = vtkObj.GetBlock(0)
         # A vtkPolyData is needed, if not found extract
         # the surface data only
         if not vtkObj.IsA('vtkPolyData'):
