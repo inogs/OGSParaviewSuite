@@ -143,6 +143,47 @@ int ComputeCellId(vtkDataSet *input, vtkDataSet *source) {
 }
 
 //----------------------------------------------------------------------------
+void ComputeCellIds(std::vector<int> &cellIds, vtkDataSet *input, vtkDataSet *source) {
+
+	// We need the weights as they are part of a function
+	double *weights; weights = new double[source->GetMaxCellSize()];
+
+	// Create the cell locator object
+	vtkCellLocator *cellLocator = vtkCellLocator::New();
+	cellLocator->SetDataSet(source); cellLocator->BuildLocator();
+
+	// Recover the number of points in the input
+	int npoints = input->GetNumberOfPoints();
+	cellIds.resize(npoints,-1);
+
+	// Loop the number of points
+	vtkNew<vtkGenericCell> gcell;
+	for (int pId = 0; pId < npoints; ++pId) {
+		// Get the xyz coordinate of the point in the input dataset
+		// then, find the cell id that contains xyz
+		vtkIdType cellId = 0; int subId = 0;
+		double dist2;
+		v3::V3 xyz, pcoords, closestPoint; 
+		
+		input->GetPoint(pId, &xyz[0]);
+		cellLocator->FindClosestPoint(&xyz[0], &closestPoint[0], gcell.GetPointer(), cellId, subId, dist2);
+
+		// Evaluate interpolation weights
+		if (cellId >= 0) {
+			// Compute a tolerance proportional to the cell length.
+			gcell->EvaluatePosition(&xyz[0], &closestPoint[0], subId, &pcoords[0], dist2, weights);
+			// Abort if the distance is too big
+			if (dist2 > (gcell->GetLength2() * CELL_TOLERANCE_FACTOR_SQR))
+				continue;
+			// Store the cell id
+			cellIds[pId] = (int)(cellId);
+		}
+	}
+	delete [] weights;
+	cellLocator->Delete();
+}
+
+//----------------------------------------------------------------------------
 vtkOGSSpaghetti::vtkOGSSpaghetti() {
 	this->SetNumberOfInputPorts(2);
 	this->SetNumberOfOutputPorts(1);
@@ -544,22 +585,26 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		return 0;
 	}
 	// Retrieve cellIds from interpolating line
-	int cellId = ComputeCellId(input,source);
+	std::vector<int> cellIds;
+	ComputeCellIds(cellIds,input,source);
 
 	// Recover datevec
 	std::string datevec = vtkmetadata->GetValue(1);
 	std::vector<std::string> vdatevec;
 	strsplit(datevec,";",vdatevec);
 
-	this->UpdateProgress(.25);
-
-	// For each time instant, loop on the cell list and load the data into
-	// the table
-	field::Field<FLDARRAY> column(1,1);
-	VTKARRAY *vtkColumn;
-	for (int ii = ii_start; ii < ii_end; ii += 1) {
+	// Compute the mesh dependent position that does not depend on time
+	// we only need to do this once
+	std::vector<int> pos1;
+	int zId_old = -1;
+	for (int cellId : cellIds) {
 		// Depth index
 		int zId = this->cId2zId[cellId][0];
+		// Skip if we are on the same zId
+		if (zId == zId_old)
+			continue;
+		else 
+			zId_old = zId;
 		// In which basin are we? (we need to loop the basins and find which is true)
 		int  bId = -1; 
 		bool isbasin = false;
@@ -568,14 +613,48 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		}
 		// In which coast are we?
 		int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
-		// Compute position on statArray
-		int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + 
-		          ncoasts*zcoords.size()*nStat*bId        + 
-		          zcoords.size()*nStat*cId                + 
-		          nStat*zId                               +
-		          this->sId;
-		// Retrieve value from array
-		column[0][0] = (bId > 0 || cId > 0) ? statArray[pos][0] : 0.;
+		// Compute the position
+		int p = ncoasts*zcoords.size()*nStat*bId  + 
+		        zcoords.size()*nStat*cId          + 
+		        nStat*zId                         +
+		        this->sId;
+		p = (bId > 0 || cId > 0) ? p : -1;
+		pos1.push_back( p );	
+	}
+
+	this->UpdateProgress(.25);
+
+	// For each time instant, loop on the cell list and load the data into
+	// the table
+	double val = 0.;
+	field::Field<FLDARRAY> column(1,1);
+	VTKARRAY *vtkColumn;
+	for (int ii = ii_start; ii < ii_end; ii += 1) {
+		column[0][0] = 0.;
+		for (int p : pos1) {
+			// Cell Id
+			//int cellId = cellIds[0];
+			// Depth index
+			//int zId = this->cId2zId[cellId][0];
+			//// In which basin are we? (we need to loop the basins and find which is true)
+			//int  bId = -1; 
+			//bool isbasin = false;
+			//for (bId = 0; bId < bmask.get_m(); ++bId) {
+			//	if (bmask[cellId][bId]) { isbasin = true; break; }
+			//}
+			//// In which coast are we?
+			//int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
+			//// Compute position on statArray
+			//int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + 
+			//          ncoasts*zcoords.size()*nStat*bId        + 
+			//          zcoords.size()*nStat*cId                + 
+			//          nStat*zId                               +
+			//          this->sId;
+			int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + p;
+			// Retrieve value from array
+			column[0][0] += (p > 0) ? statArray[pos][0] : 0.;
+		}
+		column[0][0] /= (double)(pos1.size());
 		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
 		output->AddColumn(vtkColumn); vtkColumn->Delete();
 

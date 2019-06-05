@@ -281,6 +281,21 @@
      </PropertyGroup>
 
      <!-- Interpolating line info -->
+     <!--<InputProperty command="SetInputConnection"
+                    label="Probe Type"
+                    name="Source"
+                    panel_visibility="default">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources"
+                 name="FixedPointSource" />
+        </ProxyListDomain>
+        <Documentation>This property specifies the dataset whose geometry will
+        be used in determining positions to probe.</Documentation>
+     </InputProperty>-->
+     <!-- Interpolating line info -->
      <InputProperty command="SetInputConnection"
                     label="Probe Type"
                     name="Source"
@@ -291,6 +306,8 @@
         <ProxyListDomain name="proxy_list">
           <Proxy group="extended_sources"
                  name="FixedPointSource" />
+          <Proxy group="extended_sources"
+                 name="HighResLineSource" />
         </ProxyListDomain>
         <Documentation>This property specifies the dataset whose geometry will
         be used in determining positions to probe.</Documentation>
