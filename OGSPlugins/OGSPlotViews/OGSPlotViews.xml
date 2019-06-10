@@ -794,6 +794,19 @@
                  <BooleanDomain name="bool" />
                </IntVectorProperty>
 
+               <IntVectorProperty name="slegend_outside"
+                                  label="Legend outside"
+                                  initial_string="slegend_outside"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                   If activated, the legend is placed outside the axes 
+                   (in reference to the figure).
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
                <IntVectorProperty name="slegend_location"
                                   label="Legend Location"
                                   initial_string="slegend_location"
@@ -813,19 +826,6 @@
                   <Entry text="UpperCenter" value="9"  />
                   <Entry text="Center"      value="10" />
                 </EnumerationDomain>
-               </IntVectorProperty>
-
-               <IntVectorProperty name="slegend_outside"
-                                  label="Legend outside"
-                                  initial_string="slegend_outside"
-                                  command="SetParameter"
-                                  default_values="0"
-                                  number_of_elements="1">
-                 <Documentation>
-                   If activated, the legend is placed outside the axes 
-                   (in reference to the figure).
-                 </Documentation>
-                 <BooleanDomain name="bool" />
                </IntVectorProperty>
 
                <IntVectorProperty name="slegend_font"
@@ -936,7 +936,7 @@
                </IntVectorProperty>
 
                <DoubleVectorProperty name="sx_min"
-                                     initial_string="px_min"
+                                     initial_string="sx_min"
                                      label="Minimum Range X"
                                      command="SetParameter"
                                      default_values="0"
