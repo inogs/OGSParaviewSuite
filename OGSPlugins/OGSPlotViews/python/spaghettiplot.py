@@ -81,12 +81,15 @@ def RequestData():
 			fontsize=sx_font,
 			fontweight='bold' if sx_bold else None,
 			style='italic' if sx_ital else None)
+		if sx_customrange: ax.set_xlim((sx_min,sx_max))
 		# Y Axes properties
 		ax.set_ylabel(sy_label,
 			fontsize=sy_font,
 			fontweight='bold' if sy_bold else None,
 			style='italic' if sy_ital else None)
 		if sy_customrange: ax.set_ylim((sy_min,sy_max))
+
+		if sshow_grid: ax.grid()
 
 		# Generate variable lists
 		objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []
@@ -163,7 +166,11 @@ def RequestData():
 			legend_prop = dict(size=slegend_font)
 			if slegend_bold: legend_prop['weight'] = 'bold'
 			if slegend_ital: legend_prop['style']  = 'italic'
-			ax.legend(loc=slegend_location,prop=legend_prop)
+			# Place the legend
+			if slegend_outside:
+				figure.legend(loc=slegend_location,prop=legend_prop)
+			else:
+				ax.legend(loc=slegend_location,prop=legend_prop)
 
 		# Fit figure
 		figure.tight_layout()

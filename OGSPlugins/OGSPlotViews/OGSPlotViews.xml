@@ -721,6 +721,18 @@
                  </Hints>
                </StringVectorProperty>
 
+               <IntVectorProperty name="sshow_grid"
+                                  label="Show Grid"
+                                  initial_string="sshow_grid"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                   Activate/Deactivate the plot grid.
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
                <DoubleVectorProperty name="slinewidth"
                                      label="Line width "
                                      initial_string="slinewidth"
@@ -763,6 +775,7 @@
 
                <PropertyGroup label="Plot">
                  <Property name="Variables"/>
+                 <Property name="sshow_grid"/>
                  <Property name="slinewidth"/>
                  <Property name="ssmoothdata"/>
                  <Property name="ssmoothorder"/>
@@ -802,6 +815,19 @@
                 </EnumerationDomain>
                </IntVectorProperty>
 
+               <IntVectorProperty name="slegend_outside"
+                                  label="Legend outside"
+                                  initial_string="slegend_outside"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                   If activated, the legend is placed outside the axes 
+                   (in reference to the figure).
+                 </Documentation>
+                 <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
                <IntVectorProperty name="slegend_font"
                                   initial_string="slegend_font"
                                   command="SetParameter"
@@ -836,6 +862,7 @@
 
                <PropertyGroup label="Annotation">
                  <Property name="sshow_legend"/>
+                 <Property name="slegend_outside"/>
                  <Property name="slegend_location"/>
                </PropertyGroup>
 
@@ -896,6 +923,50 @@
                  </Documentation>
                </IntVectorProperty>
 
+               <IntVectorProperty name="sx_customrange"
+                                  initial_string="sx_customrange"
+                                  label="Custom Range X"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set a custom range for the X axis.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <DoubleVectorProperty name="sx_min"
+                                     initial_string="px_min"
+                                     label="Minimum Range X"
+                                     command="SetParameter"
+                                     default_values="0"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range minimum for the X axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="sx_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <DoubleVectorProperty name="sx_max"
+                                     initial_string="sx_max"
+                                     label="Maximum Range X"
+                                     command="SetParameter"
+                                     default_values="1"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range maximum for the X axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="sx_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
                <IntVectorProperty name="sx_font"
                                   initial_string="sx_font"
                                   command="SetParameter"
@@ -933,6 +1004,9 @@
                  <Property name="sx_label"/>
                  <Property name="sx_tick_form"/>
                  <Property name="sx_rot"/>
+                 <Property name="sx_customrange"/>
+                 <Property name="sx_min"/>
+                 <Property name="sx_max"/>
                </PropertyGroup>
 
                <PropertyGroup label="X Axis Properties"
@@ -1033,6 +1107,9 @@
 
                <PropertyGroup label="Y Axis">
                  <Property name="sy_label"/>
+                 <Property name="sy_customrange"/>
+                 <Property name="sy_min"/>
+                 <Property name="sy_max"/>
                </PropertyGroup>
 
                <PropertyGroup label="Y Axis Properties"
@@ -1041,12 +1118,6 @@
                  <Property name="sy_font" function="Size"/>
                  <Property name="sy_bold" function="Bold"/>
                  <Property name="sy_ital" function="Italics"/>
-               </PropertyGroup>
-
-               <PropertyGroup label="Y Axis Range">
-                 <Property name="sy_customrange"/>
-                 <Property name="sy_min"/>
-                 <Property name="sy_max"/>
                </PropertyGroup>
 
                <!-- Save figure properties -->
@@ -1110,7 +1181,7 @@
 
                <StringVectorProperty command="SetScript"
                                      name="Script"
-                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_spaghettiplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs spaghetti plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if splot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if splot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(splot_title,&#xA;&#x9;&#x9;fontsize=splot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if splot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if splot_title_ital else None)&#x9;&#x9;&#x9;&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(sx_label,&#xA;&#x9;&#x9;fontsize=sx_font,&#xA;&#x9;&#x9;fontweight='bold' if sx_bold else None,&#xA;&#x9;&#x9;style='italic' if sx_ital else None)&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(sy_label,&#xA;&#x9;&#x9;fontsize=sy_font,&#xA;&#x9;&#x9;fontweight='bold' if sy_bold else None,&#xA;&#x9;&#x9;style='italic' if sy_ital else None)&#xA;&#x9;if sy_customrange: ax.set_ylim((sy_min,sy_max))&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []&#xA;&#xA;&#x9;xIdsg   = np.array([])&#xA;&#x9;xNamesg = np.array([])&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#x9;for objId in range(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;# Get object that must be a vtkTable&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;if not obj: continue&#xA;&#x9;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): continue&#xA;&#x9;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;&#x9;# Now parse the columns and build the array data&#xA;&#x9;&#x9;var    = []&#xA;&#x9;&#x9;xIds   = []&#xA;&#x9;&#x9;xNames = []&#xA;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;do_plot = False if len(objlist) &gt; 0 else True&#xA;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;for ii in range(0,len(objlist)):&#xA;&#x9;&#x9;&#x9;if &quot;%d&quot; % (objId+1) == &quot;%s&quot; % (objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;1):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;args = labels.split('\n')[ii].split(';')[1]&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in labels.split('\n')[ii].split(';')[2].split(','))&#xA;&#x9;&#x9;# Build the array data&#xA;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;&#x9;&#x9;xNames.append( date.strftime(sx_tick_form) )&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;&#x9;&#x9;val = npvtk.vtk_to_numpy(column)[0]&#xA;&#x9;&#x9;&#x9;&#x9;val = None if val == 0. else val&#xA;&#x9;&#x9;&#x9;&#x9;var.append(val)&#xA;&#x9;&#x9;&#x9;# Convert to numpy array&#xA;&#x9;&#x9;&#x9;z      = np.array(var)&#xA;&#x9;&#x9;&#x9;xIds   = np.array(xIds)&#xA;&#x9;&#x9;&#x9;xNames = np.array(xNames)&#xA;&#x9;&#x9;&#x9;# Smooth if requested&#xA;&#x9;&#x9;&#x9;if ssmoothdata: z = smooth(z,ssmoothorder)&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;kwargs['linewidth'] = slinewidth&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,**kwargs)&#xA;&#x9;&#x9;&#x9;# Update global variables&#xA;&#x9;&#x9;&#x9;xIdsg   = xIds   if xIds.shape[0]   &gt; xIdsg.shape[0]   else xIdsg&#xA;&#x9;&#x9;&#x9;xNamesg = xNames if xNames.shape[0] &gt; xNamesg.shape[0] else xNamesg&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIdsg if xIdsg.shape[0] &lt; 10 else np.linspace(xIdsg[0],xIdsg[-1],sx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNamesg[x_ticks],rotation=sx_rot)&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=sx_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=sy_font)&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if sshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=slegend_font)&#xA;&#x9;&#x9;if slegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if slegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;ax.legend(loc=slegend_location,prop=legend_prop)&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if ssavefigure and sfilename:&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(sfilename,dpi=soutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_spaghettiplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs spaghetti plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if splot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if splot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(splot_title,&#xA;&#x9;&#x9;fontsize=splot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if splot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if splot_title_ital else None)&#x9;&#x9;&#x9;&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(sx_label,&#xA;&#x9;&#x9;fontsize=sx_font,&#xA;&#x9;&#x9;fontweight='bold' if sx_bold else None,&#xA;&#x9;&#x9;style='italic' if sx_ital else None)&#xA;&#x9;if sx_customrange: ax.set_xlim((sx_min,sx_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(sy_label,&#xA;&#x9;&#x9;fontsize=sy_font,&#xA;&#x9;&#x9;fontweight='bold' if sy_bold else None,&#xA;&#x9;&#x9;style='italic' if sy_ital else None)&#xA;&#x9;if sy_customrange: ax.set_ylim((sy_min,sy_max))&#xA;&#xA;&#x9;if sshow_grid: ax.grid()&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []&#xA;&#xA;&#x9;xIdsg   = np.array([])&#xA;&#x9;xNamesg = np.array([])&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#x9;for objId in range(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;# Get object that must be a vtkTable&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;if not obj: continue&#xA;&#x9;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): continue&#xA;&#x9;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;&#x9;# Now parse the columns and build the array data&#xA;&#x9;&#x9;var    = []&#xA;&#x9;&#x9;xIds   = []&#xA;&#x9;&#x9;xNames = []&#xA;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;do_plot = False if len(objlist) &gt; 0 else True&#xA;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;for ii in range(0,len(objlist)):&#xA;&#x9;&#x9;&#x9;if &quot;%d&quot; % (objId+1) == &quot;%s&quot; % (objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;1):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;args = labels.split('\n')[ii].split(';')[1]&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in labels.split('\n')[ii].split(';')[2].split(','))&#xA;&#x9;&#x9;# Build the array data&#xA;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;&#x9;&#x9;xNames.append( date.strftime(sx_tick_form) )&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;&#x9;&#x9;val = npvtk.vtk_to_numpy(column)[0]&#xA;&#x9;&#x9;&#x9;&#x9;val = None if val == 0. else val&#xA;&#x9;&#x9;&#x9;&#x9;var.append(val)&#xA;&#x9;&#x9;&#x9;# Convert to numpy array&#xA;&#x9;&#x9;&#x9;z      = np.array(var)&#xA;&#x9;&#x9;&#x9;xIds   = np.array(xIds)&#xA;&#x9;&#x9;&#x9;xNames = np.array(xNames)&#xA;&#x9;&#x9;&#x9;# Smooth if requested&#xA;&#x9;&#x9;&#x9;if ssmoothdata: z = smooth(z,ssmoothorder)&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;kwargs['linewidth'] = slinewidth&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,**kwargs)&#xA;&#x9;&#x9;&#x9;# Update global variables&#xA;&#x9;&#x9;&#x9;xIdsg   = xIds   if xIds.shape[0]   &gt; xIdsg.shape[0]   else xIdsg&#xA;&#x9;&#x9;&#x9;xNamesg = xNames if xNames.shape[0] &gt; xNamesg.shape[0] else xNamesg&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIdsg if xIdsg.shape[0] &lt; 10 else np.linspace(xIdsg[0],xIdsg[-1],sx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNamesg[x_ticks],rotation=sx_rot)&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=sx_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=sy_font)&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if sshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=slegend_font)&#xA;&#x9;&#x9;if slegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if slegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;# Place the legend&#xA;&#x9;&#x9;if slegend_outside:&#xA;&#x9;&#x9;&#x9;figure.legend(loc=slegend_location,prop=legend_prop)&#xA;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;ax.legend(loc=slegend_location,prop=legend_prop)&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if ssavefigure and sfilename:&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(sfilename,dpi=soutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
                                      number_of_elements="1"
                                      panel_visibility="never">
                  <Hints>
