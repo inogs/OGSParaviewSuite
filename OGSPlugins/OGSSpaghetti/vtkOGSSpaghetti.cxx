@@ -575,6 +575,19 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 	vtkMask = VTKMASK::SafeDownCast( source->GetCellData()->GetArray(this->cmask_field) );
 	cmask   = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
 
+	// Load the mesh weights
+	VTKARRAY *vtke3 = NULL;
+	vtke3 = VTKARRAY::SafeDownCast( source->GetCellData()->GetArray("e3") );
+
+	if (vtke3 == NULL) {
+		vtkErrorMacro("Mesh weights (e1, e2 and e3) need to be loaded to proceed!");
+		return 0;
+	}
+
+	// Convert to field arrays
+	field::Field<FLDARRAY> e3;
+	e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
+
 	// Load variable stat profile
 	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*zcoords.size()*nStat,1,0.);
 	std::string filename = std::string(this->FolderName) + std::string("/") + std::string(this->field) + std::string(".nc");
@@ -595,16 +608,13 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 
 	// Compute the mesh dependent position that does not depend on time
 	// we only need to do this once
-	std::vector<int> pos1;
-	int zId_old = -1;
-	for (int cellId : cellIds) {
+	std::vector<int> pos1; pos1.resize(cellIds.size(),0);
+	double weight_sum = 0.;
+	for (int cc = 0; cc < cellIds.size(); ++cc) {
+		// Recover cell id
+		int cellId = cellIds[cc];
 		// Depth index
 		int zId = this->cId2zId[cellId][0];
-		// Skip if we are on the same zId
-		if (zId == zId_old)
-			continue;
-		else 
-			zId_old = zId;
 		// In which basin are we? (we need to loop the basins and find which is true)
 		int  bId = -1; 
 		bool isbasin = false;
@@ -619,42 +629,29 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		        nStat*zId                         +
 		        this->sId;
 		p = (bId > 0 || cId > 0) ? p : -1;
-		pos1.push_back( p );	
+		// Store the position and the sum of weights
+		pos1[cc]    = p;
+		weight_sum += e3[cellId][0];
 	}
 
 	this->UpdateProgress(.25);
 
 	// For each time instant, loop on the cell list and load the data into
 	// the table
-	double val = 0.;
 	field::Field<FLDARRAY> column(1,1);
 	VTKARRAY *vtkColumn;
 	for (int ii = ii_start; ii < ii_end; ii += 1) {
 		column[0][0] = 0.;
-		for (int p : pos1) {
-			// Cell Id
-			//int cellId = cellIds[0];
-			// Depth index
-			//int zId = this->cId2zId[cellId][0];
-			//// In which basin are we? (we need to loop the basins and find which is true)
-			//int  bId = -1; 
-			//bool isbasin = false;
-			//for (bId = 0; bId < bmask.get_m(); ++bId) {
-			//	if (bmask[cellId][bId]) { isbasin = true; break; }
-			//}
-			//// In which coast are we?
-			//int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
-			//// Compute position on statArray
-			//int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + 
-			//          ncoasts*zcoords.size()*nStat*bId        + 
-			//          zcoords.size()*nStat*cId                + 
-			//          nStat*zId                               +
-			//          this->sId;
+		for (int cc = 0; cc < cellIds.size(); ++cc) {
+			// Recover ids
+			int p      = pos1[cc];
+			int cellId = cellIds[cc];
+			// Compute position
 			int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + p;
 			// Retrieve value from array
-			column[0][0] += (p > 0) ? statArray[pos][0] : 0.;
+			column[0][0] += (p > 0) ? e3[cellId][0]*statArray[pos][0] : 0.;
 		}
-		column[0][0] /= (double)(pos1.size());
+		column[0][0] /= weight_sum;
 		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
 		output->AddColumn(vtkColumn); vtkColumn->Delete();
 
