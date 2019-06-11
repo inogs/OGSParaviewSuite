@@ -1,0 +1,174 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="extended_sources">
+    <!-- MODIFIED POINT SOURCE -->
+    <SourceProxy class="vtkPointSource"
+                 label="Fixed Point Source"
+                 name="FixedPointSourceMod">
+
+      <DoubleVectorProperty animateable="1"
+                            command="SetCenter"
+                            default_values="0.0 0.0 0.0"
+                            name="Center"
+                            number_of_elements="3">
+        <BoundsDomain default_mode="mid"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="DummyInput" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                         command="SetNumberOfPoints"
+                         default_values="1"
+                         name="NumberOfPoints"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <IntRangeDomain min="1"
+                        name="range" />
+      </IntVectorProperty>
+
+      <DoubleVectorProperty animateable="1"
+                            command="SetRadius"
+                            default_values="0.0"
+                            name="Radius"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <DoubleRangeDomain min="0.0"
+                           name="range" />
+      </DoubleVectorProperty>
+
+      <InputProperty is_internal="1"
+                     name="DummyInput">
+        <!-- Used when this source is added to a proxy list domain. -->
+      </InputProperty>
+
+      <PropertyGroup label="Point Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
+      
+      <Hints>
+        <ProxyList>
+          <Link name="DummyInput" with_property="Input" />
+        </ProxyList>
+      </Hints>
+    </SourceProxy>
+
+    <!-- OGS DEPTH LINE SOURCE -->
+    <SourceProxy class="vtkOGSDepthLineSource"
+                 label="OGS Depth Line Source"
+                 name="OGSDepthLineSource">
+
+      <!-- Projections -->
+      <IntVectorProperty name="Projection"
+                         label="Projection to use:"
+                         command="SetProjection"
+                         default_values="0"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+         <Entry text="Mercator"    value="0"  />
+         <Entry text="Cylindrical" value="1"  />
+       </EnumerationDomain>
+      </IntVectorProperty>
+
+      <!-- Longitude and Latitude -->
+      <DoubleVectorProperty animateable="1"
+                            command="SetLonLat"
+                            default_values="0.0 0.0"
+                            name="LonLat"
+                            label="Lon and Lat:"
+                            number_of_elements="2">
+      </DoubleVectorProperty>
+      <DoubleVectorProperty animateable="1"
+                            command="SetDepthRange"
+                            default_values="0.0 0.0"
+                            name="DepthRange"
+                            label="Depth Range:"
+                            number_of_elements="2">
+      </DoubleVectorProperty>
+
+      <!-- Selection of depth scale factor -->
+      <DoubleVectorProperty name="DepthScale"
+                            label="Scale factor for depth:"
+                            command="SetDepthScale"
+                            number_of_elements="1"
+                            default_values="1000."
+                            panel_visibility="advanced">
+      </DoubleVectorProperty>
+
+      <!-- Points -->
+      <DoubleVectorProperty animateable="1"
+                            command="SetPoint1"
+                            default_values="0.0 0.0 0.0"
+                            name="Point1"
+                            number_of_elements="3">
+        <BoundsDomain default_mode="max"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="DummyInput" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty animateable="1"
+                            command="SetPoint2"
+                            default_values="0.0 0.0 0.0"
+                            name="Point2"
+                            number_of_elements="3">
+        <BoundsDomain default_mode="min"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="DummyInput" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+
+      <!-- Line resolution -->
+      <IntVectorProperty command="SetResolution"
+                         default_values="1000"
+                         name="Resolution"
+                         number_of_elements="1">
+        <IntRangeDomain min="1"
+                        name="range" />
+      </IntVectorProperty>
+
+      <!-- Selection of depth scale factor -->
+      <InputProperty is_internal="1" name="DummyInput">
+        <!-- Used when this source is added to a proxy list domain. -->
+      </InputProperty>
+
+      <!-- Property Groups -->
+       <PropertyGroup label="Projection Settings">
+          <Property name="Projection" />
+          <Property name="LonLat" />
+          <Property name="DepthRange" />
+          <Property name="DepthScale" />
+      </PropertyGroup>     
+
+      <PropertyGroup panel_widget="InteractiveLine" label="Line Parameters">
+          <Property function="Point1WorldPosition" name="Point1" />
+          <Property function="Point2WorldPosition" name="Point2" />
+          <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Line Settings">
+          <Property name="Resolution" />
+      </PropertyGroup>  
+
+      <Hints>
+        <ProxyList>
+          <Link name="DummyInput" with_property="Input" />
+        </ProxyList>
+      </Hints>
+    </SourceProxy>
+    <!-- END OGS DEPTH LINE SOURCE -->
+  </ProxyGroup>
+</ServerManagerConfiguration>
