@@ -36,6 +36,8 @@
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="extended_sources"
+                 name="OGSDepthLineSource" />          
+          <Proxy group="extended_sources"
                  name="HighResLineSource" />
         </ProxyListDomain>
         <Documentation>
@@ -44,9 +46,9 @@
      </InputProperty>
 
      <Hints>
+        <PipelineIcon name="XYChartView"/>
         <Plotable />
         <ShowInMenu category="OGS" />
-        <Visibility replace_input="0" />
         <View type="OGSVerticalProfilePlot" also_show_in_current_view="1" />
      </Hints>
    </SourceProxy>

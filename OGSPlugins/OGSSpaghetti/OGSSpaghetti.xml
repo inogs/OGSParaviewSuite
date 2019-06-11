@@ -1,58 +1,4 @@
 <ServerManagerConfiguration>
-  <!-- Point source for Spaghetti according to our needs -->
-  <ProxyGroup name="extended_sources">
-    <SourceProxy class="vtkPointSource"
-                 label="Fixed Point Source"
-                 name="FixedPointSource">
-      <DoubleVectorProperty animateable="1"
-                            command="SetCenter"
-                            default_values="0.0 0.0 0.0"
-                            name="Center"
-                            number_of_elements="3">
-        <BoundsDomain default_mode="mid"
-                      mode="normal"
-                      name="range">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="DummyInput" />
-          </RequiredProperties>
-        </BoundsDomain>
-      </DoubleVectorProperty>
-      <IntVectorProperty animateable="1"
-                         command="SetNumberOfPoints"
-                         default_values="1"
-                         name="NumberOfPoints"
-                         number_of_elements="1"
-                         panel_visibility="never">
-        <IntRangeDomain min="1"
-                        name="range" />
-      </IntVectorProperty>
-      <DoubleVectorProperty animateable="1"
-                            command="SetRadius"
-                            default_values="0.0"
-                            name="Radius"
-                            number_of_elements="1"
-                            panel_visibility="never">
-        <DoubleRangeDomain min="0.0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <InputProperty is_internal="1"
-                     name="DummyInput">
-        <!-- Used when this source is added to a proxy list domain. -->
-      </InputProperty>
-      <PropertyGroup label="Point Parameters" panel_widget="InteractiveSphere">
-        <Property function="Center" name="Center" />
-        <Property function="Radius" name="Radius" />
-        <Property function="Input" name="DummyInput" />
-      </PropertyGroup>
-      <Hints>
-        <ProxyList>
-          <Link name="DummyInput" with_property="Input" />
-        </ProxyList>
-      </Hints>
-      <!-- End PointSource -->
-    </SourceProxy>
-  </ProxyGroup>
   <ProxyGroup name="filters">
    <SourceProxy name="OGSSpaghetti" 
                 class="vtkOGSSpaghetti" 
@@ -290,7 +236,9 @@
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="extended_sources"
-                 name="FixedPointSource" />
+                 name="FixedPointSourceMod" />
+          <Proxy group="extended_sources"
+                 name="OGSDepthLineSource" />  
           <Proxy group="extended_sources"
                  name="HighResLineSource" />
         </ProxyListDomain>
@@ -310,6 +258,7 @@
          </WarnOnCreate>
         <Visibility replace_input="0" />
         <Plotable />
+        <PipelineIcon name="XYChartView" />
       </Hints>
    </SourceProxy>
  </ProxyGroup>

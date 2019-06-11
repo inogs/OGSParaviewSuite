@@ -236,6 +236,8 @@
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="extended_sources"
+                 name="OGSDepthLineSource" />  
+          <Proxy group="extended_sources"
                  name="HighResLineSource" />
         </ProxyListDomain>
         <Documentation>This property specifies the dataset whose geometry will
@@ -252,8 +254,8 @@
           available in your dataset and can potentially take a long time to complete.
           Do you want to continue?
          </WarnOnCreate>
-        <Visibility replace_input="0" />
         <Plotable />
+        <PipelineIcon name="XYChartView" />
       </Hints>
    </SourceProxy>
  </ProxyGroup>
