@@ -35,8 +35,10 @@
           <Group name="sources" />
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
+          <!-- OGS Proxies -->
           <Proxy group="extended_sources"
-                 name="OGSDepthLineSource" />          
+                 name="OGSDepthLineSource" />
+          <!-- ParaView proxies kept for compatibility -->
           <Proxy group="extended_sources"
                  name="HighResLineSource" />
         </ProxyListDomain>
