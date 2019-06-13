@@ -235,10 +235,14 @@
           <Group name="sources" />
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
+          <!-- OGS Proxies -->
+          <Proxy group="extended_sources"
+                 name="OGSPointSource" />
+          <Proxy group="extended_sources"
+                 name="OGSDepthLineSource" />
+          <!-- ParaView proxies kept for compatibility -->
           <Proxy group="extended_sources"
                  name="FixedPointSourceMod" />
-          <Proxy group="extended_sources"
-                 name="OGSDepthLineSource" />  
           <Proxy group="extended_sources"
                  name="HighResLineSource" />
         </ProxyListDomain>
