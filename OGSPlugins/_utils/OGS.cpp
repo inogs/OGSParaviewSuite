@@ -341,24 +341,23 @@ void OGS::print() {
 
 extern "C"
 {
-	OGS *newOGS(const char *fname, const char *wrkdir, const int nlon, const int nlat, const int nlev,
+	int OGSWriteMesh(const char *fname, const char *wrkdir, const int nlon, const int nlat, const int nlev,
 		double *lon2m, double *lat2m, double *nav_lev, uint8_t *bmask, uint8_t *cmask) {
 		// Create a new instance of the class
-		OGS *ogscls; ogscls = new OGS[1];
+		OGS ogscls;
 		// Populate the class
-		ogscls->SetMfile(fname);
-		ogscls->SetWdir(wrkdir);
-		ogscls->Setlon2m(nlon,lon2m);
-		ogscls->Setlat2m(nlat,lat2m);
-		ogscls->Setnavlev(nlev,nav_lev);
-		ogscls->Setncells();
+		ogscls.SetMfile(fname);
+		ogscls.SetWdir(wrkdir);
+		ogscls.Setlon2m(nlon,lon2m);
+		ogscls.Setlat2m(nlat,lat2m);
+		ogscls.Setnavlev(nlev,nav_lev);
+		ogscls.Setncells();
 		// Load the masks
-		ogscls->SetMask(0,16,bmask);
-		ogscls->SetMask(1,1,cmask);
-		// Return
-		return ogscls;
+		ogscls.SetMask(0,16,bmask);
+		ogscls.SetMask(1,1,cmask);
+		// Print
+		return ogscls.writeMesh(0);
 	}
-	int OGSWriteMesh(OGS *ogscls) { return ogscls->writeMesh(0); }
 }
 
 /* AUXILIARY FUNCTIONS */

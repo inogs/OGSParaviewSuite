@@ -4,7 +4,9 @@
 #
 # Arnau Miro, OGS (2018)
 
-import os, argparse
+from __future__ import print_function
+
+import os, sys, argparse
 import numpy as np, ctypes as ct
 
 from mpl_toolkits.basemap import Basemap
@@ -33,7 +35,7 @@ class OGSmesh(object):
 	This class needs the libOGS.so that is generally deployed along with
 	this class by the deployment scripts of the OGSParaView Suite.
 	'''
-	def __init__(self,maskpath,maskname="meshmask.nc",maptype='merc',lib='libOGS.so'):
+	def __init__(self,maskpath,maskname="meshmask.nc",maptype='merc',lib='libOGS'):
 		'''
 		Class constructor for OGSmesh.
 
@@ -49,6 +51,7 @@ class OGSmesh(object):
 		self._map      = maptype
 
 		# Interface with the C functions
+		lib += '.dylib' if sys.platform == 'darwin' else '.so'
 		self._OGSlib   = ct.cdll.LoadLibrary(lib)
 
 	@property
@@ -103,29 +106,6 @@ class OGSmesh(object):
 		if dims == (125, 380, 1085): return "high"
 
 		return None
-
-#	def generateBasinsMask(self):
-#		'''
-#		Generate the basins_mask field where all basins are numbered from 1
-#		to the number of basins.
-#		'''
-#		# Initialize 
-#		SUBlist     = [ sub.name for sub in OGS.P.basin_list ]
-#		basins_mask = np.zeros(self._mask.shape)
-#
-#		# Run for each sub basin
-#		for sub in SUBlist:
-#			# Avoid dealing with the whole Mediterranean sea
-#			if sub == "med": continue
-#			# Obtain index and basin name
-#			index = SUBlist.index(sub)
-#			basin = OGS.P.basin_list[index]
-#			# Extract the sub mask
-#			s = SubMask(basin, maskobject=self._mask)
-#			# Build the basins mask for ParaView
-#			basins_mask[s.mask] = index + 1
-#
-#		return basins_mask
 
 	def generateBasinsMask(self):
 		'''
@@ -198,22 +178,13 @@ class OGSmesh(object):
 		# Return
 		return np.sort(Lon2Meters), np.sort(Lat2Meters)
 
-	def OGS(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
+	def OGSwriteMesh(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
 		'''
-		Interface with the C++ OGS class. Create a new object and return
-		the pointer to said object.
-
-		Inputs:
-			> fname:       Name of the file to write
-			> Lon2Meters:  Longitude to meters conversion (npy array)
-			> Lat2Meters:  Latitude to meters conversion (npy array)
-			> nav_lev:     Depth (npy array)
-			> basins_mask: Mask contanining the sub basins
-			> coast_mask:  Mask contanining the coasts
+		Wrapper for the C function writeOGSMesh inside the OGSmesh.so library. 
 		'''
-		OGSnew       = self._OGSlib.newOGS
+		writeMesh    = self._OGSlib.OGSWriteMesh
 		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p]
-		OGS.restype  = c_void_p
+		OGS.restype  = c_int
 
 		# Compute sizes of vectors
 		nLon = Lon2Meters.shape[0]
@@ -221,20 +192,10 @@ class OGSmesh(object):
 		nLev = nav_lev.shape[0]
 
 		# Return class instance
-		return OGSnew(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
+		return writeMesh(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
 					  Lat2Meters.ctypes.data_as(c_double_p), nav_lev.ctypes.data_as(c_double_p),\
 					  basins_mask.ctypes.data_as(c_uint8_p),coast_mask.ctypes.data_as(c_uint8_p)
 					 )
-
-	def OGSwriteMesh(self,OGScls):
-		'''
-		Wrapper for the C function writeOGSMesh inside the OGSmesh.so library. 
-		'''
-		writeMesh          = self._OGSlib.OGSWriteMesh
-		writeMesh.argtypes = [c_void_p]
-		writeMesh.restype  = c_int
-
-		return writeMesh(OGScls)
 
 	def createOGSMesh(self,fname="mesh.ogsmsh",path="."):
 		'''
@@ -247,6 +208,7 @@ class OGSmesh(object):
 		'''
 		# Read the mesh mask
 		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
+
 		# Obtain the coasts_mask and the basins_mask
 		basins_mask = self.generateBasinsMask().ravel()
 		coasts_mask = self.generateCoastsMask().ravel()
@@ -254,11 +216,8 @@ class OGSmesh(object):
 		# Project latitude and longitude according to map specifics
 		Lon2Meters, Lat2Meters = self.applyProjection(dims,Lon,Lat)
 
-		# Create an instance of the OGS class
-		OGScls = self.OGS(fname,path,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coasts_mask);
-
 		# Save into file
-		self.OGSwriteMesh(OGScls)
+		self.OGSwriteMesh(fname,path,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coasts_mask);
 
 '''
 	MAIN
