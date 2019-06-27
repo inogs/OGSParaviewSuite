@@ -29,7 +29,7 @@
 
 # Paraview version
 PV_VERS=$1
-INSTALL_PREFIX=../paraview-$PV_VERS
+INSTALL_PREFIX=$PWD/paraview-$PV_VERS
 OSX_SDK=macosx10.14
 SUITEDIR='OGSParaviewSuite'
 NPROCS=2
@@ -87,6 +87,7 @@ cmake ../paraview-superbuild/ \
    -DENABLE_vrpn=ON \
    -DENABLE_vortexfinder2=OFF \
    -Dparaview_PLUGINS_EXTERNAL="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils" \
+   -Dparaview_PLUGINS_AUTOLOAD="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils" \
    -Dparaview_PLUGIN_OGSAnnotateDateTime_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSAnnotateDateTime \
    -Dparaview_PLUGIN_OGSDepthProfile_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDepthProfile \
    -Dparaview_PLUGIN_OGSDerivatives_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDerivatives \
@@ -120,37 +121,79 @@ ln -s $PWD/install/lib/python2.7/site-packages/matplotlib-2.2.3-py2.7-macosx-10.
 # Install
 make -j $NPROCS install
 
+# Dowload extra sources from google drive
+fileid="13L4jjYfTa85cAluJdqZYa0MhU4j9pLP4"
+filename="extra_src.tar.gz"
+curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}" > /dev/null
+curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
+tar xzf extra_src.tar.gz
+
 # FIX: matplotlib depends on backports and kiwisolver
 # backports is already compiled during installation
-cp -r install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports/ $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-# kiwisolver must be compiled afterwards
-curl -O https://files.pythonhosted.org/packages/16/e7/df58eb8868d183223692d2a62529a594f6414964a3ae93548467b146a24d/kiwisolver-1.1.0.tar.gz
-tar xvzf kiwisolver-1.1.0.tar.gz && cd kiwisolver-1.1.0
-python2.7 setup.py build && cd ..
-cp kiwisolver-1.1.0/build/lib.macosx-10.14-intel-2.7/kiwisolver.so $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-
+cp -r $PWD/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports/ $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+# Unpack kiwisolver wheel
+unzip extra_src/kiwisolver-1.1.0.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+# Unpack cftime wheel
+unzip extra_src/cftime-1.0.3.4.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+# Unpack netCDF4 wheel
+unzip extra_src/netCDF4-1.4.2.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+# Compile and install geos
+tar xf extra_src/geos-3.7.0.tar.bz2 && cd geos-3.7.0
+./configure --prefix=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/ --libdir=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries
+make -j $NPROCS install
+cd ../
+# Compile and install basemap
+tar xfz extra_src/basemap-1.1.0.tar.gz && cd basemap-1.1.0
+export GEOS_DIR=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/
+ln -s $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/lib
+ln -s $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/lib64
+python2.7 setup.py build
+cp build/lib.macosx-10.14-intel-2.7/_geoslib.so $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp -r build/lib.macosx-10.14-intel-2.7/mpl_toolkits/basemap $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/mpl_toolkits
+cd ../
+# Compile and install proj
+tar xzf extra_src/proj-6.1.0.tar.gz && cd proj-6.1.0
+./configure --prefix=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/ --libdir=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries
+unzip extra_src/proj-datumgrid-1.8.zip -d data/
+make -j $NPROCS install
+cd ../
+# Compile and install pyproj
+tar xzf extra_src/pyproj-1.9.6.tar.gz && cd pyproj-1.9.6
+python2.7 setup.py build
+cp -r build/lib.macosx-10.14-intel-2.7/pyproj $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cd ../
+# Remove dist-info folders
+rm -rf $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/*.dist-info
 # Also copy ffmpeg
 cp install/bin/ffmpeg $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
-
 cd ..
 printf "Install done successfully!\n"
 
 # Deploy img2video
 printf "Deploying img2video... "
-cp paraview-superbuild/$SUITEDIR/bin/img2video paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/bin/
+cp paraview-superbuild/$SUITEDIR/bin/img2video $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
 printf "OK\n"
 
 # Deploy bit.sea inside the ParaView installation
 printf "Deploying bit.sea... "
-cp -r paraview-superbuild/$SUITEDIR/bit.sea/commons paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
-cp -r paraview-superbuild/$SUITEDIR/bit.sea/basins  paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
+cp -r paraview-superbuild/$SUITEDIR/bit.sea/commons $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp -r paraview-superbuild/$SUITEDIR/bit.sea/basins  $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 printf "OK\n"
 
 # Deploy OGStools inside the installation
 printf "Deploying OGS tools... "
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/
-
-ln -s paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/OGSlonlat2m.py paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/bin/OGSlonlat2m
-chmod +x paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/bin/OGSlonlat2m
-
+# libOGS
+cd paraview-superbuild/$SUITEDIR/OGSPlugins/_utils
+g++ -shared -o $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries/libOGS.dylib -fPIC -std=c++11 OGS.cpp netcdfio.cpp -L $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries/ -l vtkNetCDF-pv5.6
+cd ../../../../
+# Python utils
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/default.ini $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
+# Symbolic links
+ln -s paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/OGS2Paraview.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
+chmod +x $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/OGS2Paraview.py
+ln -s paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/OGSlonlat2m.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
+chmod +x $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/OGSlonlat2m.py
 printf "OK\n"
