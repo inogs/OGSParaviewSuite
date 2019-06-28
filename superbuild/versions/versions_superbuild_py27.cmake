@@ -133,7 +133,7 @@ superbuild_set_selectable_source(qt5
     URL_MD5 "${qt5_10_md5}"
   SELECT 5.12 
     URL     "http://download.qt.io/archive/qt/5.12/5.12.4/single/qt-everywhere-src-5.12.4.tar.xz" 
-    URL_MD5 "${qt5_12_md5}")
+    URL_MD5 "${qt5_12_md5}"
   SELECT 5.13 
     URL     "http://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz" 
     URL_MD5 "${qt5_13_md5}")
