@@ -4,7 +4,7 @@ The **OGS Compute Lambda2 Criterion** computes the lambda2 turbulence criterion 
 
 The lambda2 criterion (Jeong & Hussain, 1995) is based on computing the value of the second eigenvalue (lambda2) of the tensor S2 + O2 where:
 
-<img src="drawing.jpg" alt="" width="200"/>
+<center><img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSLambda2Criterion/doc/eqs.png" alt="" width="200"/></center>
 
 Properly tuned, this criterion yelds the same result as the Q criterion.
 
