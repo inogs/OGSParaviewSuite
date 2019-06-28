@@ -78,6 +78,7 @@ cmake ../paraview-superbuild/ \
    -DENABLE_embree=ON \
    -DENABLE_ospray=ON \
    -DENABLE_python=ON \
+   -DUSE_SYSTEM_python=OFF \
    -DENABLE_numpy=ON \
    -DENABLE_scipy=ON \
    -DENABLE_matplotlib=ON \
@@ -132,11 +133,11 @@ tar xzf extra_src.tar.gz
 # backports is already compiled during installation
 cp -r $PWD/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports/ $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 # Unpack kiwisolver wheel
-unzip extra_src/kiwisolver-1.1.0.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+unzip extra_src/kiwisolver-1.1.0_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 # Unpack cftime wheel
-unzip extra_src/cftime-1.0.3.4.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+unzip extra_src/cftime-1.0.3.4_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 # Unpack netCDF4 wheel
-unzip extra_src/netCDF4-1.4.2.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+unzip extra_src/netCDF4-1.4.2_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 # Compile and install geos
 tar xf extra_src/geos-3.7.0.tar.bz2 && cd geos-3.7.0
 ./configure --prefix=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/ --libdir=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries

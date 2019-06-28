@@ -31,7 +31,7 @@
 PV_VERS=$1
 INSTALL_PREFIX=$PWD/paraview-$PV_VERS
 SUITEDIR='OGSParaviewSuite'
-NPROCS=28
+NPROCS=24
 
 # Load modules
 # provide a basic building environment
@@ -63,7 +63,6 @@ cmake ../paraview-superbuild/ \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
    -DBUILD_TESTING=OFF \
    -Dparaview_SOURCE_SELECTION=$PV_VERS \
-   -Dqt5_SOURCE_SELECTION=5.12 \
    -DCMAKE_BUILD_TYPE_paraview=Release \
    -DENABLE_mpi=ON \
    -DUSE_SYSTEM_mpi=OFF \
@@ -74,9 +73,9 @@ cmake ../paraview-superbuild/ \
    -DENABLE_bzip2=ON \
    -DENABLE_libxml2=ON \
    -DENABLE_png=ON \
-   -DENABLE_qt5=ON \
-   -DENABLE_mesa=ON \
-   -DENABLE_osmesa=OFF \
+   -DENABLE_qt5=OFF \
+   -DENABLE_mesa=OFF \
+   -DENABLE_osmesa=ON \
    -DENABLE_tbb=ON \
    -DENABLE_embree=ON \
    -DENABLE_ospray=ON \
@@ -91,8 +90,8 @@ cmake ../paraview-superbuild/ \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
-   -Dparaview_PLUGINS_EXTERNAL="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils" \
-   -Dparaview_PLUGINS_AUTOLOAD="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils" \
+   -Dparaview_PLUGINS_EXTERNAL="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils" \
+   -Dparaview_PLUGINS_AUTOLOAD="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils" \
    -Dparaview_PLUGIN_OGSAnnotateDateTime_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSAnnotateDateTime \
    -Dparaview_PLUGIN_OGSDepthProfile_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDepthProfile \
    -Dparaview_PLUGIN_OGSDerivatives_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDerivatives \
@@ -101,7 +100,6 @@ cmake ../paraview-superbuild/ \
    -Dparaview_PLUGIN_OGSLambda2Criterion_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSLambda2Criterion \
    -Dparaview_PLUGIN_OGSOkuboWeiss_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSOkuboWeiss \
    -Dparaview_PLUGIN_OGSOmegaCriterion_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSOmegaCriterion \
-   -Dparaview_PLUGIN_OGSPlotViews_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSPlotViews \
    -Dparaview_PLUGIN_OGSQCriterion_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSQCriterion \
    -Dparaview_PLUGIN_OGSReader_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSReader \
    -Dparaview_PLUGIN_OGSSelectTools_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSSelectTools \
