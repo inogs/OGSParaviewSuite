@@ -109,11 +109,17 @@ if (WIN32)
 else ()
   set(qt5_10_md5 "7e167b9617e7bd64012daaacb85477af")
 endif ()
-set(qt5_12_ver "5.12.0")
+set(qt5_12_ver "5.12.4")
 if (WIN32)
   set(qt5_12_md5 "")
 else ()
   set(qt5_12_md5 "dda95b0239d13c5276834177af3a8588")
+endif ()
+set(qt5_13_ver "5.13.0")
+if (WIN32)
+  set(qt5_12_md5 "")
+else ()
+  set(qt5_12_md5 "3c168d9a3a08248ff36f4f54c82e437f")
 endif ()
 superbuild_set_selectable_source(qt5
   SELECT 5.8
@@ -127,6 +133,9 @@ superbuild_set_selectable_source(qt5
     URL_MD5 "${qt5_10_md5}"
   SELECT 5.12 
     URL     "http://download.qt.io/archive/qt/5.12/5.12.4/single/qt-everywhere-src-5.12.4.tar.xz" 
+    URL_MD5 "${qt5_12_md5}")
+  SELECT 5.13 
+    URL     "http://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz" 
     URL_MD5 "${qt5_12_md5}")
 
 if (WIN32 AND NOT superbuild_building_prebuilt_python)
