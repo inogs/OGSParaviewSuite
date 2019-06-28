@@ -113,7 +113,7 @@ set(qt5_12_ver "5.12.0")
 if (WIN32)
   set(qt5_12_md5 "")
 else ()
-  set(qt5_12_md5 "af569de3eb42da4457b0897e5759dc91")
+  set(qt5_12_md5 "dda95b0239d13c5276834177af3a8588")
 endif ()
 superbuild_set_selectable_source(qt5
   SELECT 5.8
@@ -126,7 +126,7 @@ superbuild_set_selectable_source(qt5
     URL     "https://www.paraview.org/files/dependencies/qt-everywhere-src-${qt5_10_ver}.${qt5_ext}"
     URL_MD5 "${qt5_10_md5}"
   SELECT 5.12 
-    URL     "http://download.qt.io/archive/qt/5.12/5.12.0/single/qt-everywhere-src-5.12.0.tar.xz" 
+    URL     "http://download.qt.io/archive/qt/5.12/5.12.4/single/qt-everywhere-src-5.12.4.tar.xz" 
     URL_MD5 "${qt5_12_md5}")
 
 if (WIN32 AND NOT superbuild_building_prebuilt_python)
