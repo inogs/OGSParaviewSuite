@@ -4,19 +4,19 @@ The **OGS Compute Okubo-Weiss** and the **OGS Select Okubo-Weiss** are two filte
 
 The Okubo-Weiss parameter (Okubo, 1970; Weiss, 1991) is computed as:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq1.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq1.png" alt="" width="160"/>
 
 where:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq2.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq2.png" alt="" width="250"/>
 
 An eddy is then localized as a vorticity dominated area (or eddy core) surrounded by a strain dominated region (circulation cell) as defined by (Isern-Fontanet. 2004). Then:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/OW.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/OW.png" alt="" width="500"/>
 
 with:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq3.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq3.png" alt="" width="120"/>
 
 and 0.2 being a scaling factor.
 
