@@ -189,12 +189,7 @@ g++ -shared -o $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries/libOGS.d
 cd ../../../../
 # Python utils
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/default.ini $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
-# Symbolic links
-ln -s paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/OGS2Paraview.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
-chmod +x $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/OGS2Paraview.py
-ln -s paraview-$PV_VERS/ParaView-$PV_VERS.app/Contents/Python/OGSlonlat2m.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
-chmod +x $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/OGSlonlat2m.py
 printf "OK\n"

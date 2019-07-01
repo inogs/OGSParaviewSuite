@@ -131,6 +131,8 @@ curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}
 curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
 tar xzf extra_src.tar.gz
 
+module load python/2.7.15
+
 # Unpack cftime wheel
 unzip extra_src/cftime-1.0.3.4.whl -d $INSTALL_PREFIX/lib/python2.7/site-packages/
 # Unpack netCDF4 wheel
@@ -156,7 +158,7 @@ make -j $NPROCS install
 cd ../
 # Compile and install pyproj
 tar xzf extra_src/pyproj-1.9.6.tar.gz && cd pyproj-1.9.6
-python2.7 setup.py build
+python setup.py build
 cp -r build/lib.linux-x86_64-2.7/pyproj $INSTALL_PREFIX/lib/python2.7/site-packages/
 cd ../
 # Remove dist-info folders
@@ -188,15 +190,9 @@ printf "OK\n"
 printf "Deploying OGSMesh and OGS2Paraview... "
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/libOGS.so $INSTALL_PREFIX/lib
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py $INSTALL_PREFIX/lib/python*/site-packages
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/lib/python*/site-packages
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/lib/python*/site-packages
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/bin
+cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/bin
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/default.ini $INSTALL_PREFIX/bin
-
-cd $INSTALL_PREFIX
-ln -s lib/python*/site-packages/OGS2Paraview.py bin/OGS2Paraview.py
-chmod +x lib/python*/site-packages/OGS2Paraview.py
-ln -s lib/python*/site-packages/OGSlonlat2m.py bin/OGSlonlat2m.py
-chmod +x lib/python*/site-packages/OGSlonlat2m.py
 
 cd ..
 printf "OK\n"
