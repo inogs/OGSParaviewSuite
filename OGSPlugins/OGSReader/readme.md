@@ -42,7 +42,7 @@ The first consideration when generating the mesh is to project the angular coord
 
 This projection is done using the basemap library from Python. By default the Mercator 
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/eq1.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/eq1.png" alt="" width="500"/>
 
 with
 
@@ -50,11 +50,11 @@ with
 
 and the cylindrical 
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/eq3.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/eq3.png" alt="" width="180"/>
 
 projections are considered.
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/mesh.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/mesh.png" alt="" width="600"/>
 
 The basins mask and the continental shelf mask (coast mask) are also included in the mesh file. The basins mask is a mask that subdivides the different regions of the Mediterranean and follows the battimetry. The continental shelf mask subdivides the regions of the Mediterranean whose depth is less than 200 meters.
 
