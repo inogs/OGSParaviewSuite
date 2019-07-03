@@ -26,7 +26,7 @@ The computation of the statistics deserves a special mention. The general naive 
 
 Welford (1962) proposed an algorithm to comptue the variance in a single loop. West (1979) extended the method for weighted computations using a recursive algorithm:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSSpatialStats/doc/eq1.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSSpatialStats/doc/eq1.png" alt="" width="330"/>
 
 where the mean and standard deviation can be computed acummulating over _i_ until _n_.
 
@@ -36,11 +36,11 @@ A parallel algorithm was proposed by Chan (1979). the magnitudes are basically c
 
 This reduction of domains A and B requires to store the partial computations of the weights, mean and variance for each sub-domain:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSSpatialStats/doc/eq3.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSSpatialStats/doc/eq3.png" alt="" width="120"/>
 
 A similar reduction can be implemented for the standard deviation:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSSpatialStats/doc/eq4.png" alt="" width="200"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSSpatialStats/doc/eq4.png" alt="" width="400"/>
 
 the total standard derviation need to be divided by the sum of all the weights.
 
