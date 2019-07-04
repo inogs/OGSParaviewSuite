@@ -7,7 +7,7 @@ The **OGS Reader** is a ParaView plugin that lets import data from [OGSTM-BFM](h
 Generating the masterfile and the meshes is done by means of the **OGS2Paraview** script, which is a helper python script included in the suite and deployed during the installation. It can be called by issuing:
 
 ```bash
-OGS2ParaView [-h] -n NAME -p PATH [-m MODE] [-c CONF] [--gen-mesh] [--meshmask MESH]
+OGS2ParaView.py [-h] -n NAME -p PATH [-m MODE] [-c CONF] [--gen-mesh] [--meshmask MESH]
 ```
 where _NAME_ is the name of the masterfile and _PATH_ is the path to the dataset. Four _MODE_ are available:
 
@@ -29,7 +29,7 @@ The following rules are recommended to be observed when organizing the data dire
 
 * The variables must be of the same dimensions specified in the meshmask.
 * There should be all the variables for a specific timestep.
-* Variable file names should be consistent (<prefix>.<date>.<name>.nc).
+* Variable file names should be consistent (\<prefix\>.\<date\>.\<name\>.nc).
 
 The data directory and the variable file names can be modified by specifying a configuration file when running the tool.
 
