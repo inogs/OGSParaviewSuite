@@ -6,4 +6,4 @@ The **OGS Utils** filter is a collection of tools specifically designed to enhan
 * **OGS Point source** with separate longitude/latitude input as well as depth.
 * **OGS Depth Line source** with only vertical component and longitude/latitude input as well as desired depths.
 
-For backwards compatibility, the original ParaView sources have been kept as an optional input method, howver, the defaults have been changed to these on the **OGS Utils**.
+For backwards compatibility, the original ParaView sources have been kept as an optional input method, however, the defaults have been changed to these on the **OGS Utils**.
