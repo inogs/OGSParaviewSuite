@@ -75,6 +75,15 @@
        </EnumerationDomain>
       </IntVectorProperty>
 
+      <!-- Selection of depth scale factor -->
+      <DoubleVectorProperty name="DepthScale"
+                            label="Scale factor for depth:"
+                            command="SetDepthScale"
+                            number_of_elements="1"
+                            default_values="1000."
+                            panel_visibility="advanced">
+      </DoubleVectorProperty>
+
       <!-- Longitude and Latitude -->
       <DoubleVectorProperty animateable="1"
                             command="SetLonLat"
@@ -97,15 +106,6 @@
                             name="Depth"
                             label="Depth: "
                             number_of_elements="1">
-      </DoubleVectorProperty>
-
-      <!-- Selection of depth scale factor -->
-      <DoubleVectorProperty name="DepthScale"
-                            label="Scale factor for depth:"
-                            command="SetDepthScale"
-                            number_of_elements="1"
-                            default_values="1000."
-                            panel_visibility="advanced">
       </DoubleVectorProperty>
 
       <!-- Point -->
@@ -177,6 +177,15 @@
        </EnumerationDomain>
       </IntVectorProperty>
 
+      <!-- Selection of depth scale factor -->
+      <DoubleVectorProperty name="DepthScale"
+                            label="Scale factor for depth:"
+                            command="SetDepthScale"
+                            number_of_elements="1"
+                            default_values="1000."
+                            panel_visibility="advanced">
+      </DoubleVectorProperty>
+
       <!-- Longitude and Latitude -->
       <DoubleVectorProperty animateable="1"
                             command="SetLonLat"
@@ -205,15 +214,6 @@
             <ComponentLabel component="1" label="Depth max: "/>
           </ShowComponentLabels>
         </Hints>
-      </DoubleVectorProperty>
-
-      <!-- Selection of depth scale factor -->
-      <DoubleVectorProperty name="DepthScale"
-                            label="Scale factor for depth:"
-                            command="SetDepthScale"
-                            number_of_elements="1"
-                            default_values="1000."
-                            panel_visibility="advanced">
       </DoubleVectorProperty>
 
       <!-- Points -->
