@@ -262,4 +262,5 @@ int vtkOGSDerivatives::RequestInformation(vtkInformation* vtkNotUsed(request),
 	#endif
 
   	this->isReqInfo = true;
+  	return 1;
 }
