@@ -131,7 +131,7 @@ tar xzf extra_src.tar.gz
 
 # FIX: matplotlib depends on backports and kiwisolver
 # backports is already compiled during installation
-cp -r $PWD/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports/ $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp -r $PWD/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 # Unpack kiwisolver wheel
 unzip extra_src/kiwisolver-1.1.0_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 # Unpack cftime wheel
