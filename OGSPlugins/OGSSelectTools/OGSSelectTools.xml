@@ -9,7 +9,7 @@
         short_help="Lets the user select coasts from the coasts mask.">
     </Documentation>
 
-    <InputProperty command="SetInputConnection"
+     <InputProperty command="SetInputConnection"
                    name="Input">
         <ProxyGroupDomain name="groups">
           <Group name="sources" />
@@ -23,7 +23,7 @@
         </InputArrayDomain>
         <Documentation>This property specifies the input to the Threshold
         filter.</Documentation>
-      </InputProperty>
+     </InputProperty>
 
      <!-- Name of basins mask array -->
      <StringVectorProperty name="mask_field"
