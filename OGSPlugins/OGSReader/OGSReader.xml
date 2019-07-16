@@ -9,12 +9,11 @@
      </Documentation>
 
      <!-- File Name Property -->
-     <StringVectorProperty
-        name="FileName"
-        animateable="0"
-        command="SetFileName"
-        number_of_elements="1"
-        panel_visibility="always">
+     <StringVectorProperty name="FileName"
+                           animateable="0"
+                           command="SetFileName"
+                           number_of_elements="1"
+                           panel_visibility="always">
         <FileListDomain name="files"/>
         <Hints>
             <FileChooser extensions="ogs" file_description="OGS NetCDF reader" />
