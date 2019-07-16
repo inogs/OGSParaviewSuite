@@ -255,9 +255,9 @@ namespace v3
 		float *out; out = new float[3*n];
 		#pragma omp parallel for 
 		for (int i=0;i<n;i++){
-			out[n*i + 0] = (float)(v[i][0]);
-			out[n*i + 1] = (float)(v[i][1]);
-			out[n*i + 2] = (float)(v[i][2]);
+			out[3*i + 0] = (float)(v[i][0]);
+			out[3*i + 1] = (float)(v[i][1]);
+			out[3*i + 2] = (float)(v[i][2]);
 		}
 		return out;		
 	}
@@ -265,9 +265,9 @@ namespace v3
 		double *out;  out = new double[3*n];
 		#pragma omp parallel for
 		for (int i=0;i<n;i++){
-			out[n*i + 0] = v[i][0];
-			out[n*i + 1] = v[i][1];
-			out[n*i + 2] = v[i][2];
+			out[3*i + 0] = v[i][0];
+			out[3*i + 1] = v[i][1];
+			out[3*i + 2] = v[i][2];
 		}
 		return out;		
 	}
