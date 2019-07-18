@@ -8,9 +8,9 @@
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
 
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
+	 This software is distributed WITHOUT ANY WARRANTY; without even
+	 the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+	 PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 
@@ -21,6 +21,7 @@
 #include "field.h"
 
 #include <vector>
+#include <cstdio>
 
 #ifdef __linux__
 // Include OpenMP when working with GCC
@@ -184,7 +185,7 @@ namespace field
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
-						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
+									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
@@ -306,7 +307,7 @@ namespace field
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
-						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
+									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
@@ -454,7 +455,7 @@ namespace field
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
-						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
+									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
@@ -633,7 +634,7 @@ namespace field
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
-						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
+									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
@@ -866,13 +867,68 @@ namespace field
 					// Computation of the Q-criterion
 					if (!Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
-						            -grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
+									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
 				}
 			}
 		}
 		return grad;
 	}
+
+	/* WRITEFIELD
+
+		Allows to write a field variable providing some mesh coordinates and
+		selecting whether to use Fortran stride or not (useful to read in Matlab).
+
+		Stores the variables as float arrays to save space.
+	*/
+
+	template<class T>
+	int WriteField(const char *fname, float time, v3::V3v &xyz, Field<T> &f, bool fstride) {
+
+		std::FILE *myfile; myfile = std::fopen(fname,"wb");
+		if (myfile == NULL) return 0;
+
+		int ncol = f.get_m(), mshsz = f.get_n();
+
+		if ( std::fwrite(&ncol, sizeof(int),  1,myfile) != 1 ) return -1;
+		if ( std::fwrite(&mshsz,sizeof(int),  1,myfile) != 1 ) return -1;
+		if ( std::fwrite(&time, sizeof(float),1,myfile) != 1 ) return -1;
+
+		// If requested, change the stride (Column major order, Fortran style)
+		// else just convert to single precision
+		float *xyz2; xyz2 = new float[3*mshsz];
+		float *f2;   f2   = new float[ncol*mshsz];
+		if (fstride) {
+			for (int ii = 0; ii < mshsz; ++ii) {
+				xyz2[ii + mshsz*0] = xyz[ii][0];
+				xyz2[ii + mshsz*1] = xyz[ii][1];
+				xyz2[ii + mshsz*2] = xyz[ii][2];
+				#pragma loop_count min(1), max(16), avg(3) // for vectorization
+				for (int jj = 0; jj < ncol; ++jj)
+					f2[ii + jj*mshsz] = f[ii][jj];
+			}
+		} else {
+			for (int ii = 0; ii < mshsz; ++ii) {
+				xyz2[3*ii + 0] = xyz[ii][0];
+				xyz2[3*ii + 1] = xyz[ii][1];
+				xyz2[3*ii + 2] = xyz[ii][2];
+				#pragma loop_count min(1), max(16), avg(3) // for vectorization
+				for (int jj = 0; jj < ncol; ++jj)
+					f2[3*ii + jj] = f[ii][jj];
+			}
+		}
+
+		// Write coordinates
+		if ( std::fwrite(xyz2,sizeof(float),3*mshsz,myfile) != 3*mshsz ) return -1;
+		// Write field
+		if ( std::fwrite(f2,sizeof(float),ncol*mshsz,myfile) != ncol*mshsz ) return -1;
+
+		// Close file
+		std::fclose(myfile);
+		delete [] xyz2; delete[] f2;
+		return 1;
+}
 
 	/* COUNTDEPTHLEVELS
 
