@@ -512,7 +512,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			7 -> Projection ID
 	*/
 	std::string aux_str;
-	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",7,NULL);
+	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",8,NULL);
 
 	// Set the current file date
 	vtkmetadata->SetValue(0,this->ogsdata.datetime(ii_tstep));
