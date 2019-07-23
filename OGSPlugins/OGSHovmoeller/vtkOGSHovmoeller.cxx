@@ -310,7 +310,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		// Recover metadata array
 		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 		// Recover projection Id
-		projId = std::stod( vtkmetadata->GetValue(6) );
+		projId = std::stod( vtkmetadata->GetValue(7) );
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
 		ComputeCellIds(cellList,input,source);
 		// Recover the master file name from source
@@ -339,7 +339,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 	// Recover metadata array
 	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 	// Recover projection Id
-	projId = std::stod( vtkmetadata->GetValue(6) );
+	projId = std::stod( vtkmetadata->GetValue(7) );
 
 	// This is the normal non-parallel algorithm
 	ComputeCellIds(cellList,input,source);

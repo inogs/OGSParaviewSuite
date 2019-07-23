@@ -508,6 +508,8 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			3 -> Loaded variables
 			4 -> File name
 			5 -> Meshmask
+			6 -> Meshfile
+			7 -> Projection ID
 	*/
 	std::string aux_str;
 	vtkStringArray *vtkmetadata = VTK::createVTKstrf("Metadata",7,NULL);
@@ -548,12 +550,16 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	// Set the file name
 	vtkmetadata->SetValue(4,this->FileName);
 
-	// Set the mesh name
-	aux_str = this->ogsdata.meshmask(this->projId) + std::string(";") + this->ogsdata.meshfile(this->projId);
+	// Set the mesh mask
+	aux_str = this->ogsdata.meshmask(this->projId);
 	vtkmetadata->SetValue(5,aux_str.c_str());
 
+	// Set the mesh file
+	aux_str = this->ogsdata.meshfile(this->projId);
+	vtkmetadata->SetValue(6,aux_str.c_str());
+
 	// Set the projection id
-	vtkmetadata->SetValue(6,std::to_string(this->projId));
+	vtkmetadata->SetValue(7,std::to_string(this->projId));
 
 	// Add array to mesh
 	this->Mesh->GetFieldData()->AddArray(vtkmetadata);
