@@ -58,6 +58,9 @@ namespace field
 			inline size_t get_sz()                                    { return sz; }
 			inline bool   isempty()                                   { return n == 0; }
 
+			template <class U>
+			inline Field<U> convert()                                 { Field<U> f(n,m); std::copy(val,val+sz,f.data()); return f; }
+
 			// Operators
 			inline T         *operator[](int i)                   { return (i>=0) ? val + m*i : val + m*(n+i); }
 			inline Field<T>  &operator=(const Field<T> &f)        { set(f.n,f.m,f.val); return (*this); }
