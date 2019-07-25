@@ -18,7 +18,11 @@
 #ifndef NETCDFIO_H
 #define NETCDFIO_H
 
+#include "V3.h"
 #include "field.h"
+
+#include <vector>
+#include <string>
 
 #define NETCDF_ERR 0
 #define NETCDF_OK  1
@@ -26,11 +30,21 @@
 namespace NetCDF
 {
 	/* Read NetCDF Routines */
-	double *readNetCDF(const char *fname, const char *varname, const int n);
-	int     readNetCDF2F(const char *fname, const char *varname, field::Field<double> &f);
-  int     readNetCDF2F(const char *fname, const char *varname, field::Field<float> &f);
-  int     readNetCDF2F3(const char *fname, const char *vname1, const char *vname2,const char *vname3, field::Field<double> &f);
-  int     readNetCDF2F3(const char *fname, const char *vname1, const char *vname2,const char *vname3, field::Field<float> &f);
+  int readNetCDF(const char *fname, const char *varname, const int n, double *out, bool m2zero);
+  int readNetCDF(const char *fname, const char *varname, const int n, float *out, bool m2zero);
+  int readNetCDF(const char *fname, const char *varname, std::vector<double> &out);
+  int readNetCDF(const char *fname, const char *varname, std::vector<float> &out);
+  int readNetCDF(const char *fname, const char *varname, field::Field<double> &f);
+  int readNetCDF(const char *fname, const char *varname, field::Field<float> &f);
+  int readNetCDF(const char *fname, std::string *varname, field::Field<double> &f);
+  int readNetCDF(const char *fname, std::string *varname, field::Field<float> &f);
+  /* Write NetCDF Routines */
+  int writeNetCDF(const char *fname, const char *varname, int dims[], double *lon, double *lat, double *depth, double *data);
+  int writeNetCDF(const char *fname, const char *varname, int dims[], float *lon, float *lat, float *depth, float *data);
+  int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], double *lon, double *lat, double *depth, double **data);
+  int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], float *lon, float *lat, float *depth, float **data);
+  int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<double> &f);
+  int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<float> &f);
 }
 
 #endif

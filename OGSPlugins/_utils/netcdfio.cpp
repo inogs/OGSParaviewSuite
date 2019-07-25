@@ -20,6 +20,9 @@
 // so as not to incur in compilation duplicates
 #include "vtknetcdf/include/netcdf.h"
 #include "netcdfio.hpp"
+#include "Projections.hpp"
+
+#include <algorithm>
 
 #ifdef __linux__
 // Include OpenMP when working with GCC
@@ -31,174 +34,491 @@
 #define OMP_THREAD_NUM  0
 #endif
 
+#define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
+#define MISSING_VALUE 1.e20
+
 #define MAXVAL 1.e15
 
 namespace NetCDF
 {
+	/* NETCDF API
+
+		Helper functions for opening, creating, reading and 
+		writing NetCDF files.
+	*/
+	int NetCDFCreate(const char *fname, int &fid) {
+		// Create the file. The NC_CLOBBER parameter tells netCDF to overwrite 
+		// this file, if it already exists.
+		if ( nc_create(fname,NC_CLOBBER,&fid) != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_put_att_text(fid, NC_GLOBAL, "Convenctions", strlen("COARDS"), "COARDS") != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFDefXY(int fid, int &id, int &vid, const char *dimname, const char *varname, nc_type xtype, int n,
+		const char *long_name, const char *units) {
+		// Define dimension and variable
+		if ( nc_def_dim(fid,dimname,n,&id)            != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_def_var(fid,varname,xtype,1,&id,&vid) != NC_NOERR ) return NETCDF_ERR;
+		// Define units attributes for the variables
+		if ( nc_put_att_text(fid,id,"units",strlen(units),units)             != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_put_att_text(fid,id,"long_name",strlen(long_name),long_name) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFDefZ(int fid, int &id, int &vid, const char *dimname, const char *varname, nc_type xtype, int n,
+		const char *units, const char *positive) {
+		// Define dimension and variable
+		if ( nc_def_dim(fid,dimname,n,&id)            != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_def_var(fid,varname,xtype,1,&id,&vid) != NC_NOERR ) return NETCDF_ERR;
+		// Define units attributes for the variables
+		if ( nc_put_att_text(fid,id,"units",strlen(units),units)          != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_put_att_text(fid,id,"positive",strlen(positive),positive) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFDefT(int fid, int &id, const char *dimname) {
+		if ( nc_def_dim(fid,dimname,NC_UNLIMITED,&id) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFDefVar(int fid, int &id, const char *varname, nc_type xtype, int ndim, int dims[]) {
+		if ( nc_def_var(fid,varname,xtype,ndim,dims,&id) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFPutDim(int fid, int id, double *data) {
+		if ( nc_put_var_double(fid,id,data) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFPutDim(int fid, int id, float *data) {
+		if ( nc_put_var_float(fid,id,data) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFPutVar(int fid, int id, int dims[], double *data) {
+		// These settings tell netcdf to write one timestep of data. (The
+		// setting of start[0] inside the loop below tells netCDF which
+		// timestep to write.)
+		size_t count[] = {1,(size_t)(dims[2]),(size_t)(dims[1]),(size_t)(dims[0])};
+		size_t start[] = {0,0,0,0};
+
+		// Write the data to the file.
+		if ( nc_put_vara_double(fid,id,start,count,data) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFPutVar(int fid, int id, int dims[], float *data) {
+		// These settings tell netcdf to write one timestep of data. (The
+		// setting of start[0] inside the loop below tells netCDF which
+		// timestep to write.)
+		size_t count[] = {1,(size_t)(dims[2]),(size_t)(dims[1]),(size_t)(dims[0])};
+		size_t start[] = {0,0,0,0};
+
+		// Write the data to the file.
+		if ( nc_put_vara_float(fid,id,start,count,data) != NC_NOERR ) return NETCDF_ERR;
+			
+		return NETCDF_OK;
+	}
+	int NetCDFGetVar(int fid, const char *varname, const int n, double *out, bool m2zero) {
+		int varid, vartype;
+		// Get the variable id based on its name
+		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return NETCDF_ERR;
+		// Get the variable type
+		if ( nc_inq_vartype(fid,varid,&vartype) != NC_NOERR ) return NETCDF_ERR;
+		// Read the data according to its type
+		switch (vartype) {
+			case NC_FLOAT:
+				{
+					std::vector<float> aux(n);
+					if ( nc_get_var_float(fid,varid,&aux[0]) != NC_NOERR ) return NETCDF_ERR;
+					std::copy(&aux[0],&aux[0]+n,out);
+				}
+				break;
+			case NC_DOUBLE:
+				if ( nc_get_var_double(fid,varid,out) != NC_NOERR ) return NETCDF_ERR;
+				break;
+			default:
+				return NETCDF_ERR;
+				break;
+		}
+		// Deal with the missing value (convert it to zeros)
+		if (m2zero) {
+			#pragma omp parallel
+			{
+			for (int ii = OMP_THREAD_NUM; ii < n; ii += OMP_NUM_THREADS)
+				out[ii] = (out[ii] >= MISSING_VALUE) ? 0. : out[ii];
+			}			
+		}
+		return NETCDF_OK;
+	}
+	int NetCDFGetVar(int fid, const char *varname, const int n, float *out, bool m2zero) {
+		int varid, vartype;
+		// Get the variable id based on its name
+		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return NETCDF_ERR;
+		// Get the variable type
+		if ( nc_inq_vartype(fid,varid,&vartype) != NC_NOERR ) return NETCDF_ERR;
+		// Read the data according to its type
+		switch (vartype) {
+			case NC_FLOAT:
+				if ( nc_get_var_float(fid,varid,out) != NC_NOERR ) return NETCDF_ERR;
+				break;
+			case NC_DOUBLE:
+				{
+					std::vector<double> aux(n);
+					if ( nc_get_var_double(fid,varid,&aux[0]) != NC_NOERR ) return NETCDF_ERR;
+					std::copy(&aux[0],&aux[0]+n,out);
+				}
+				break;
+			default:
+				return NETCDF_ERR;
+				break;
+		}
+		// Deal with the missing value (convert it to zeros)
+		if (m2zero) {
+			#pragma omp parallel
+			{
+			for (int ii = OMP_THREAD_NUM; ii < n; ii += OMP_NUM_THREADS)
+				out[ii] = (out[ii] >= MISSING_VALUE) ? 0. : out[ii];
+			}			
+		}
+		return NETCDF_OK;
+	}
+
 	/* READNETCDF
 
 		Reads a NetCDF4 file given the name of the file, the name of the variable
 		to be read and its size.
 	*/
-	double *readNetCDF(const char *fname, const char *varname, const int n) {
+	int readNetCDF(const char *fname, const char *varname, const int n, double *out, bool m2zero) {
 
-		int fid, varid;
-		double *out;
+		int fid;
 
-		// Allocate output variable
-		out = new double[n];
 		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )
-			return NULL;
-		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR )
-			return NULL;
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR ) return NETCDF_ERR;
+
 		// Read the data
-		nc_get_var_double(fid,varid,out);
+		if ( NetCDFGetVar(fid,varname,n,out,m2zero) != NETCDF_OK ) return NETCDF_ERR;
+
 		// Close the file
-		nc_close(fid);
-		// Eliminate the missing variables
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int readNetCDF(const char *fname, const char *varname, const int n, float *out, bool m2zero) {
+
+		int fid;
+
+		// Open file for reading
+		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Read the data
+		if ( NetCDFGetVar(fid,varname,n,out,m2zero) != NETCDF_OK ) return NETCDF_ERR;
+
+		// Close the file
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int readNetCDF(const char *fname, const char *varname, std::vector<double> &out) {
+		return readNetCDF(fname,varname,(int)(out.size()),&out[0],true);
+	}
+	int readNetCDF(const char *fname, const char *varname, std::vector<float> &out) {
+		return readNetCDF(fname,varname,(int)(out.size()),&out[0],true);
+	}
+	int readNetCDF(const char *fname, const char *varname, field::Field<double> &f) {
+		return readNetCDF(fname,varname,f.get_n(),f.data(),true);
+	}
+	int readNetCDF(const char *fname, const char *varname, field::Field<float> &f) {
+		return readNetCDF(fname,varname,f.get_n(),f.data(),true);
+	}
+	int readNetCDF(const char *fname, std::string *varname, field::Field<double> &f) {
+
+		int retval;
+
+		// Define auxiliary variable
+		std::vector<std::vector<double>> aux_var(f.get_m());
+
+		// Load each variable in the auxiliary vector, do not convert empties to zeros
+		for (int vid = 0; vid < f.get_m(); ++vid) {
+			aux_var[vid].resize(f.get_n());
+			retval = readNetCDF(fname,varname[vid].c_str(),f.get_n(),&aux_var[vid][0],false);
+		}
+
+		// Set output field and eliminate the missing variables
 		#pragma omp parallel
 		{
-		for (int ii = OMP_THREAD_NUM; ii < n; ii += OMP_NUM_THREADS)
-			if(out[ii] > MAXVAL) out[ii] = 0.;
+		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS)
+			#pragma loop_count min(1), max(16), avg(3) // for vectorization
+			for (int jj = 0; jj < f.get_m(); ++jj)
+				f[ii][jj] = (aux_var[jj][ii] >= MISSING_VALUE) ? 0. : aux_var[jj][ii];
 		}
-		// Return
-		return out;
+
+		return retval;
+	}
+	int readNetCDF(const char *fname, std::string *varname, field::Field<float> &f) {
+
+		int retval;
+
+		// Define auxiliary variable
+		std::vector<std::vector<float>> aux_var(f.get_m());
+
+		// Load each variable in the auxiliary vector, do not convert empties to zeros
+		for (int vid = 0; vid < f.get_m(); ++vid) {
+			aux_var[vid].resize(f.get_n());
+			retval = readNetCDF(fname,varname[vid].c_str(),f.get_n(),&aux_var[vid][0],false);
+		}
+
+		// Set output field and eliminate the missing variables
+		#pragma omp parallel
+		{
+		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS)
+			#pragma loop_count min(1), max(16), avg(3) // for vectorization
+			for (int jj = 0; jj < f.get_m(); ++jj)
+				f[ii][jj] = (aux_var[jj][ii] >= MISSING_VALUE) ? 0. : aux_var[jj][ii];
+		}
+
+		return retval;
 	}
 
-	/* READNETCDF2F
+	/* WRITENETCDF
 
-		Reads a NetCDF4 file given the name of the file, the name of the variable
+		Writes a NetCDF4 file given the variable, the name of the file, the name of the variable
 		to be read and its size.
-
-		Stores the variable in a field structure, therefore it is safe.
 	*/
-	int readNetCDF2F(const char *fname, const char *varname, field::Field<double> &f) {
-
-		int fid, varid;
-
-		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
-		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return NETCDF_ERR;
+	int writeNetCDF(const char *fname, const char *varname, int dims[], double *lon, double *lat, 
+		double *depth, double *data) {
 		
-		// Read the data
-		nc_get_var_double(fid,varid,f.data());
+		int fid, lon_id, lat_id, dep_id, tim_id;
+		int varid, vlon_id, vlat_id, vdep_id;
+
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
+
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefXY(fid,lon_id,vlon_id,"x","nav_lon",NC_DOUBLE,dims[0],"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,lat_id,vlat_id,"y","nav_lat",NC_DOUBLE,dims[1],"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefZ(fid,dep_id,vdep_id,"deptht","deptht",NC_DOUBLE,dims[2],"meter","down")           != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefT(fid,tim_id,"time_counter")                                                       != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[4] = {tim_id,dep_id,lat_id,lon_id};
+		if ( NetCDFDefVar(fid,varid,varname,NC_DOUBLE,4,dimvar) != NETCDF_OK ) return NETCDF_ERR;
+		
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vlon_id,&lon[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlat_id,&lat[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdep_id,&depth[0])   != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutVar(fid,varid,dims,&data[0]) != NETCDF_OK ) return NETCDF_ERR;
+
 		// Close the file
-		nc_close(fid);
-		
-		// Eliminate the missing variables
-		#pragma omp parallel
-		{
-		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS)
-			if (f[ii][0] > MAXVAL) f[ii][0] = 0.;
-		}
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
 
 		return NETCDF_OK;
 	}
+	int writeNetCDF(const char *fname, const char *varname, int dims[], float *lon, float *lat, 
+		float *depth, float *data) {
 
-	int readNetCDF2F(const char *fname, const char *varname, field::Field<float> &f) {
+		int fid, lon_id, lat_id, dep_id, tim_id;
+		int varid, vlon_id, vlat_id, vdep_id;
 
-		int fid, varid;
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
 
-		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
-		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,varname,&varid) != NC_NOERR ) return NETCDF_ERR;
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefXY(fid,lon_id,vlon_id,"x","nav_lon",NC_FLOAT,dims[0],"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,lat_id,vlat_id,"y","nav_lat",NC_FLOAT,dims[1],"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefZ(fid,dep_id,vdep_id,"deptht","deptht",NC_FLOAT,dims[2],"meter","down")           != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefT(fid,tim_id,"time_counter")                                                      != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[4] = {tim_id,dep_id,lat_id,lon_id};
+		if ( NetCDFDefVar(fid,varid,varname,NC_FLOAT,4,dimvar) != NETCDF_OK ) return NETCDF_ERR;
 		
-		// Read the data
-		nc_get_var_float(fid,varid,f.data());
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vlon_id,&lon[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlat_id,&lat[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdep_id,&depth[0])   != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutVar(fid,varid,dims,&data[0]) != NETCDF_OK ) return NETCDF_ERR;
+
 		// Close the file
-		nc_close(fid);
-		
-		// Eliminate the missing variables
-		#pragma omp parallel
-		{
-		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS)
-			if (f[ii][0] > MAXVAL) f[ii][0] = 0.;
-		}
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
 
-		return NETCDF_OK;
+		return NETCDF_OK;		
 	}
+	int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], double *lon, double *lat, 
+		double *depth, double **data) {
 
-	/* READNETCDF2F3
+		int fid, lon_id, lat_id, dep_id, tim_id;
+		int vlon_id, vlat_id, vdep_id;
 
-		Reads a NetCDF4 file given the name of the file, the name of the variable
-		to be read and its size (vector field).
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
 
-		Stores the variable in a field structure, therefore it is safe.
-	*/
-	int readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, 
-		const char *vname3, field::Field<double> &f) {
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefXY(fid,lon_id,vlon_id,"x","nav_lon",NC_DOUBLE,dims[0],"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,lat_id,vlat_id,"y","nav_lat",NC_DOUBLE,dims[1],"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefZ(fid,dep_id,vdep_id,"deptht","deptht",NC_DOUBLE,dims[2],"meter","down")           != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefT(fid,tim_id,"time_counter")                                                       != NETCDF_OK ) return NETCDF_ERR;
 
-		int fid, varid1, varid2, varid3, n = f.get_n();
-		double *u, *v, *w;
-
-		// Allocate
-		u = new double[n]; v = new double[n]; w = new double[n];
-
-		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
-		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,vname1,&varid1) != NC_NOERR ) return NETCDF_ERR;
-		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return NETCDF_ERR;
-		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return NETCDF_ERR;
+		// Define the variables
+		int dimvar[4] = {tim_id,dep_id,lat_id,lon_id};
+		std::vector<int> varid(nvars);
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFDefVar(fid,varid[vid],varname[vid].c_str(),NC_DOUBLE,4,dimvar) != NETCDF_OK ) return NETCDF_ERR;
 		
-		// Read the data
-		nc_get_var_double(fid,varid1,u);
-		nc_get_var_double(fid,varid2,v);
-		nc_get_var_double(fid,varid3,w);
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vlon_id,&lon[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlat_id,&lat[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdep_id,&depth[0])   != NETCDF_OK ) return NETCDF_ERR;
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFPutVar(fid,varid[vid],dims,&data[vid][0]) != NETCDF_OK ) return NETCDF_ERR;
+
 		// Close the file
-		nc_close(fid);
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
 
-		// Set field and eliminate the missing variables
-		field::Field<double>::iterator iter;
-		for (iter = f.begin(); iter != f.end(); ++iter) {
-			iter[0] = u[iter.ind()]; if(iter[0] > MAXVAL) iter[0] = 0.;
-			iter[1] = v[iter.ind()]; if(iter[1] > MAXVAL) iter[1] = 0.;
-			iter[2] = w[iter.ind()]; if(iter[2] > MAXVAL) iter[2] = 0.;
-		}
-
-		// Return
-		delete [] u; delete [] v; delete [] w;
-		return NETCDF_OK;
+		return NETCDF_OK;		
 	}
-	int readNetCDF2F3(const char *fname, const char *vname1, const char *vname2, 
-		const char *vname3, field::Field<float> &f) {
+	int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], float *lon, float *lat, 
+		float *depth, float **data) {
 
-		int fid, varid1, varid2, varid3, n = f.get_n();
-		float *u, *v, *w;
+		int fid, lon_id, lat_id, dep_id, tim_id;
+		int vlon_id, vlat_id, vdep_id;
 
-		// Allocate
-		u = new float[n]; v = new float[n]; w = new float[n];
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
 
-		// Open file for reading
-		if ( nc_open(fname,NC_NOWRITE,&fid) != NC_NOERR )   return NETCDF_ERR;
-		// Get the variable id based on its name
-		if ( nc_inq_varid(fid,vname1,&varid1) != NC_NOERR ) return NETCDF_ERR;
-		if ( nc_inq_varid(fid,vname2,&varid2) != NC_NOERR ) return NETCDF_ERR;
-		if ( nc_inq_varid(fid,vname3,&varid3) != NC_NOERR ) return NETCDF_ERR;
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefXY(fid,lon_id,vlon_id,"x","nav_lon",NC_FLOAT,dims[0],"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,lat_id,vlat_id,"y","nav_lat",NC_FLOAT,dims[1],"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefZ(fid,dep_id,vdep_id,"deptht","deptht",NC_FLOAT,dims[2],"meter","down")           != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefT(fid,tim_id,"time_counter")                                                      != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[4] = {tim_id,dep_id,lat_id,lon_id};
+		std::vector<int> varid(nvars);
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFDefVar(fid,varid[vid],varname[vid].c_str(),NC_FLOAT,4,dimvar) != NETCDF_OK ) return NETCDF_ERR;
 		
-		// Read the data
-		nc_get_var_float(fid,varid1,u);
-		nc_get_var_float(fid,varid2,v);
-		nc_get_var_float(fid,varid3,w);
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vlon_id,&lon[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlat_id,&lat[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdep_id,&depth[0])   != NETCDF_OK ) return NETCDF_ERR;
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFPutVar(fid,varid[vid],dims,&data[vid][0]) != NETCDF_OK ) return NETCDF_ERR;
+
 		// Close the file
-		nc_close(fid);
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
 
-		// Set field and eliminate the missing variables
-		#pragma omp parallel
-		{
-		for (int ii = OMP_THREAD_NUM; ii < f.get_n(); ii += OMP_NUM_THREADS) {
-			f[ii][0] = u[ii]; if(f[ii][0] > MAXVAL) f[ii][0] = 0.;
-			f[ii][1] = v[ii]; if(f[ii][1] > MAXVAL) f[ii][1] = 0.;
-			f[ii][2] = w[ii]; if(f[ii][2] > MAXVAL) f[ii][2] = 0.;
-		}
+		return NETCDF_OK;		
+	}
+	int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<double> &f) {
+
+		std::vector<double> lon(dims[0]), lat(dims[1]), depth(dims[2]);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int jj = 0; jj < dims[1]; ++jj) {
+			for (int ii = 0; ii < dims[0]; ++ii) {
+				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
+				// Compute the spatial coordinates
+				PROJ::ProjInvMercator(lon[ii], lat[jj], &xyz[ind][0]);
+			}
 		}
 
-		// Return
-		delete [] u; delete [] v; delete [] w;
-		return NETCDF_OK;
+		// Convert V3v to depth positive down
+		for (int kk = 0; kk < dims[2]; ++kk) {
+			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
+			depth[kk] = -xyz[ind][2];
+		}
+
+		// Write NetCDF
+		int retval;
+		if (f.get_m() == 1) {
+			// We can use the writeNetCDF API to write a single file containing a variable
+			retval = writeNetCDF(fname,varname,dims,&lon[0],&lat[0],&depth[0],&f[0][0]);
+		} else {
+			// For variables with multiple components, we need to create variable names
+			std::vector<std::string> newvarname(f.get_m());
+			std::vector<double*> ff(f.get_m());
+			// Generate variable name and array
+			for (int mm = 0; mm < f.get_m(); ++mm) {
+				newvarname[mm] = std::string(varname) + std::string("_") + std::to_string(mm);
+				std::replace(newvarname[mm].begin(),newvarname[mm].end(),' ','_'); // Replace white spaces
+				// Fill the array
+				ff[mm] = new double[f.get_n()];
+				for (int nn = 0; nn < f.get_n(); ++nn)
+					ff[mm][nn] = f[nn][mm];
+			}
+			// Write NetCDF
+			retval = writeNetCDF(fname,newvarname.data(),f.get_m(),dims,&lon[0],&lat[0],&depth[0],ff.data());
+			// Deallocate
+			for (int mm = 0; mm < f.get_m(); ++mm)
+				delete [] ff[mm];
+		}
+
+		return retval;
+	}
+	int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<float> &f) {
+
+		std::vector<float> lon(dims[0]), lat(dims[1]), depth(dims[2]);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int jj = 0; jj < dims[1]; ++jj) {
+			for (int ii = 0; ii < dims[0]; ++ii) {
+				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
+				// Compute the spatial coordinates
+				double aux_lon, aux_lat;
+				PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ind][0]);
+				lon[ii]   = (float)(aux_lon);
+				lat[jj]   = (float)(aux_lat);
+			}
+		}
+
+		// Convert V3v to depth positive down
+		for (int kk = 0; kk < dims[2]; ++kk) {
+			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
+			depth[kk] = (float)(-xyz[ind][2]);
+		}
+
+		// Write NetCDF
+		int retval;
+		if (f.get_m() == 1) {
+			// We can use the writeNetCDF API to write a single file containing a variable
+			retval = writeNetCDF(fname,varname,dims,&lon[0],&lat[0],&depth[0],&f[0][0]);
+		} else {
+			// For variables with multiple components, we need to create variable names
+			std::vector<std::string> newvarname(f.get_m());
+			std::vector<float*> ff(f.get_m());
+			// Generate variable name and array
+			for (int mm = 0; mm < f.get_m(); ++mm) {
+				newvarname[mm] = std::string(varname) + std::string("_") + std::to_string(mm);
+				std::replace(newvarname[mm].begin(),newvarname[mm].end(),' ','_'); // Replace white spaces
+				// Fill the array
+				ff[mm] = new float[f.get_n()];
+				for (int nn = 0; nn < f.get_n(); ++nn)
+					ff[mm][nn] = f[nn][mm];
+			}
+			// Write NetCDF
+			retval = writeNetCDF(fname,newvarname.data(),f.get_m(),dims,&lon[0],&lat[0],&depth[0],ff.data());
+			// Deallocate
+			for (int mm = 0; mm < f.get_m(); ++mm)
+				delete [] ff[mm];
+		}
+
+		return retval;
 	}
 }
