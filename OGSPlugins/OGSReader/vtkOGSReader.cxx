@@ -382,9 +382,13 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			if (std::string(this->ogsdata.var_name(0,ii)) == "Velocity") {
 				array.clear(); array.set_dim(this->ogsdata.ncells(),3);
 
-				if ( NetCDF::readNetCDF2F3(this->ogsdata.var_path(0,ii,ii_tstep).c_str(),
-											"vozocrtx","vomecrty","vovecrtz",array ) != NETCDF_OK )	{					    								  
-					vtkErrorMacro("Cannot read NetCDF <Velocity>!Aborting!"); return 0; 
+				std::vector<std::string> vel_vars(3);
+				vel_vars[0] = std::string("vozocrtx");
+				vel_vars[1] = std::string("vomecrty");
+				vel_vars[2] = std::string("vovecrtz");
+
+				if ( NetCDF::readNetCDF(this->ogsdata.var_path(0,ii,ii_tstep).c_str(),vel_vars.data(),array) != NETCDF_OK )	{				    								  
+					vtkErrorMacro("Cannot read NetCDF <Velocity>! Aborting!"); return 0; 
 				}
 
 				// We need to project the velocity field from a face centered grid to a cell centered grid
@@ -405,8 +409,8 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 			} else {
 				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
 
-				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(0,ii,ii_tstep).c_str(), this->ogsdata.var_vname(0,ii), array) != NETCDF_OK ) {
-					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">!Aborting!"); return 0;
+				if ( NetCDF::readNetCDF(this->ogsdata.var_path(0,ii,ii_tstep).c_str(), this->ogsdata.var_vname(0,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(0,ii)<<">! Aborting!"); return 0;
 				}
 
 				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(0,ii),array);
@@ -432,8 +436,8 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
 
-				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(1,ii,ii_tstep).c_str(), this->ogsdata.var_vname(1,ii), array) != NETCDF_OK ) {
-					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(1,ii)<<">!Aborting!"); return 0;
+				if ( NetCDF::readNetCDF(this->ogsdata.var_path(1,ii,ii_tstep).c_str(), this->ogsdata.var_vname(1,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(1,ii)<<">! Aborting!"); return 0;
 				}
 
 				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(1,ii),array);
@@ -458,8 +462,8 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
 
-				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(2,ii,ii_tstep).c_str(), this->ogsdata.var_vname(2,ii), array) != NETCDF_OK ) {
-					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(2,ii)<<">!Aborting!"); return 0;
+				if ( NetCDF::readNetCDF(this->ogsdata.var_path(2,ii,ii_tstep).c_str(), this->ogsdata.var_vname(2,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(2,ii)<<">! Aborting!"); return 0;
 				}
 
 				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(2,ii),array);
@@ -484,8 +488,8 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 				array.clear(); array.set_dim(this->ogsdata.ncells(),1);
 
-				if ( NetCDF::readNetCDF2F(this->ogsdata.var_path(3,ii,ii_tstep).c_str(), this->ogsdata.var_vname(3,ii), array) != NETCDF_OK ) {
-					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(3,ii)<<">!Aborting!"); return 0;
+				if ( NetCDF::readNetCDF(this->ogsdata.var_path(3,ii,ii_tstep).c_str(), this->ogsdata.var_vname(3,ii), array) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read NetCDF <"<<this->ogsdata.var_vname(3,ii)<<">! Aborting!"); return 0;
 				}
 
 				vtkarray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->ogsdata.var_name(3,ii),array);

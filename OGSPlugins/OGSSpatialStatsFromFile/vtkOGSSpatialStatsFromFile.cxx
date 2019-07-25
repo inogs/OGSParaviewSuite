@@ -195,7 +195,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		// At this point, we can try to load the stat profile
 		field::Field<FLDARRAY> statProfile(nbasins*ncoasts*(nz-1)*nstat,1);
 		
-		if ( NetCDF::readNetCDF2F(filename.c_str(),arrName.c_str(),statProfile) != NETCDF_OK ) {
+		if ( NetCDF::readNetCDF(filename.c_str(),arrName.c_str(),statProfile) != NETCDF_OK ) {
 			// If file cannot be read or variable does not exist
 			vtkWarningMacro("File <"<<filename.c_str()<<"> or variable <"
 				<<arrName.c_str()<<"> cannot be read!");

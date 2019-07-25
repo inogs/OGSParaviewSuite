@@ -426,7 +426,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		// Load the variable on a temporal field
 		arrayTemp.set_dim(ogsdata.ncells(),1);
 
-		if ( NetCDF::readNetCDF2F(ogsdata.var_path(this->field,ii).c_str(), 
+		if ( NetCDF::readNetCDF(ogsdata.var_path(this->field,ii).c_str(), 
 			ogsdata.var_vname(this->field), arrayTemp) != NETCDF_OK ) {
 			vtkErrorMacro("Cannot read variable <"<<this->field<<"> in NetCDF! Aborting!"); return 0;
 		}
@@ -561,7 +561,7 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*zcoords.size()*nStat,1,0.);
 	std::string filename = std::string(this->FolderName) + std::string("/") + std::string(this->field) + std::string(".nc");
 
-	if ( NetCDF::readNetCDF2F(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
+	if ( NetCDF::readNetCDF(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
 		// If file cannot be read or variable does not exist
 		vtkErrorMacro("File <"<<filename.c_str()<<"> or variable <"<<this->field<<"> cannot be read!");
 		return 0;

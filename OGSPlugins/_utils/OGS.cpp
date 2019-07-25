@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include <vector>
 #include <string>
 
 #ifdef __linux__
@@ -237,23 +238,25 @@ int OGS::writeMesh(const int i) {
 
 void OGS::readMeshmask(const int i) {
 	// Read the fields as double arrays
-	double *e1t, *e1u, *e1v, *e1f;
-	e1t = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1t",1*(this->_nlon-1)*(this->_nlat-1));
-	e1u = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1u",1*(this->_nlon-1)*(this->_nlat-1));
-	e1v = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1v",1*(this->_nlon-1)*(this->_nlat-1));
-	e1f = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1f",1*(this->_nlon-1)*(this->_nlat-1));
+	int ncells2D = 1*(this->_nlon-1)*(this->_nlat-1);
+	
+	std::vector<double> e1t(ncells2D), e1u(ncells2D), e1v(ncells2D), e1f(ncells2D);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1t",e1t);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1u",e1u);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1v",e1v);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e1f",e1f);
 
-	double *e2t, *e2u, *e2v, *e2f;
-	e2t = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2t",1*(this->_nlon-1)*(this->_nlat-1));
-	e2u = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2u",1*(this->_nlon-1)*(this->_nlat-1));
-	e2v = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2v",1*(this->_nlon-1)*(this->_nlat-1));
-	e2f = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2f",1*(this->_nlon-1)*(this->_nlat-1));
+	std::vector<double> e2t(ncells2D), e2u(ncells2D), e2v(ncells2D), e2f(ncells2D);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2t",e2t);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2u",e2u);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2v",e2v);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e2f",e2f);
 
-	double *e3t, *e3u, *e3v, *e3w;
-	e3t = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3t_0",this->_ncells);
-	e3u = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3u_0",this->_ncells);
-	e3v = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3v_0",this->_ncells);
-	e3w = NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3w_0",this->_ncells);
+	std::vector<double> e3t(this->_ncells), e3u(this->_ncells), e3v(this->_ncells), e3w(this->_ncells);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3t_0",e3t);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3u_0",e3u);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3v_0",e3v);
+	NetCDF::readNetCDF(this->meshmask(i).c_str(),"e3w_0",e3w);
 
 	// Allocate the fields
 	this->_e1.set_dim(this->_ncells,4);
@@ -283,10 +286,6 @@ void OGS::readMeshmask(const int i) {
 			}
 		}
 	}
-
-	delete [] e1t; delete [] e1u; delete [] e1v; delete [] e1f;
-	delete [] e2t; delete [] e2u; delete [] e2v; delete [] e2f;
-	delete [] e3t; delete [] e3u; delete [] e3v; delete [] e3w;
 }
 
 std::string OGS::var_WritePath(int i, int j, const char *str, const char *token) {
