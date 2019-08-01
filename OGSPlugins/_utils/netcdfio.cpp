@@ -35,9 +35,6 @@
 #endif
 
 #define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
-#define MISSING_VALUE 1.e20
-
-#define MAXVAL 1.e15
 
 namespace NetCDF
 {
@@ -83,6 +80,7 @@ namespace NetCDF
 	}
 	int NetCDFDefVar(int fid, int &id, const char *varname, nc_type xtype, int ndim, int dims[]) {
 		if ( nc_def_var(fid,varname,xtype,ndim,dims,&id) != NC_NOERR ) return NETCDF_ERR;
+		if ( nc_put_att_text(fid,id,"missing_value",strlen("1.e+20f"),"1.e+20f") != NC_NOERR ) return NETCDF_ERR;
 
 		return NETCDF_OK;
 	}
@@ -93,6 +91,30 @@ namespace NetCDF
 	}
 	int NetCDFPutDim(int fid, int id, float *data) {
 		if ( nc_put_var_float(fid,id,data) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFPutVar(int fid, int id, int dims, double *data) {
+		// These settings tell netcdf to write one timestep of data. (The
+		// setting of start[0] inside the loop below tells netCDF which
+		// timestep to write.)
+		size_t count[] = {1,(size_t)(dims)};
+		size_t start[] = {0,0};
+
+		// Write the data to the file.
+		if ( nc_put_vara_double(fid,id,start,count,data) != NC_NOERR ) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int NetCDFPutVar(int fid, int id, int dims, float *data) {
+		// These settings tell netcdf to write one timestep of data. (The
+		// setting of start[0] inside the loop below tells netCDF which
+		// timestep to write.)
+		size_t count[] = {1,(size_t)(dims)};
+		size_t start[] = {0,0};
+
+		// Write the data to the file.
+		if ( nc_put_vara_float(fid,id,start,count,data) != NC_NOERR ) return NETCDF_ERR;
 
 		return NETCDF_OK;
 	}
@@ -424,6 +446,53 @@ namespace NetCDF
 
 		return NETCDF_OK;		
 	}
+	int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], v3::V3v &xyz, double **data) {
+		
+		std::vector<double> lon(dims[0]), lat(dims[1]), depth(dims[2]);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int jj = 0; jj < dims[1]; ++jj) {
+			for (int ii = 0; ii < dims[0]; ++ii) {
+				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
+				// Compute the spatial coordinates
+				PROJ::ProjInvMercator(lon[ii], lat[jj], &xyz[ind][0]);
+			}
+		}
+
+		// Convert V3v to depth positive down
+		for (int kk = 0; kk < dims[2]; ++kk) {
+			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
+			depth[kk] = -xyz[ind][2];
+		}
+
+		return writeNetCDF(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
+	}
+	int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], v3::V3v &xyz, float **data) {
+		
+		std::vector<float> lon(dims[0]), lat(dims[1]), depth(dims[2]);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int jj = 0; jj < dims[1]; ++jj) {
+			for (int ii = 0; ii < dims[0]; ++ii) {
+				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
+				// Compute the spatial coordinates
+				double aux_lon, aux_lat;
+				PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ind][0]);
+				lon[ii]   = (float)(aux_lon);
+				lat[jj]   = (float)(aux_lat);
+			}
+		}
+
+		// Convert V3v to depth positive down
+		for (int kk = 0; kk < dims[2]; ++kk) {
+			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
+			depth[kk] = (float)(-xyz[ind][2]);
+		}
+
+		return writeNetCDF(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
+	}
 	int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<double> &f) {
 
 		std::vector<double> lon(dims[0]), lat(dims[1]), depth(dims[2]);
@@ -519,6 +588,264 @@ namespace NetCDF
 				delete [] ff[mm];
 		}
 
+		return retval;
+	}
+
+	/* WRITENETCDFPROFILE
+
+		Writes a NetCDF4 file given the variable, the name of the file, the name of the variable
+		to be read and its size.
+	*/
+	int writeNetCDFProfile(const char *fname, const char *varname, int dims, double *lon, double *lat, 
+		double *depth, double *data) {
+		
+		int fid, loid, laid, deid, tid;
+		int varid, vloid, vlaid, vdeid;
+
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
+
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefZ(fid,deid,vdeid,"deptht","deptht",NC_DOUBLE,dims,"meter","down")           != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,loid,vloid,"x","nav_lon",NC_DOUBLE,dims,"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,laid,vlaid,"y","nav_lat",NC_DOUBLE,dims,"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;		
+		if ( NetCDFDefT(fid,tid,"time_counter")                                                   != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[2] = {tid,vdeid};
+		if ( NetCDFDefVar(fid,varid,varname,NC_DOUBLE,2,dimvar)   != NETCDF_OK ) return NETCDF_ERR;
+		
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vloid,&lon[0])       != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlaid,&lat[0])       != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdeid,&depth[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutVar(fid,varid,dims,&data[0]) != NETCDF_OK ) return NETCDF_ERR;
+
+		// Close the file
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int writeNetCDFProfile(const char *fname, const char *varname, int dims, float *lon, float *lat, 
+		float *depth, float *data) {
+		
+		int fid, loid, laid, deid, tid;
+		int varid, vloid, vlaid, vdeid;
+
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
+
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefZ(fid,deid,vdeid,"deptht","deptht",NC_FLOAT,dims,"meter","down") != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,loid,vloid,"x","nav_lon",NC_FLOAT,dims,"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,laid,vlaid,"y","nav_lat",NC_FLOAT,dims,"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;				
+		if ( NetCDFDefT(fid,tid,"time_counter")                                       != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[2] = {tid,vdeid};
+		if ( NetCDFDefVar(fid,varid,varname,NC_FLOAT,2,dimvar)   != NETCDF_OK ) return NETCDF_ERR;
+		
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vloid,&lon[0])       != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlaid,&lat[0])       != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdeid,&depth[0])     != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutVar(fid,varid,dims,&data[0]) != NETCDF_OK ) return NETCDF_ERR;
+
+		// Close the file
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, double *lon, double *lat, 
+		double *depth, double **data) {
+		
+		int fid, loid, laid, deid, tid;
+		int vloid, vlaid, vdeid;
+
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
+
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefZ(fid,deid,vdeid,"deptht","deptht",NC_DOUBLE,dims,"meter","down")          != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,loid,vloid,"x","nav_lon",NC_FLOAT,dims,"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,laid,vlaid,"y","nav_lat",NC_FLOAT,dims,"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;				
+		if ( NetCDFDefT(fid,tid,"time_counter")                                                  != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[2] = {tid,vdeid};
+		std::vector<int> varid(nvars);
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFDefVar(fid,varid[vid],varname[vid].c_str(),NC_DOUBLE,2,dimvar) != NETCDF_OK ) return NETCDF_ERR;
+		
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vloid,&lon[0])   != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlaid,&lat[0])   != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdeid,&depth[0]) != NETCDF_OK ) return NETCDF_ERR;
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFPutVar(fid,varid[vid],dims,&data[vid][0]) != NETCDF_OK ) return NETCDF_ERR;
+
+		// Close the file
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, float *lon, float *lat, 
+		float *depth, float **data) {
+		
+		int fid, loid, laid, deid, tid;
+		int vloid, vlaid, vdeid;
+
+		// Create the file
+		if ( NetCDFCreate(fname,fid) != NETCDF_OK) return NETCDF_ERR;
+
+		// Define the dimensions. NetCDF will hand back 2 IDs for each.
+		if ( NetCDFDefZ(fid,deid,vdeid,"deptht","deptht",NC_FLOAT,dims,"meter","down") != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,loid,vloid,"x","nav_lon",NC_FLOAT,dims,"Longitude","degrees_east")  != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFDefXY(fid,laid,vlaid,"y","nav_lat",NC_FLOAT,dims,"Longitude","degrees_north") != NETCDF_OK ) return NETCDF_ERR;				
+		if ( NetCDFDefT(fid,tid,"time_counter")                                        != NETCDF_OK ) return NETCDF_ERR;
+
+		// Define the variables
+		int dimvar[2] = {tid,vdeid};
+		std::vector<int> varid(nvars);
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFDefVar(fid,varid[vid],varname[vid].c_str(),NC_FLOAT,2,dimvar) != NETCDF_OK ) return NETCDF_ERR;
+		
+		// End define mode
+		if ( nc_enddef(fid) != NC_NOERR ) return NETCDF_ERR;
+
+		// Write the data to the file.
+		if ( NetCDFPutDim(fid,vloid,&lon[0])   != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vlaid,&lat[0])   != NETCDF_OK ) return NETCDF_ERR;
+		if ( NetCDFPutDim(fid,vdeid,&depth[0]) != NETCDF_OK ) return NETCDF_ERR;
+		for (int vid = 0; vid < nvars; ++vid)
+			if ( NetCDFPutVar(fid,varid[vid],dims,&data[vid][0]) != NETCDF_OK ) return NETCDF_ERR;
+
+		// Close the file
+		if ( nc_close(fid) != NC_NOERR) return NETCDF_ERR;
+
+		return NETCDF_OK;
+	}
+	int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, v3::V3v &xyz, double **data) {
+		
+		std::vector<double> lon(dims), lat(dims), depth(dims);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int ii = 0; ii < dims; ++ii) {
+			// Compute the spatial coordinates
+			PROJ::ProjInvMercator(lon[ii], lat[ii], &xyz[ii][0]);
+			// Convert V3v to depth positive down
+			depth[ii] = -xyz[ii][2];
+		}
+
+		return writeNetCDFProfile(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
+	}
+	int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, v3::V3v &xyz, float **data) {
+		
+		std::vector<float> lon(dims), lat(dims), depth(dims);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int ii = 0; ii < dims; ++ii) {
+			// Compute the spatial coordinates
+			double aux_lon, aux_lat;
+			PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ii][0]);
+			lon[ii]   = (float)(aux_lon);
+			lat[ii]   = (float)(aux_lat);
+			// Convert V3v to depth positive down
+			depth[ii] = (float)(-xyz[ii][2]);
+		}
+
+		return writeNetCDFProfile(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
+	}
+	int writeNetCDFProfile(const char *fname, const char *varname, int dims, v3::V3v &xyz, field::Field<double> &f) {
+
+		std::vector<double> lon(dims), lat(dims), depth(dims);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int ii = 0; ii < dims; ++ii) {
+			// Compute the spatial coordinates
+			PROJ::ProjInvMercator(lon[ii], lat[ii], &xyz[ii][0]);
+			// Convert V3v to depth positive down
+			depth[ii] = -xyz[ii][2];
+		}
+
+		// Write NetCDF
+		int retval;
+		if (f.get_m() == 1) {
+			// We can use the writeNetCDF API to write a single file containing a variable
+			retval = writeNetCDFProfile(fname,varname,dims,&lon[0],&lat[0],&depth[0],&f[0][0]);
+		} else {
+			// For variables with multiple components, we need to create variable names
+			std::vector<std::string> newvarname(f.get_m());
+			std::vector<double*> ff(f.get_m());
+			// Generate variable name and array
+			for (int mm = 0; mm < f.get_m(); ++mm) {
+				newvarname[mm] = std::string(varname) + std::string("_") + std::to_string(mm);
+				std::replace(newvarname[mm].begin(),newvarname[mm].end(),' ','_'); // Replace white spaces
+				// Fill the array
+				ff[mm] = new double[f.get_n()];
+				for (int nn = 0; nn < f.get_n(); ++nn)
+					ff[mm][nn] = f[nn][mm];
+			}
+			// Write NetCDF
+			retval = writeNetCDFProfile(fname,newvarname.data(),f.get_m(),dims,&lon[0],&lat[0],&depth[0],ff.data());
+			// Deallocate
+			for (int mm = 0; mm < f.get_m(); ++mm)
+				delete [] ff[mm];
+		}
+		return retval;
+	}
+	int writeNetCDFProfile(const char *fname, const char *varname, int dims, v3::V3v &xyz, field::Field<float> &f) {
+
+		std::vector<float> lon(dims), lat(dims), depth(dims);
+
+		// Convert V3v to lon, lat using the conversion to degrees and
+		// converting depth to positive
+		for (int ii = 0; ii < dims; ++ii) {
+			// Compute the spatial coordinates
+			double aux_lon, aux_lat;
+			PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ii][0]);
+			lon[ii]   = (float)(aux_lon);
+			lat[ii]   = (float)(aux_lat);
+			// Convert V3v to depth positive down
+			depth[ii] = (float)(-xyz[ii][2]);
+		}
+
+		// Write NetCDF
+		int retval;
+		if (f.get_m() == 1) {
+			// We can use the writeNetCDF API to write a single file containing a variable
+			retval = writeNetCDFProfile(fname,varname,dims,&lon[0],&lat[0],&depth[0],&f[0][0]);
+		} else {
+			// For variables with multiple components, we need to create variable names
+			std::vector<std::string> newvarname(f.get_m());
+			std::vector<float*> ff(f.get_m());
+			// Generate variable name and array
+			for (int mm = 0; mm < f.get_m(); ++mm) {
+				newvarname[mm] = std::string(varname) + std::string("_") + std::to_string(mm);
+				std::replace(newvarname[mm].begin(),newvarname[mm].end(),' ','_'); // Replace white spaces
+				// Fill the array
+				ff[mm] = new float[f.get_n()];
+				for (int nn = 0; nn < f.get_n(); ++nn)
+					ff[mm][nn] = f[nn][mm];
+			}
+			// Write NetCDF
+			retval = writeNetCDFProfile(fname,newvarname.data(),f.get_m(),dims,&lon[0],&lat[0],&depth[0],ff.data());
+			// Deallocate
+			for (int mm = 0; mm < f.get_m(); ++mm)
+				delete [] ff[mm];
+		}
 		return retval;
 	}
 }
