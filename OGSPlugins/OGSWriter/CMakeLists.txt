@@ -35,6 +35,6 @@ set ( CMAKE_CXX_FLAGS "-lz")
 
 ADD_PARAVIEW_PLUGIN(OGSWriter "1.0"
   SERVER_MANAGER_XML OGSWriter.xml
-  SERVER_MANAGER_SOURCES cnpy.cpp ../_utils/vtkOperations.cpp vtkOGSNPZWriter.cxx vtkOGSFieldWriter.cxx
+  SERVER_MANAGER_SOURCES ../_utils/OGS.cpp ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/Projections.cpp ../_utils/vtkOperations.cpp cnpy.cpp vtkOGSNPZWriter.cxx vtkOGSFieldWriter.cxx vtkOGSNetCDFWriter.cxx
   REQUIRED_ON_SERVER
   )
