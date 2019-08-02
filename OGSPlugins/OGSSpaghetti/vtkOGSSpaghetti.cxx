@@ -558,7 +558,7 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		// stored under "xyz". Now we shall find the number of unique z coordinates or,
 		// depending on the user input, the coordinates of each depth level, as well as
 		// its mesh connectivity (cId2zId).
-		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi);
+		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi,false);
 	}
 
 	this->UpdateProgress(.1);
@@ -589,7 +589,7 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 	e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
 
 	// Load variable stat profile
-	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*zcoords.size()*nStat,1,0.);
+	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*this->zcoords.size()*nStat,1,0.);
 	std::string filename = std::string(this->FolderName) + std::string("/") + std::string(this->field) + std::string(".nc");
 
 	if ( NetCDF::readNetCDF(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
@@ -624,8 +624,8 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		// In which coast are we?
 		int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
 		// Compute the position
-		int p = ncoasts*zcoords.size()*nStat*bId  + 
-		        zcoords.size()*nStat*cId          + 
+		int p = ncoasts*this->zcoords.size()*nStat*bId  + 
+		        this->zcoords.size()*nStat*cId          + 
 		        nStat*zId                         +
 		        this->sId;
 		p = (bId > 0 || cId > 0) ? p : -1;
@@ -647,7 +647,7 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 			int p      = pos1[cc];
 			int cellId = cellIds[cc];
 			// Compute position
-			int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + p;
+			int pos = nbasins*ncoasts*this->zcoords.size()*nStat*ii + p;
 			// Retrieve value from array
 			column[0][0] += (p > 0) ? e3[cellId][0]*statArray[pos][0] : 0.;
 		}

@@ -185,7 +185,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		// stored under "xyz". Now we shall find the number of unique z coordinates or,
 		// depending on the user input, the coordinates of each depth level, as well as
 		// its mesh connectivity (cId2zId).
-		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi);
+		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi,true);
 	}
 
 	// At this point we either have a rectilinear grid or an

@@ -939,7 +939,7 @@ namespace field
 		desired uniquevals.
 
 	*/
-	field::Field<int> countDepthLevels(v3::V3v &xyz, std::vector<double> &uniquevals, double epsi);
+	field::Field<int> countDepthLevels(v3::V3v &xyz, std::vector<double> &uniquevals, double epsi, bool addlayer);
 }
 
 #endif
