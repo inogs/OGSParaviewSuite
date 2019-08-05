@@ -127,23 +127,24 @@ int vtkOGSSelectBasin::RequestData(vtkInformation *vtkNotUsed(request),
 
 	this->UpdateProgress(0.0);
 
-	// Get the basins mask
+	// Decide whether we have cell or point data
+	int n_cell_vars  = input->GetCellData()->GetNumberOfArrays();
+	int n_point_vars = input->GetPointData()->GetNumberOfArrays();
+
+	bool iscelld = (n_cell_vars > n_point_vars) ? true : false;
+
+	// Recover basins mask as a field
 	VTKMASK *vtkmask = NULL;
-	bool iscelld = true;
-
-	vtkmask = VTKMASK::SafeDownCast(input->GetCellData()->GetArray(this->mask_field));
-
-	if (vtkmask == NULL) {
-		vtkmask = VTKMASK::SafeDownCast(input->GetPointData()->GetArray(this->mask_field));
-		iscelld = false;
-	}
+	if (iscelld)
+		vtkmask = VTKMASK::SafeDownCast( input->GetCellData()->GetArray(this->mask_field) );
+	else
+		vtkmask = VTKMASK::SafeDownCast( input->GetPointData()->GetArray(this->mask_field) );
 
 	if (vtkmask == NULL) {
 		vtkErrorMacro("Cannot load mask field "<<this->mask_field<<"!");
 		return 0;
 	}
-
-	// Recover basins mask as a field
+	
 	field::Field<FLDMASK> mask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkmask);
 
 	// Generate a new field (initialized at zero) that will be used as cutting mask
