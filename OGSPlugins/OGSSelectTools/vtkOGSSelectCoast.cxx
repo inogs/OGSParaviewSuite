@@ -156,19 +156,22 @@ int vtkOGSSelectCoast::RequestData(vtkInformation *vtkNotUsed(request),
 	VTKMASK *vtkcutmask;
 	vtkcutmask = VTK::createVTKfromField<VTKMASK,FLDMASK>("CutMask",cutmask);
 
-	if (iscelld)
+	if (iscelld) {
 		input->GetCellData()->AddArray(vtkcutmask);
-	else
+		// Force to use the CutMask to produce the Threshold
+		this->Superclass::SetInputArrayToProcess(0,0,0,
+			vtkDataObject::FIELD_ASSOCIATION_CELLS,"CutMask");
+	} else {
 		input->GetPointData()->AddArray(vtkcutmask);
+		// Force to use the CutMask to produce the Threshold
+		this->Superclass::SetInputArrayToProcess(0,0,0,
+			vtkDataObject::FIELD_ASSOCIATION_POINTS,"CutMask");
+	}
 
 	this->UpdateProgress(0.4);
 
 	// Force ThresholdBetween to obtain values that are greater than 0
 	this->Superclass::ThresholdBetween(0.5,1.);
-
-	// Force to use the CutMask to produce the Threshold
-	this->Superclass::SetInputArrayToProcess(0,0,0,
-		vtkDataObject::FIELD_ASSOCIATION_CELLS,"CutMask");
 
 	this->UpdateProgress(0.6);
 
