@@ -286,6 +286,136 @@
       </Hints>
       <!-- End Threshold -->
     </SourceProxy>
+
+    <SourceProxy class="vtkOGSSelectPolygon"
+                 name="OGSSelectPolygon"
+                 label="OGS Select Polygon">
+    <Documentation
+        long_help="This filter lets the user select using a polygon from bit.sea."
+        short_help="Lets the user select using a polygon.">
+    </Documentation>
+
+     <InputProperty command="SetInputConnection"
+                   name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+                          number_of_components="1">
+        </InputArrayDomain>
+        <Documentation>This property specifies the input to the Threshold
+        filter.</Documentation>
+     </InputProperty>
+
+     <!-- Points -->
+     <StringVectorProperty name="Points"
+                           label="Polygon points: "
+                           command="SetstrPoints"
+                           default_values=""
+                           number_of_elements="1">
+        <Documentation>
+          Point list in the form of:
+
+            Longitude ; Latitude
+
+          The ";" is important to separate both magnitudes.
+          The polygon point order must be set accordingly.
+        </Documentation>
+        <Hints>
+          <Widget type="multi_line"/>
+        </Hints>
+     </StringVectorProperty>
+
+     <!-- Invert -->
+     <IntVectorProperty name="Invert"
+                        label="Invert"
+                        command="SetInvert"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Invert the selection.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- OLD THRESHOLD PARAMETERS HAVE NOW BEEN SHADOWED -->
+     
+     <!-- Array to process -->
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Scalars"
+                            name="SelectInputScalars"
+                            number_of_elements="5"
+                            panel_visibility="never">
+        <ArrayListDomain attribute_type="Scalars"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>The value of this property contains the name of the
+        scalar array from which to perform thresholding.</Documentation>
+      </StringVectorProperty>
+
+      <!-- Threshold between (just 0.5 and 1) -->
+      <DoubleVectorProperty command="ThresholdBetween"
+                            default_values="0.5 1"
+                            label="Threshold Range"
+                            name="ThresholdBetween"
+                            number_of_elements="2"
+                            panel_visibility="never">
+        <Documentation>The values of this property specify the upper and lower
+        bounds of the thresholding operation (defaulted to 0.5 and 1).</Documentation>
+      </DoubleVectorProperty>
+
+      <!-- All scalars -->
+      <IntVectorProperty command="SetAllScalars"
+                         default_values="1"
+                         name="AllScalars"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>If the value of this property is 1, then a cell is only
+        included in the output if the value of the selected array for all its
+        points is within the threshold. This is only relevant when thresholding
+        by a point-centered array.</Documentation>
+      </IntVectorProperty>
+
+      <!-- Use Continuous Cell Range -->
+      <IntVectorProperty command="SetUseContinuousCellRange"
+                         default_values="0"
+                         name="UseContinuousCellRange"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If off, the vertex scalars are treated as a discrete set. If on, they
+          are treated as a continuous interval over the minimum and maximum. One
+          important "on" use case: When setting lower and upper threshold
+          equal to some value and turning AllScalars off, the results are
+          cells containing the isosurface for that value.  WARNING: Whether on
+          or off, for higher order input, the filter will not give accurate
+          results.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+      </Hints>
+      <!-- End Threshold -->
+    </SourceProxy>
     
  </ProxyGroup>
 </ServerManagerConfiguration>
