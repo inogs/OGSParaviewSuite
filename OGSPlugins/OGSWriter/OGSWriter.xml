@@ -102,6 +102,48 @@
       </Hints>
     </WriterProxy>
     <!-- END Writer NPY -->
+    <!-- Writer NPY Table-->
+    <WriterProxy name="OGSNPZTableWriter"
+                 class="vtkOGSNPZTableWriter"
+                 label="OGS NPZ Table Writer">
+      <Documentation short_help="Write table data to a NPZ file.">
+        Writes table data as a NPZ data file. Each column is stored as an array on the file.
+      </Documentation>
+
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkTable" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the input to the OGS NPZ Writer.</Documentation>
+      </InputProperty>
+
+      <!-- File Name -->
+      <StringVectorProperty name="FileName"
+                            animateable="0"
+                            command="SetFileName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="npz" file_description="Numpy npz file" />
+        </Hints>
+        <Documentation>
+          This property specifies the file name for the OGS NPZ Writer.
+        </Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <WriterFactory extensions="npz" file_description="Numpy npz file" />
+      </Hints>
+    </WriterProxy>
+    <!-- END Writer NPY Table -->
     <!-- Writer FIELD -->
     <WriterProxy name="OGSFieldWriter"
                  class="vtkOGSFieldWriter"
