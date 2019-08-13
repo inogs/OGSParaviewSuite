@@ -99,8 +99,12 @@ int vtkOGSNPZWriter::RequestData(vtkInformation* request,
 	vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector)) {
 
 	// Tell the pipeline to start looping.
-	if (this->ii_cur == this->ii_start && this->timeseries)
+	if (this->ii_cur == this->ii_start && this->timeseries) {
 		request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+		// Number of timesteps failsafe
+		int ntsteps = inputVector[0]->GetInformationObject(0)->Length( vtkStreamingDemandDrivenPipeline::TIME_STEPS() );
+		this->ii_end = (this->ii_end > ntsteps) ? ntsteps : this->ii_end;
+	}
 
 	// Handle the timestep
 	struct tm tm = {0}; char buff[256];
