@@ -19,6 +19,8 @@
 #include "vtkIOCoreModule.h" // For export macro
 #include "vtkWriter.h"
 
+#include <string>
+
 //----------------------------------------------------------------------------
 
 class vtkOGSNPZWriter : public vtkWriter {
@@ -59,14 +61,14 @@ protected:
   ~vtkOGSNPZWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;
-
-  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* );;
-
+  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* );
   void WriteData() override;
 
-  char *FileName, *varname;
+  char *FileName, *FileName2, *varname;
   double dfact;
   int singlevar, timeseries, append;
+  
+  std::string path, fnamenoext, ext;
 
 private:
   vtkOGSNPZWriter(const vtkOGSNPZWriter&) = delete;

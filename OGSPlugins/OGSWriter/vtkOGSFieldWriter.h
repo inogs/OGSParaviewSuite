@@ -19,6 +19,8 @@
 #include "vtkIOCoreModule.h" // For export macro
 #include "vtkWriter.h"
 
+#include <string>
+
 //----------------------------------------------------------------------------
 
 class vtkOGSFieldWriter : public vtkWriter {
@@ -42,22 +44,33 @@ public:
   vtkGetMacro(fstride, int);
   vtkSetMacro(fstride, int);
 
+  // Set/Get timestep strings
+  vtkGetMacro(timeseries, int);
+  vtkSetMacro(timeseries, int);
+  void SetStartEnd(const int val1, const int val2);
+
   int Write() override; // This is necessary to get Write() wrapped for scripting languages.
+  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
 protected:
   vtkOGSFieldWriter();
   ~vtkOGSFieldWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;
+  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* );
   void WriteData() override;
 
   char *FileName, *varname;
   double dfact;
-  int fstride;
+  int fstride, timeseries;
+
+  std::string path, fnamenoext, ext;
 
 private:
   vtkOGSFieldWriter(const vtkOGSFieldWriter&) = delete;
   void operator=(const vtkOGSFieldWriter&) = delete;
+
+  int ii_start, ii_end, ii_cur;
 };
 
 #endif

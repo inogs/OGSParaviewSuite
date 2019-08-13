@@ -86,7 +86,7 @@
 
       <!-- Appending variables to an existing file -->
       <IntVectorProperty name="Append"
-                         label="Append"
+                         label="Append?"
                          command="Setappend"
                          default_values="0"
                          number_of_elements="1">
@@ -243,6 +243,38 @@
         </Documentation>
       </StringVectorProperty>
 
+      <!-- Time Series -->
+      <IntVectorProperty name="TimeSeries"
+                         label="Process Multiple Timesteps?"
+                         command="Settimeseries"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single time frame or all the time steps.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                            command="SetStartEnd"
+                            default_values="0 0"
+                            name="StartEnd"
+                            label="Frames: "
+                            number_of_elements="2">
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="TimeSeries" function="boolean" />
+          </PropertyWidgetDecorator>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="Start frame: "/>
+            <ComponentLabel component="1" label="End frame: "/>
+          </ShowComponentLabels>
+        </Hints>
+        <Documentation>
+          Start and end time frame.
+        </Documentation>
+      </IntVectorProperty>
+
       <!-- Appending variables to an existing file -->
       <IntVectorProperty name="Stride"
                          label="Fortran Stride"
@@ -370,6 +402,38 @@
         Whether to save the mesh dependent variables and masks.
       </Documentation>
       <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Time Series -->
+      <IntVectorProperty name="TimeSeries"
+                         label="Process Multiple Timesteps?"
+                         command="Settimeseries"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single time frame or all the time steps.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                            command="SetStartEnd"
+                            default_values="0 0"
+                            name="StartEnd"
+                            label="Frames: "
+                            number_of_elements="2">
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="TimeSeries" function="boolean" />
+          </PropertyWidgetDecorator>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="Start frame: "/>
+            <ComponentLabel component="1" label="End frame: "/>
+          </ShowComponentLabels>
+        </Hints>
+        <Documentation>
+          Start and end time frame.
+        </Documentation>
       </IntVectorProperty>
 
       <Hints>

@@ -19,6 +19,8 @@
 #include "vtkIOCoreModule.h" // For export macro
 #include "vtkWriter.h"
 
+#include <string>
+
 class vtkAbstractArray;
 class vtkRectilinearGrid;
 class vtkUnstructuredGrid;
@@ -55,18 +57,27 @@ public:
   vtkGetMacro(SaveAll, int);
   vtkSetMacro(SaveAll, int);
 
+  // Set/Get timestep strings
+  vtkGetMacro(timeseries, int);
+  vtkSetMacro(timeseries, int);
+  void SetStartEnd(const int val1, const int val2);
+
   int Write() override; // This is necessary to get Write() wrapped for scripting languages.
+  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
 protected:
   vtkOGSNetCDFWriter();
   ~vtkOGSNetCDFWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;
+  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* );
   void WriteData() override;
 
   char *FileName, *OGSFile, *varname;
   double dfact;
-  int singlevar,SaveAll,projId;
+  int singlevar, timeseries, SaveAll,projId;
+
+  std::string path, fnamenoext, ext;
 
 private:
   vtkOGSNetCDFWriter(const vtkOGSNetCDFWriter&) = delete;
@@ -78,6 +89,8 @@ private:
   void writeNetCDFUnstructuredGridnVar(vtkUnstructuredGrid *, bool);
   void writeNetCDFPolyData1Var(vtkPolyData *, vtkAbstractArray *, bool);
   void writeNetCDFPolyDatanVar(vtkPolyData *, bool);
+
+  int ii_start, ii_end, ii_cur;
 };
 
 #endif

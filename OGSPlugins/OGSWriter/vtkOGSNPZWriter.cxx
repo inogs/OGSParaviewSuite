@@ -36,7 +36,6 @@
 #include <ctime>
 #include <chrono>
 #include <vector>
-#include <string>
 #include <vtksys/SystemTools.hxx>
 
 vtkStandardNewMacro(vtkOGSNPZWriter);
@@ -81,6 +80,11 @@ int vtkOGSNPZWriter::Write() {
 		return 0;
 	}
 
+	// Extract filename format
+	this->path       = vtksys::SystemTools::GetFilenamePath(this->FileName);
+	this->fnamenoext = vtksys::SystemTools::GetFilenameWithoutLastExtension(this->FileName);
+	this->ext        = vtksys::SystemTools::GetFilenameLastExtension(this->FileName);
+
 	// Always write even if the data hasn't changed
 	this->Modified();
 	this->Update();
@@ -122,15 +126,10 @@ int vtkOGSNPZWriter::RequestData(vtkInformation* request,
 
 		// Format the time
 		strftime(buff,256,"%Y%m%d-%H:%M:%S",&tm);
-    	
-    	// Format the filename
-    	std::string path       = vtksys::SystemTools::GetFilenamePath(this->FileName);
-    	std::string fnamenoext = vtksys::SystemTools::GetFilenameWithoutLastExtension(this->FileName);
-    	std::string ext        = vtksys::SystemTools::GetFilenameLastExtension(this->FileName);
 
-    	// File name
-    	std::string fname = path + std::string("/") + fnamenoext + std::string(".") + std::string(buff) + ext;
-    	this->SetFileName(fname.c_str());
+		// File name
+		std::string fname = this->path + std::string("/") + this->fnamenoext + std::string(".") + std::string(buff) + this->ext;
+		this->SetFileName(fname.c_str());
 	}	
 	
 	// Write the data

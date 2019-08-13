@@ -32,8 +32,11 @@
 
 #include "vtkObjectFactory.h"
 
-#include<vector>
-#include<string>
+#include <cmath>
+#include <ctime>
+#include <chrono>
+#include <vector>
+#include <vtksys/SystemTools.hxx>
 
 vtkStandardNewMacro(vtkOGSFieldWriter);
 
@@ -65,6 +68,81 @@ vtkOGSFieldWriter::~vtkOGSFieldWriter() {
 //----------------------------------------------------------------------------
 int vtkOGSFieldWriter::FillInputPortInformation( int vtkNotUsed(port), vtkInformation* info) {
 	info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSFieldWriter::Write() {
+	// Make sure we only export from one mesh
+	if(this->GetNumberOfInputConnections(0) != 1) {
+		vtkErrorMacro("Exactly one input required."); 
+		return 0;
+	}
+
+	// Extract filename format
+	this->path       = vtksys::SystemTools::GetFilenamePath(this->FileName);
+	this->fnamenoext = vtksys::SystemTools::GetFilenameWithoutLastExtension(this->FileName);
+	this->ext        = vtksys::SystemTools::GetFilenameLastExtension(this->FileName);
+
+	// Always write even if the data hasn't changed
+	this->Modified();
+	this->Update();
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSFieldWriter::ProcessRequest(vtkInformation* request, 
+	vtkInformationVector** inputVector, vtkInformationVector* outputVector) {
+	return this->Superclass::ProcessRequest(request, inputVector, outputVector);
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSFieldWriter::RequestData(vtkInformation* request, 
+	vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector)) {
+
+	// Tell the pipeline to start looping.
+	if (this->ii_cur == this->ii_start && this->timeseries) {
+		request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+		// Number of timesteps failsafe
+		int ntsteps = inputVector[0]->GetInformationObject(0)->Length( vtkStreamingDemandDrivenPipeline::TIME_STEPS() );
+		this->ii_end = (this->ii_end > ntsteps) ? ntsteps : this->ii_end;
+	}
+
+	// Handle the timestep
+	struct tm tm = {0}; char buff[256];
+	double *inTimes = inputVector[0]->GetInformationObject(0)->Get( vtkStreamingDemandDrivenPipeline::TIME_STEPS() );
+
+	if (inTimes && this->timeseries) {
+		// Recover the current timestep and set it
+		double timeReq = inTimes[this->ii_cur];
+		inputVector[0]->GetInformationObject(0)->Set( vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(),timeReq );
+		
+		// Convert to struct tm
+		time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(
+			std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<double>(timeReq))));
+		tm = *localtime(&time);
+
+		// Format the time
+		strftime(buff,256,"%Y%m%d-%H:%M:%S",&tm);
+
+		// File name
+		std::string fname = this->path + std::string("/") + this->fnamenoext + std::string(".") + std::string(buff) + this->ext;
+		this->SetFileName(fname.c_str());
+	}	
+	
+	// Write the data
+	this->WriteData();
+
+	if (this->timeseries) {
+		this->ii_cur++;
+		if (this->ii_cur >= this->ii_end) {
+			// Tell the pipeline to stop looping.
+			request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+			this->ii_cur = this->ii_start;
+		}
+	}
+
 	return 1;
 }
 
@@ -126,6 +204,9 @@ void vtkOGSFieldWriter::WriteData() {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSFieldWriter::Write() {
-	return Superclass::Write();
+void vtkOGSFieldWriter::SetStartEnd(const int val1, const int val2) {
+	this->ii_start = val1;
+	this->ii_end   = val2;
+	this->ii_cur   = val1;
+	this->Modified();
 }
