@@ -46,22 +46,33 @@ public:
   vtkGetMacro(singlevar, int);
   vtkSetMacro(singlevar, int);
 
+  // Set/Get timestep strings
+  vtkGetMacro(timeseries, int);
+  vtkSetMacro(timeseries, int);
+  void SetStartEnd(const int val1, const int val2);
+
   int Write() override; // This is necessary to get Write() wrapped for scripting languages.
+  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
 protected:
   vtkOGSNPZWriter();
   ~vtkOGSNPZWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;
+
+  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* );;
+
   void WriteData() override;
 
   char *FileName, *varname;
   double dfact;
-  int singlevar, append;
+  int singlevar, timeseries, append;
 
 private:
   vtkOGSNPZWriter(const vtkOGSNPZWriter&) = delete;
   void operator=(const vtkOGSNPZWriter&) = delete;
+
+  int ii_start, ii_end, ii_cur;
 };
 
 #endif

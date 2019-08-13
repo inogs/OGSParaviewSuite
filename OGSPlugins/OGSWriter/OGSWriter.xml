@@ -50,7 +50,7 @@
 
       <!-- Selection of single variable -->
       <IntVectorProperty name="SingleVariable"
-                         label="Process Single Variable"
+                         label="Process Single Variable?"
                          command="Setsinglevar"
                          default_values="0"
                          number_of_elements="1">
@@ -94,6 +94,38 @@
         Wether to append the variables to the file or write it new.
       </Documentation>
       <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Time Series -->
+      <IntVectorProperty name="TimeSeries"
+                         label="Process Multiple Timesteps?"
+                         command="Settimeseries"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single time frame or all the time steps.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                            command="SetStartEnd"
+                            default_values="0 0"
+                            name="StartEnd"
+                            label="Frames: "
+                            number_of_elements="2">
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="TimeSeries" function="boolean" />
+          </PropertyWidgetDecorator>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="Start frame: "/>
+            <ComponentLabel component="1" label="End frame: "/>
+          </ShowComponentLabels>
+        </Hints>
+        <Documentation>
+          Start and end time frame.
+        </Documentation>
       </IntVectorProperty>
 
       <Hints>

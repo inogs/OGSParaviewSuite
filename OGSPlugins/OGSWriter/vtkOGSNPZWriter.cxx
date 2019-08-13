@@ -28,11 +28,16 @@
 #include "vtkAbstractArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkStringArray.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 
 #include "vtkObjectFactory.h"
 
-#include<vector>
-#include<string>
+#include <cmath>
+#include <ctime>
+#include <chrono>
+#include <vector>
+#include <string>
+#include <vtksys/SystemTools.hxx>
 
 vtkStandardNewMacro(vtkOGSNPZWriter);
 
@@ -54,7 +59,7 @@ vtkStandardNewMacro(vtkOGSNPZWriter);
 #include"cnpy.hpp"
 
 //----------------------------------------------------------------------------
-vtkOGSNPZWriter::vtkOGSNPZWriter() : FileName(nullptr), varname(nullptr), dfact(1000.), append(0), singlevar(0) {}
+vtkOGSNPZWriter::vtkOGSNPZWriter() : FileName(nullptr), varname(nullptr), dfact(1000.), append(0), singlevar(0), ii_cur(0) {}
 
 //----------------------------------------------------------------------------
 vtkOGSNPZWriter::~vtkOGSNPZWriter() {
@@ -69,11 +74,78 @@ int vtkOGSNPZWriter::FillInputPortInformation( int vtkNotUsed(port), vtkInformat
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSNPZWriter::WriteData() {
+int vtkOGSNPZWriter::Write() {
 	// Make sure we only export from one mesh
-	if(this->GetNumberOfInputConnections(0) != 1)
-		vtkErrorMacro("Exactly one input required.");
+	if(this->GetNumberOfInputConnections(0) != 1) {
+		vtkErrorMacro("Exactly one input required."); 
+		return 0;
+	}
 
+	// Always write even if the data hasn't changed
+	this->Modified();
+	this->Update();
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSNPZWriter::ProcessRequest(vtkInformation* request, 
+	vtkInformationVector** inputVector, vtkInformationVector* outputVector) {
+	return this->Superclass::ProcessRequest(request, inputVector, outputVector);
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSNPZWriter::RequestData(vtkInformation* request, 
+	vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector)) {
+
+	// Tell the pipeline to start looping.
+	if (this->ii_cur == this->ii_start && this->timeseries)
+		request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+
+	// Handle the timestep
+	struct tm tm = {0}; char buff[256];
+	double *inTimes = inputVector[0]->GetInformationObject(0)->Get( vtkStreamingDemandDrivenPipeline::TIME_STEPS() );
+
+	if (inTimes && this->timeseries) {
+		// Recover the current timestep and set it
+		double timeReq = inTimes[this->ii_cur];
+		inputVector[0]->GetInformationObject(0)->Set( vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(),timeReq );
+		
+		// Convert to struct tm
+		time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(
+			std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<double>(timeReq))));
+		tm = *localtime(&time);
+
+		// Format the time
+		strftime(buff,256,"%Y%m%d-%H:%M:%S",&tm);
+    	
+    	// Format the filename
+    	std::string path       = vtksys::SystemTools::GetFilenamePath(this->FileName);
+    	std::string fnamenoext = vtksys::SystemTools::GetFilenameWithoutLastExtension(this->FileName);
+    	std::string ext        = vtksys::SystemTools::GetFilenameLastExtension(this->FileName);
+
+    	// File name
+    	std::string fname = path + std::string("/") + fnamenoext + std::string(".") + std::string(buff) + ext;
+    	this->SetFileName(fname.c_str());
+	}	
+	
+	// Write the data
+	this->WriteData();
+
+	if (this->timeseries) {
+		this->ii_cur++;
+		if (this->ii_cur >= this->ii_end) {
+			// Tell the pipeline to stop looping.
+			request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+			this->ii_cur = this->ii_start;
+		}
+	}
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+void vtkOGSNPZWriter::WriteData() {
 	// Recover the input
 	vtkDataSet *input = vtkDataSet::SafeDownCast( this->GetExecutive()->GetInputData(0,0) );
 
@@ -152,6 +224,10 @@ void vtkOGSNPZWriter::WriteData() {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSNPZWriter::Write() {
-	return Superclass::Write();
+void vtkOGSNPZWriter::SetStartEnd(const int val1, const int val2) {
+	this->ii_start = val1;
+	this->ii_end   = val2;
+	this->ii_cur   = val1;
+	this->Modified();
 }
+
