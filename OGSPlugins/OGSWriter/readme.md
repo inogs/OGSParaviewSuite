@@ -13,6 +13,7 @@ data['xyz'] # Return xyz array from data dictionary
 ```
 
 * _.field_: Binary array storage for _vtkRectilinearGrid_, _vtkUnstructuredGrid_ and _vtkPolyData_. This file must be read as follows:
+
 |  type   |     Amount    | Name  |    Description    |
 |---------|---------------|-------|-------------------|
 | int32   |    1          | ncols | number of columns |
