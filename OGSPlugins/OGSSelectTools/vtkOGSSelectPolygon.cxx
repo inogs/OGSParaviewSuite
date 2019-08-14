@@ -134,14 +134,14 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 	for (std::string str : aux) {
 		// Split again by ;
 		std::vector<std::string> aux2;
-		strsplit(str,aux2,';');
+		strsplit(str,aux2,' ');
 		// Check correctness
 		if (str.size() == 0 || aux2.size() != 2) {
 			vtkErrorMacro("Problems parsing points! Check the input points.");
 			return 0;
 		}
 		// Convert to double
-		double lon = std::stod(aux2[0]), lat = std::stod(aux2[1]);
+		double lon = std::stod(aux2[1]), lat = std::stod(aux2[0]);
 		// Project
 		double xy[2];
 		switch (this->projId) {

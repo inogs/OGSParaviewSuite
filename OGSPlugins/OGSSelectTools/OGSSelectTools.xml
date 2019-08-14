@@ -320,10 +320,11 @@
         <Documentation>
           Point list in the form of:
 
-            Longitude ; Latitude
+            Latitude Longitude
 
-          The ";" is important to separate both magnitudes.
-          The polygon point order must be set accordingly.
+          A whitespace " " is needed to separate both magnitudes.
+          The polygon point order must be set accordingly. Handles
+          directly the output from bit.sea/poly_selector.
         </Documentation>
         <Hints>
           <Widget type="multi_line"/>
