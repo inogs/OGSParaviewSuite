@@ -19,7 +19,7 @@ data['xyz'] # Return xyz array from data dictionary
 | int32   |    1          | ncols | number of columns |
 | int32   |    1          | mshsz | mesh size         |
 | float32 |    1          | time  | simulation time   |
-| float32 | 3 x mshsz     | xyz   | mesh points       |
-| float32 | ncols x mshsz | data  | data array        |
+| float32 | 3 * mshsz     | xyz   | mesh points       |
+| float32 | ncols * mshsz | data  | data array        |
 
 * _.nc_: NetCDF-4 compatible file for _vtkRectilinearGrid_, _vtkUnstructuredGrid_ and _vtkPolyData_.
