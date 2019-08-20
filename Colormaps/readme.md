@@ -9,4 +9,4 @@ Guide to install colormaps:
 
 Click on the _Choose Preset_ button (blue) to open the dialog and then click on _Import_ (red). Select the colormap stored and your computer and open it. It should now be visible in the presets list. If not, you might need to toggle the _Advanced_ button (yellow).
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/Colormaps/doc/1.png" alt="" width="400"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/Colormaps/doc/1.png" alt="" width="800"/>
