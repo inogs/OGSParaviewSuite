@@ -235,6 +235,7 @@ void vtkOGSDepthProfile::Initialize(vtkDataSet* input,vtkDataSet* source, vtkDat
 		// Do not work with the basins, coasts mask, e1, e2 or e3
 		if (std::string("basins mask") == arrName) continue;
 		if (std::string("coast mask")  == arrName) continue;
+		if (std::string("land mask")   == arrName) continue;
 		if (std::string("Okubo-Weiss mask") == arrName) continue;
 		if (std::string("Q-criterion mask") == arrName) continue;
 		if (std::string("e1")          == arrName) continue;
@@ -255,6 +256,7 @@ void vtkOGSDepthProfile::Initialize(vtkDataSet* input,vtkDataSet* source, vtkDat
 		// Do not work with the basins, coasts mask, e1, e2 or e3
 		if (std::string("basins mask") == arrName) continue;
 		if (std::string("coast mask")  == arrName) continue;
+		if (std::string("land mask")   == arrName) continue;
 		if (std::string("Okubo-Weiss mask") == arrName) continue;
 		if (std::string("Q-criterion mask") == arrName) continue;
 		if (std::string("e1")          == arrName) continue;

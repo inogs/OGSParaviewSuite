@@ -188,7 +188,8 @@ void vtkOGSFieldWriter::WriteData() {
 
 	// Recover the field and write
 	if (std::string(this->varname) == std::string("basins mask") || 
-		std::string(this->varname) == std::string("coast mask")) {
+		std::string(this->varname) == std::string("coast mask")  ||
+		std::string(this->varname) == std::string("land mask")) {
 		// Use mask uint8
 		field::Field<FLDMASK> array;
 		array = VTK::createFieldfromVTK<VTKMASK,FLDMASK>( VTKMASK::SafeDownCast(vtkArray) );

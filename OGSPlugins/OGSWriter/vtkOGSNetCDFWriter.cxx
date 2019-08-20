@@ -362,6 +362,7 @@ void vtkOGSNetCDFWriter::writeNetCDFRectilinearGrid1Var(vtkRectilinearGrid *inpu
 	// Load the variable
 	if (std::string(this->varname) == std::string("basins mask")      || 
 		std::string(this->varname) == std::string("coast mask")       ||
+		std::string(this->varname) == std::string("land mask")        ||
 		std::string(this->varname) == std::string("Okubo-Weiss mask") ||
 		std::string(this->varname) == std::string("Q-criterion mask")) {
 		// Use mask uint8
@@ -412,6 +413,7 @@ void vtkOGSNetCDFWriter::writeNetCDFRectilinearGridnVar(vtkRectilinearGrid *inpu
 		// Discard some variables
 		if ( !this->SaveAll && vname == std::string("basins mask")      ) continue;
 		if ( !this->SaveAll && vname == std::string("coast mask")       ) continue;
+		if ( !this->SaveAll && vname == std::string("land mask")        ) continue;
 		if ( !this->SaveAll && vname == std::string("Okubo-Weiss mask") ) continue;
 		if ( !this->SaveAll && vname == std::string("Q-criterion mask") ) continue;
 		if ( !this->SaveAll && vname == std::string("coast mask")       ) continue;
@@ -444,7 +446,7 @@ void vtkOGSNetCDFWriter::writeNetCDFRectilinearGridnVar(vtkRectilinearGrid *inpu
 		std::string vname = std::string(vtkArray->GetName());
 		field::Field<float> aux;
 		// Load the variable
-		if (vname == std::string("basins mask") || vname == std::string("coast mask") ||
+		if (vname == std::string("basins mask") || vname == std::string("coast mask") || vname == std::string("land mask") ||
 			vname == std::string("Okubo-Weiss mask") || vname == std::string("Q-criterion mask")) {
 			// Use mask uint8
 			field::Field<FLDMASK> array;
@@ -515,7 +517,7 @@ void vtkOGSNetCDFWriter::writeNetCDFUnstructuredGrid1Var(vtkUnstructuredGrid *in
 	std::string vname = std::string( vtkArray->GetName() );
 
 	// Load the variable
-	if (vname == std::string("basins mask") || vname == std::string("coast mask") ||
+	if (vname == std::string("basins mask") || vname == std::string("coast mask") || vname == std::string("land mask") ||
 		vname == std::string("Okubo-Weiss mask") || vname == std::string("Q-criterion mask")) {
 		// Use mask uint8
 		FLDMASK aux = 0;
@@ -589,7 +591,7 @@ void vtkOGSNetCDFWriter::writeNetCDFUnstructuredGridnVar(vtkUnstructuredGrid *in
 		int ncomp = vtkArray->GetNumberOfValues()/vtkArray->GetNumberOfTuples();
 
 		// Load the variable
-		if (vname == std::string("basins mask") || vname == std::string("coast mask") ||
+		if (vname == std::string("basins mask") || vname == std::string("coast mask") || vname == std::string("land mask") ||
 			vname == std::string("Okubo-Weiss mask") || vname == std::string("Q-criterion mask")) {
 			// Use mask uint8
 			FLDMASK aux = 0;
@@ -637,6 +639,7 @@ void vtkOGSNetCDFWriter::writeNetCDFPolyData1Var(vtkPolyData *input, vtkAbstract
 	// Load the variable
 	if (std::string(this->varname) == std::string("basins mask")      || 
 		std::string(this->varname) == std::string("coast mask")       ||
+		std::string(this->varname) == std::string("land mask")       ||
 		std::string(this->varname) == std::string("Okubo-Weiss mask") ||
 		std::string(this->varname) == std::string("Q-criterion mask")) {
 		// Use mask uint8
@@ -680,9 +683,9 @@ void vtkOGSNetCDFWriter::writeNetCDFPolyDatanVar(vtkPolyData *input, bool iscell
 		// Discard some variables
 		if ( !this->SaveAll && vname == std::string("basins mask")      ) continue;
 		if ( !this->SaveAll && vname == std::string("coast mask")       ) continue;
+		if ( !this->SaveAll && vname == std::string("land mask")        ) continue;
 		if ( !this->SaveAll && vname == std::string("Okubo-Weiss mask") ) continue;
 		if ( !this->SaveAll && vname == std::string("Q-criterion mask") ) continue;
-		if ( !this->SaveAll && vname == std::string("coast mask")       ) continue;
 		if ( !this->SaveAll && vname == std::string("e1")               ) continue;
 		if ( !this->SaveAll && vname == std::string("e2")               ) continue;
 		if ( !this->SaveAll && vname == std::string("e3")               ) continue;
@@ -712,7 +715,7 @@ void vtkOGSNetCDFWriter::writeNetCDFPolyDatanVar(vtkPolyData *input, bool iscell
 		std::string vname = std::string(vtkArray->GetName());
 		field::Field<float> aux;
 		// Load the variable
-		if (vname == std::string("basins mask") || vname == std::string("coast mask") ||
+		if (vname == std::string("basins mask") || vname == std::string("coast mask") || vname == std::string("land mask") ||
 			vname == std::string("Okubo-Weiss mask") || vname == std::string("Q-criterion mask")) {
 			// Use mask uint8
 			field::Field<FLDMASK> array;

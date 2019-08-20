@@ -240,6 +240,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		// these arrays will exist or not.
 		if (arrName == std::string("coast mask"))  continue;
 		if (arrName == std::string("basins mask")) continue;
+		if (arrName == std::string("land mask"))   continue;
 		if (arrName == std::string("e1"))          continue;
 		if (arrName == std::string("e2"))          continue;
 		if (arrName == std::string("e3"))          continue;

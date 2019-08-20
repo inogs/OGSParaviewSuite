@@ -168,7 +168,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 	// Define a vector containing the names of the arrays to compute and to exclude
 	std::string FileName;
 	std::vector<std::string> arrNames, arrNamesNotComputed{"e1","e2","e3",
-		"basins mask","coast mask","Okubo-Weiss mask","Q-criterion mask"};
+		"basins mask","coast mask","land mask","Okubo-Weiss mask","Q-criterion mask"};
 
 	VTKARRAY *vtkArray;
 	std::vector<field::Field<FLDARRAY>> arrFields;

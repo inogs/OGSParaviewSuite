@@ -110,6 +110,7 @@ def RequestData():
 				# Filter some variables (Do not plot them)
 				if varname == 'basins mask':       continue
 				if varname == 'coast mask':        continue
+				if varname == 'land mask':         continue
 				if varname == 'e1':                continue
 				if varname == 'e2':                continue
 				if varname == 'e3':                continue
