@@ -305,6 +305,9 @@ int vtkOGSSpaghetti::RequestData(vtkInformation *request,
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	// Check if the source is a vtkRectilinearGrid
+	if ( !source->IsA("vtkRectilinearGrid") ) { vtkErrorMacro("Input must be a vtkRectilinearGrid. Aborting..."); return 0; }
+
 	// Check input field
 	if (std::string(this->field) == std::string("coast mask"))  { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("basins mask")) { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
