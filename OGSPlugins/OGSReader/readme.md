@@ -56,7 +56,7 @@ projections are considered.
 
 <img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSReader/doc/mesh.png" alt="" width="600"/>
 
-The basins mask and the continental shelf mask (coast mask) are also included in the mesh file. The basins mask is a mask that subdivides the different regions of the Mediterranean and follows the battimetry. The continental shelf mask subdivides the regions of the Mediterranean whose depth is less than 200 meters.
+The basins mask, the continental shelf mask (coast mask) and the land mask are also included in the mesh file. The basins mask is a mask that subdivides the different regions of the Mediterranean and follows the bathymetry. The continental shelf mask subdivides the regions of the Mediterranean whose depth is less than 200 meters. Finally, the land mask divides the water zones with the land zones, also following the bathymetry.
 
 In addition to this mask arrays, tensor fields for e1, e2 and e3 are also created. These contain information on the mesh stretching and are necessary to project magnitudes to the cell centers, compute gradients or compute spatial statistics. They are stored as:
 

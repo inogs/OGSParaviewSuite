@@ -35,20 +35,24 @@ class OGSmesh(object):
 	This class needs the libOGS.so that is generally deployed along with
 	this class by the deployment scripts of the OGSParaView Suite.
 	'''
-	def __init__(self,maskpath,maskname="meshmask.nc",maptype='merc',lib='libOGS'):
+	def __init__(self,maskpath,maskname="meshmask.nc",maptype='merc',res='l',lib='libOGS'):
 		'''
 		Class constructor for OGSmesh.
 
 		Inputs:
-			> maskpath: Full path to meshmask.
+			> maskpath: Full path to the mask file.
+			> maskname: Name of the mask file (default: meshmask.nc)
 			> maptype:  Kind of map projection (default: merc).
+			> res:      Resolution for basemap (default: l)
 			> lib:      Full path to the OGSmesh.so library.
 		'''
 		# Class variables
 		self._maskpath = maskpath
 		self._maskname = maskname
-		self._mask     = None     # meshmask will update after being read
 		self._map      = maptype
+		self._res      = res
+		self._mask     = None     # meshmask will update after being read
+		self._mproj    = None     # applyProjection will update after being generated
 
 		# Interface with the C functions
 		lib += '.dylib' if sys.platform == 'darwin' else '.so'
@@ -116,7 +120,7 @@ class OGSmesh(object):
 
 	def generateCoastsMask(self):
 		'''
-		Generate the continetnal shelf mask field where coastal areas 
+		Generate the continental shelf mask field where coastal areas 
 		are separated from the open sea (at depth 200m).
 
 		FIX AMAL: the intersection with the med mask and mask_at_level
@@ -129,7 +133,7 @@ class OGSmesh(object):
 		# This is all the places that have water at depth = 200 m
 		jk_m       = self._mask.getDepthIndex(200.)
 		mask200_2D = self._mask.mask[jk_m+1,:,:].copy() # FIX AMAL
-		mask200_3D = np.array([mask200_2D for i in xrange(dims[0])])
+		mask200_3D = np.array([mask200_2D for i in range(dims[0])])
 		
 		# Extract mask for mediterranean sea
 		# We want all the places that belong to the MED and that are water from 0 to 200 m
@@ -140,7 +144,33 @@ class OGSmesh(object):
 		coasts_mask[~mask200_3D & s.mask] = 1 # Coast
 		coasts_mask[ mask200_3D & s.mask] = 2 # Open sea
 
-		return coasts_mask	
+		return coasts_mask
+
+	def generateLandMask(self,coasts_mask):
+		'''
+		Generate the mask field that shows true when a point is in
+		a land area and false when it is on the water. This mask accounts
+		for the atlantic buffer, the gulf of Bizcaya and the black sea so
+		that the continents are easily recognizable.
+		'''
+		# Create a containing array
+		dims = self._mask.shape
+		land_mask = np.zeros(dims,dtype=c_uint8)
+
+		# Anything that is not water will be land
+		land_mask[coasts_mask == 0] = 1
+		# Loop the surface level and decide whether the point
+		# belongs to land or water.
+		for jj in range(dims[1]):
+			for ii in range(dims[2]):
+				# Abort the points that are in the water to capture the battimetry
+				if not land_mask[0,jj,ii]: continue
+				# Obtain the projected points
+				xpt,ypt = self._mproj(self._mask.xlevels[jj,ii],self._mask.ylevels[jj,ii])
+				# Update land mask
+				land_mask[:,jj,ii] = 1 if self._mproj.is_land(xpt,ypt) else 0
+
+		return land_mask
 
 	def applyProjection(self,dims,Lon,Lat,Lon0=0.,Lat0=0.):
 		'''
@@ -154,36 +184,34 @@ class OGSmesh(object):
 			> Lat:  latitude vector.
 		'''
 		# Define map projection
-		mproj = Basemap(projection = self._map, \
-						lat_0      = Lat0, \
-						lon_0      = Lon0, \
-                        llcrnrlon  = -5.3, \
-                        llcrnrlat  = 28.0, \
-                        urcrnrlon  = 37,   \
-                        urcrnrlat  = 46.0, \
-                        resolution = 'l'
-                       )
+		self._mproj = Basemap(projection = self._map, \
+						      lat_0      = Lat0, \
+						      lon_0      = Lon0, \
+                              llcrnrlon  = -8.9, \
+                              llcrnrlat  = 30.1, \
+                              urcrnrlon  = 37,   \
+                              urcrnrlat  = 46.0, \
+                              resolution = self._res
+                             )
 		# Initialize arrays
-		nLon = dims[2]
-		nLat = dims[1]
-		Lon2Meters = np.zeros((nLon,),np.double)
-		Lat2Meters = np.zeros((nLat,),np.double)
+		nLon = dims[2]; Lon2Meters = np.zeros((nLon,),dtype=np.double)
+		nLat = dims[1]; Lat2Meters = np.zeros((nLat,),dtype=np.double)
 		# Perform projection
-		for ii in xrange(0,nLon):
-			xpt,ypt        = mproj(Lon[60,ii],Lat[60,0]) # FIXED NEW
+		for ii in range(0,nLon):
+			xpt,_          = self._mproj(Lon[60,ii],Lat[60,0]) # FIXED NEW
 			Lon2Meters[ii] = xpt if not self._map == 'cyl' else 6371e3*np.deg2rad(xpt)
-		for jj in xrange(0,nLat):
-			xpt,ypt        = mproj(Lon[0,nLon/2],Lat[jj,nLon/2])
+		for jj in range(0,nLat):
+			_,ypt          = self._mproj(Lon[0,nLon/2],Lat[jj,nLon/2])
 			Lat2Meters[jj] = ypt if not self._map == 'cyl' else 6371e3*np.deg2rad(ypt)
 		# Return
 		return np.sort(Lon2Meters), np.sort(Lat2Meters)
 
-	def OGSwriteMesh(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask):
+	def OGSwriteMesh(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask,land_mask):
 		'''
 		Wrapper for the C function writeOGSMesh inside the OGSmesh.so library. 
 		'''
 		writeMesh    = self._OGSlib.OGSWriteMesh
-		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p]
+		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p,c_uint8_p]
 		OGS.restype  = c_int
 
 		# Compute sizes of vectors
@@ -192,10 +220,14 @@ class OGSmesh(object):
 		nLev = nav_lev.shape[0]
 
 		# Return class instance
-		return writeMesh(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),Lon2Meters.ctypes.data_as(c_double_p),\
-					  Lat2Meters.ctypes.data_as(c_double_p), nav_lev.ctypes.data_as(c_double_p),\
-					  basins_mask.ctypes.data_as(c_uint8_p),coast_mask.ctypes.data_as(c_uint8_p)
-					 )
+		return writeMesh(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),\
+						 Lon2Meters.ctypes.data_as(c_double_p),\
+					     Lat2Meters.ctypes.data_as(c_double_p),\
+					     nav_lev.ctypes.data_as(c_double_p),\
+					     basins_mask.ctypes.data_as(c_uint8_p),\
+					     coast_mask.ctypes.data_as(c_uint8_p),\
+					     land_mask.ctypes.data_as(c_uint8_p)
+					    )
 
 	def createOGSMesh(self,fname="mesh.ogsmsh",path="."):
 		'''
@@ -209,15 +241,17 @@ class OGSmesh(object):
 		# Read the mesh mask
 		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
 
-		# Obtain the coasts_mask and the basins_mask
-		basins_mask = self.generateBasinsMask().ravel()
-		coasts_mask = self.generateCoastsMask().ravel()
-
 		# Project latitude and longitude according to map specifics
 		Lon2Meters, Lat2Meters = self.applyProjection(dims,Lon,Lat)
 
+		# Obtain the coasts_mask and the basins_mask
+		basins_mask = self.generateBasinsMask()
+		coasts_mask = self.generateCoastsMask()
+		land_mask   = self.generateLandMask(coasts_mask)
+
 		# Save into file
-		self.OGSwriteMesh(fname,path,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coasts_mask);
+		self.OGSwriteMesh(fname,path,Lon2Meters,Lat2Meters,nav_lev,
+			basins_mask.ravel(),coasts_mask.ravel(),land_mask.ravel());
 
 '''
 	MAIN
@@ -230,13 +264,15 @@ if __name__ == '__main__':
 	argpar.add_argument('-i','--input',type=str,help='Full path to meshmask directory',required=True,dest='inpath')
 	argpar.add_argument('-o','--output',type=str,help='Name of the output mesh file',dest='outfile')
 	argpar.add_argument('-m','--map',type=str,help='Projection type (default: merc)',dest='map')
+	argpar.add_argument('-r','--res',type=str,help='Map resolution (default: l)',dest='res')
 
 	# parse input arguments
 	args=argpar.parse_args()
 	if not args.map: args.map = 'merc'
+	if not args.res: args.res = 'l'
 
 	# Define class instance
-	mesh = OGSmesh(args.inpath,maptype=args.map)
+	mesh = OGSmesh(args.inpath,maptype=args.map,res=args.res)
 
 	# Generate the mesh file
 	if not args.outfile:

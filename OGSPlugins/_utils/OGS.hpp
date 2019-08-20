@@ -180,7 +180,7 @@ namespace ogs
 			// Mesh size information
 			int _nlat, _nlon, _nlev, _ncells;
 			std::vector<double> _lon2m, _lat2m, _nav_lev;
-			field::Field<uint8_t> _masks[2];
+			field::Field<uint8_t> _masks[3];
 			field::Field<double> _e1, _e2, _e3;
 
 			std::string var_WritePath(int i, int j, const char *str, const char *token);

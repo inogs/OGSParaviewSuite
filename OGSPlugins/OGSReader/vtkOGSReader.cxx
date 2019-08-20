@@ -195,6 +195,7 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   	*/
   	this->MaskDataArraySelection->AddArray("Sub-basins");         // Mask containing the different sub-basins of the MED
   	this->MaskDataArraySelection->AddArray("Continental shelf");  // Mask of the continental shelf
+  	this->MaskDataArraySelection->AddArray("Land");               // Mask of the land
 
 	/* ADD MASK ARRAYS
 
@@ -224,6 +225,15 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		vtkmask->Delete();
 	} else {
 		this->Mesh->GetCellData()->RemoveArray("coast mask");
+	}
+
+	// Continental shelf mask ("coast mask")
+	if (this->GetMaskArrayStatus("Land")) {
+		vtkmask = VTK::createVTKfromField<vtkTypeUInt8Array,uint8_t>("land mask",this->ogsdata.mask(2));
+		this->Mesh->GetCellData()->AddArray(vtkmask);
+		vtkmask->Delete();
+	} else {
+		this->Mesh->GetCellData()->RemoveArray("land mask");
 	}
 
 	this->UpdateProgress(0.15);
