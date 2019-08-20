@@ -191,7 +191,8 @@ class OGSmesh(object):
                               llcrnrlat  = 30.1, \
                               urcrnrlon  = 37,   \
                               urcrnrlat  = 46.0, \
-                              resolution = self._res
+                              resolution = self._res, \
+                              area_thresh= 500. # Area threshold so that small water bodies are not painted
                              )
 		# Initialize arrays
 		nLon = dims[2]; Lon2Meters = np.zeros((nLon,),dtype=np.double)
