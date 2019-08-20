@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Program:   OGSSelectBasin
+  Program:   OGSSelectTools
   Module:    vtkOGSSelectBasin.cxx
 
   Copyright (c) 2018 Arnau Miro, OGS

@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Program:   OGSSelectPolygon
+  Program:   OGSSelectTools
   Module:    vtkOGSSelectPolygon.cxx
 
   Copyright (c) 2019 Arnau Miro, OGS

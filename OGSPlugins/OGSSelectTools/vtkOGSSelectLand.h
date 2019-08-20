@@ -2,7 +2,7 @@
 /*=========================================================================
 
   Program:   OGSSelectTools
-  Module:    vtkOGSSelectCoast.h
+  Module:    vtkOGSSelectLand.h
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -13,40 +13,28 @@
 
 =========================================================================*/
 
-#ifndef vtkOGSSelectCoast_h
-#define vtkOGSSelectCoast_h
+#ifndef vtkOGSSelectLand_h
+#define vtkOGSSelectLand_h
 
 #include "vtkDataSet.h"
 #include "vtkThreshold.h"
 
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-class vtkDataArraySelection;
-
 #ifdef PARAVIEW_USE_MPI
   class vtkMultiProcessController;
 #endif
 
-class VTK_EXPORT vtkOGSSelectCoast : public vtkThreshold {
+class VTK_EXPORT vtkOGSSelectLand : public vtkThreshold {
 public:
-  static vtkOGSSelectCoast* New();
-  vtkTypeMacro(vtkOGSSelectCoast, vtkThreshold);
+  static vtkOGSSelectLand* New();
+  vtkTypeMacro(vtkOGSSelectLand, vtkThreshold);
 
   void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Get the name of the mask field to operate
   vtkSetStringMacro(mask_field);
-
-  // Description:
-  // The following methods allow selective seleccion of the basins.
-  int GetNumberOfCoastsArrays();
-  const char * GetCoastsArrayName(int index);
-  int GetCoastsArrayIndex(const char* name);
-  int GetCoastsArrayStatus(const char *name);
-  void SetCoastsArrayStatus(const char* name, int status);
-  void DisableAllCoastsArrays();
-  void EnableAllCoastsArrays();
 
   #ifdef PARAVIEW_USE_MPI
     // Description:
@@ -58,20 +46,18 @@ public:
   #endif
 
 protected:
-  vtkOGSSelectCoast();
-  ~vtkOGSSelectCoast();
+  vtkOGSSelectLand();
+  ~vtkOGSSelectLand();
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
-
-  vtkDataArraySelection* CoastsDataArraySelection;
 
   #ifdef PARAVIEW_USE_MPI
     vtkMultiProcessController* Controller;
   #endif
 
 private:
-  vtkOGSSelectCoast(const vtkOGSSelectCoast&) = delete;
-  void operator=(const vtkOGSSelectCoast&) = delete;
+  vtkOGSSelectLand(const vtkOGSSelectLand&) = delete;
+  void operator=(const vtkOGSSelectLand&) = delete;
 
   int procId, nProcs;
   char *mask_field;

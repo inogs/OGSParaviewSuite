@@ -1,7 +1,7 @@
 // -*- c++ -*-
 /*=========================================================================
 
-  Program:   OGSSelectPolygon
+  Program:   OGSSelectTools
   Module:    vtkOGSSelectPolygon.h
 
   Copyright (c) 2019 Arnau Miro, OGS
