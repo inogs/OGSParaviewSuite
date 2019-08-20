@@ -154,6 +154,7 @@ namespace v3
 			inline void size(const int nn, const double *val);
 
 			inline int     len();
+			inline void   clear();
 			inline V3     *data();
 			inline float  *tofloat();
 			inline double *todouble();
@@ -225,7 +226,7 @@ namespace v3
 	inline V3v::V3v(const int nn, const double *val)       { alloc = false; n = 0; size(nn,val); }
 	inline V3v::V3v(const int nn, const V3 *val)           { alloc = false; n = 0; size(nn,val); }
 	inline V3v::V3v(const V3v &val)                        { alloc = false; n = 0; size(val.n,val.v); }
-	inline V3v::~V3v()                                     { if (alloc) delete[] v; }
+	inline V3v::~V3v()                                     { clear(); }
 
 	// Operators
 	inline V3   V3v::operator[](int i) const               { return (i>=0) ? v[i] : v[n+i]; }
@@ -249,6 +250,7 @@ namespace v3
 			v[i] = V3(val[3*i + 0],val[3*i + 1],val[3*i + 2]);
 	}
 	inline int     V3v::len()                              { return n; }
+	inline void    V3v::clear()                            { n = 0; if (alloc) { delete [] v; } alloc = false; }
 	inline V3     *V3v::data()                             { return v; }
 	inline bool    V3v::isempty()						   { return n == 0; }
 	inline float  *V3v::tofloat()                          {
