@@ -305,9 +305,13 @@ int vtkOGSSpaghetti::RequestData(vtkInformation *request,
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	// Check if the source is a vtkRectilinearGrid
+	if ( !source->IsA("vtkRectilinearGrid") ) { vtkErrorMacro("Input must be a vtkRectilinearGrid. Aborting..."); return 0; }
+
 	// Check input field
 	if (std::string(this->field) == std::string("coast mask"))  { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("basins mask")) { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("land mask"))   { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("e2"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("e3"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
@@ -343,7 +347,7 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 		// Recover metadata array
 		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 		// Recover projection Id
-		projId = std::stod( vtkmetadata->GetValue(6) );
+		projId = std::stod( vtkmetadata->GetValue(7) );
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
 		cellList = ComputeCellId(input,source);
 		// Recover the master file name from source
@@ -369,7 +373,7 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 	// Recover metadata array
 	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 	// Recover projection Id
-	projId = std::stod( vtkmetadata->GetValue(6) );
+	projId = std::stod( vtkmetadata->GetValue(7) );
 
 	// This is the normal non-parallel algorithm
 	cellList = ComputeCellId(input,source);
@@ -456,7 +460,7 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 		// Load the variable on a temporal field
 		arrayTemp.set_dim(ogsdata.ncells(),1);
 
-		if ( NetCDF::readNetCDF2F(ogsdata.var_path(this->field,ii).c_str(), 
+		if ( NetCDF::readNetCDF(ogsdata.var_path(this->field,ii).c_str(), 
 			ogsdata.var_vname(this->field), arrayTemp) != NETCDF_OK ) {
 			vtkErrorMacro("Cannot read variable <"<<this->field<<"> in NetCDF! Aborting!"); return 0;
 		}
@@ -558,7 +562,7 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		// stored under "xyz". Now we shall find the number of unique z coordinates or,
 		// depending on the user input, the coordinates of each depth level, as well as
 		// its mesh connectivity (cId2zId).
-		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi);
+		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi,false);
 	}
 
 	this->UpdateProgress(.1);
@@ -589,10 +593,10 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 	e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
 
 	// Load variable stat profile
-	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*zcoords.size()*nStat,1,0.);
+	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*this->zcoords.size()*nStat,1,0.);
 	std::string filename = std::string(this->FolderName) + std::string("/") + std::string(this->field) + std::string(".nc");
 
-	if ( NetCDF::readNetCDF2F(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
+	if ( NetCDF::readNetCDF(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
 		// If file cannot be read or variable does not exist
 		vtkErrorMacro("File <"<<filename.c_str()<<"> or variable <"<<this->field<<"> cannot be read!");
 		return 0;
@@ -624,8 +628,8 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 		// In which coast are we?
 		int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
 		// Compute the position
-		int p = ncoasts*zcoords.size()*nStat*bId  + 
-		        zcoords.size()*nStat*cId          + 
+		int p = ncoasts*this->zcoords.size()*nStat*bId  + 
+		        this->zcoords.size()*nStat*cId          + 
 		        nStat*zId                         +
 		        this->sId;
 		p = (bId > 0 || cId > 0) ? p : -1;
@@ -647,7 +651,7 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 			int p      = pos1[cc];
 			int cellId = cellIds[cc];
 			// Compute position
-			int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + p;
+			int pos = nbasins*ncoasts*this->zcoords.size()*nStat*ii + p;
 			// Retrieve value from array
 			column[0][0] += (p > 0) ? e3[cellId][0]*statArray[pos][0] : 0.;
 		}

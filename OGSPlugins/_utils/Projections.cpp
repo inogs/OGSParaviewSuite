@@ -25,8 +25,8 @@
 // Some user defined constants to work with the Python modules
 // of this program
 const double R_earth = 6371.e3; // Earth mean radius (m)
-const double lon0    = -5.3;
-const double lat0    = 28.;
+const double lon0    = -8.9;
+const double lat0    = 30.1;
 
 namespace PROJ
 {

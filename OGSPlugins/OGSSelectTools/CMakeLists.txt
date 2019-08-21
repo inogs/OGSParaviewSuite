@@ -32,6 +32,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSSelectTools "1.0"
   SERVER_MANAGER_XML OGSSelectTools.xml
-  SERVER_MANAGER_SOURCES vtkOGSSelectCoast.cxx vtkOGSSelectBasin.cxx
+  SERVER_MANAGER_SOURCES ../_utils/Projections.cpp ../_utils/vtkOperations.cpp vtkOGSSelectCoast.cxx vtkOGSSelectBasin.cxx vtkOGSSelectLand.cxx vtkOGSSelectPolygon.cxx
   REQUIRED_ON_SERVER
   )

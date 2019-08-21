@@ -1,7 +1,7 @@
 // -*- c++ -*-
 /*=========================================================================
 
-  Program:   OGSSelectBasin
+  Program:   OGSSelectTools
   Module:    vtkOGSSelectBasin.h
 
   Copyright (c) 2018 Arnau Miro, OGS

@@ -1,7 +1,7 @@
 // -*- c++ -*-
 /*=========================================================================
 
-  Program:   OGSSelectCoast
+  Program:   OGSSelectTools
   Module:    vtkOGSSelectCoast.h
 
   Copyright (c) 2018 Arnau Miro, OGS

@@ -272,9 +272,13 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+	// Check if the source is a vtkRectilinearGrid
+	if ( !source->IsA("vtkRectilinearGrid") ) { vtkErrorMacro("Input must be a vtkRectilinearGrid. Aborting..."); return 0; }
+
 	// Check input field
 	if (std::string(this->field) == std::string("coast mask"))  { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("basins mask")) { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+	if (std::string(this->field) == std::string("land mask"))   { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("e2"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 	if (std::string(this->field) == std::string("e3"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
@@ -310,7 +314,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		// Recover metadata array
 		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 		// Recover projection Id
-		projId = std::stod( vtkmetadata->GetValue(6) );
+		projId = std::stod( vtkmetadata->GetValue(7) );
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
 		ComputeCellIds(cellList,input,source);
 		// Recover the master file name from source
@@ -339,7 +343,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 	// Recover metadata array
 	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 	// Recover projection Id
-	projId = std::stod( vtkmetadata->GetValue(6) );
+	projId = std::stod( vtkmetadata->GetValue(7) );
 
 	// This is the normal non-parallel algorithm
 	ComputeCellIds(cellList,input,source);
@@ -426,7 +430,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		// Load the variable on a temporal field
 		arrayTemp.set_dim(ogsdata.ncells(),1);
 
-		if ( NetCDF::readNetCDF2F(ogsdata.var_path(this->field,ii).c_str(), 
+		if ( NetCDF::readNetCDF(ogsdata.var_path(this->field,ii).c_str(), 
 			ogsdata.var_vname(this->field), arrayTemp) != NETCDF_OK ) {
 			vtkErrorMacro("Cannot read variable <"<<this->field<<"> in NetCDF! Aborting!"); return 0;
 		}
@@ -540,7 +544,7 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 		// stored under "xyz". Now we shall find the number of unique z coordinates or,
 		// depending on the user input, the coordinates of each depth level, as well as
 		// its mesh connectivity (cId2zId).
-		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi);
+		this->cId2zId = field::countDepthLevels(this->xyz,this->zcoords,this->epsi,false);
 	}
 
 	this->UpdateProgress(.1);
@@ -558,10 +562,10 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 	cmask   = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
 
 	// Load variable stat profile
-	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*zcoords.size()*nStat,1,0.);
+	field::Field<FLDARRAY> statArray(ntsteps*nbasins*ncoasts*this->zcoords.size()*nStat,1,0.);
 	std::string filename = std::string(this->FolderName) + std::string("/") + std::string(this->field) + std::string(".nc");
 
-	if ( NetCDF::readNetCDF2F(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
+	if ( NetCDF::readNetCDF(filename.c_str(),this->field,statArray) != NETCDF_OK ) {
 		// If file cannot be read or variable does not exist
 		vtkErrorMacro("File <"<<filename.c_str()<<"> or variable <"<<this->field<<"> cannot be read!");
 		return 0;
@@ -608,10 +612,10 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 			// In which coast are we?
 			int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
 			// Compute position on statArray
-			int pos = nbasins*ncoasts*zcoords.size()*nStat*ii + 
-			          ncoasts*zcoords.size()*nStat*bId        + 
-			          zcoords.size()*nStat*cId                + 
-			          nStat*zId                               +
+			int pos = nbasins*ncoasts*this->zcoords.size()*nStat*ii + 
+			          ncoasts*this->zcoords.size()*nStat*bId        + 
+			          this->zcoords.size()*nStat*cId                + 
+			          nStat*zId                                     +
 			          this->sId;
 
 			// Retrieve value from array

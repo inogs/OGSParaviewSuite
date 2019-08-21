@@ -45,10 +45,9 @@
                             animateable="1"
                             default_values="Velocity"
                             number_of_elements="1">
-        <ArrayListDomain 
-          name="array_list"
-          attribute_type="Scalars"
-          input_domain_name="inputs_array">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars"
+                         input_domain_name="inputs_array">
           <RequiredProperties>
             <Property name="Input" function="Input" />
           </RequiredProperties>
@@ -124,7 +123,7 @@
                            panel_visibility="advanced">
          <ArrayListDomain name="array_list"
                           attribute_type="Scalars"
-          input_domain_name="inputs_array">
+                          input_domain_name="inputs_array">
           <RequiredProperties>
             <Property name="Input" function="Input" />
           </RequiredProperties>
@@ -141,13 +140,13 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="OWStatus"
-                            command="SetOWArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="OWInfo"
-                            label="Mediterranean Sea">
+                           command="SetOWArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="OWInfo"
+                           label="Mediterranean Sea">
         <ArraySelectionDomain name="array_list">
           <RequiredProperties>
             <Property name="OWInfo" function="ArrayList" />

@@ -11,9 +11,17 @@
 #		-n NAME, --name NAME    	Name of the simulation
 #		-p PATH, --path PATH    	Path to the simulation files
 #       -m MODE, --mode MODE        Mode of operation
+#       -r RES,  --res RES          Map resolution
 #		-c CONF, --config CONF      Configuration file for the simulation
 #		--gen-mesh              	Force generation of the mesh file
 #		--meshmask MESH             Name of the meshmask to use
+#
+# Resolutions (according to Basemap):
+#	> c: Crude
+#   > l: Low
+#   > i: Intermediate
+#   > h: High
+#   > f: Full
 #
 # Modes of operation:
 #	> 0: Generate the mesh and exit
@@ -35,7 +43,7 @@ class OGS2ParaView:
 	NetCDF (meshmask.nc) to the OGS master file (.ogs) and the OGS
 	mesh file (.ogsmsh) that also includes the masks.
 	'''
-	def __init__(self,name,path,mode=1,meshmask="meshmask.nc",config=os.path.join(os.path.dirname(sys.argv[0]),"default.ini")):
+	def __init__(self,name,path,mode=1,meshmask="meshmask.nc",res='l',config=os.path.join(os.path.dirname(sys.argv[0]),"default.ini")):
 		'''
 		Class constructor.
 		'''
@@ -43,6 +51,7 @@ class OGS2ParaView:
 		self._name      = name
 		self._path      = path
 		self._meshmask  = meshmask
+		self._res       = res
 		self.masterfile = os.path.join(path,"%s.ogs" % name)
 		self.meshfile   = os.path.join(path,"%s.ogsmsh" % name)
 		self.cfgfile    = config
@@ -99,7 +108,7 @@ class OGS2ParaView:
 		'''
 		Generate the binary .ogsmsh file.
 		'''
-		mesh = OGSmesh.OGSmesh(self._path,maskname=self._meshmask)
+		mesh = OGSmesh.OGSmesh(self._path,maskname=self._meshmask,res=self._res)
 		for proj in self.projections:
 			# Projection name and map
 			pname = proj[0].strip()
@@ -253,7 +262,8 @@ if __name__ == '__main__':
 	argpar = argparse.ArgumentParser(prog="OGS2ParaView",description="Generation of OGS master file.")
 	argpar.add_argument('-n','--name',type=str,help='Name of the simulation',required=True,dest='name')
 	argpar.add_argument('-p','--path',type=str,help='Path to the simulation files',required=True,dest='path')
-	argpar.add_argument('-m','--mode',type=int,help='Mode of operation',dest='mode')
+	argpar.add_argument('-m','--mode',type=int,help='Mode of operation (0,1,2,3,4)',dest='mode')
+	argpar.add_argument('-r','--res',type=str,help='Map resolution (c,l,i,h,f)',dest='res')
 	argpar.add_argument('-c','--config',type=str,help='Configuration file for the simulation',dest='conf')
 	argpar.add_argument('--gen-mesh',action='store_true',help='Force generation of the mesh file',dest='gen_mesh')
 	argpar.add_argument('--meshmask',type=str,help='Name of the meshmask to use',dest='mesh')
@@ -261,10 +271,11 @@ if __name__ == '__main__':
 	# parse input arguments
 	args=argpar.parse_args()
 	if args.mode == None: args.mode = 1
+	if not args.res:  args.res  = 'l'
 	if not args.mesh: args.mesh = "meshmask.nc"
 	if not args.conf: args.conf = os.path.join(os.path.dirname(sys.argv[0]),"default.ini")
 
 	# Create an instance of the class
-	OGS2P = OGS2ParaView(name=args.name,path=args.path,mode=args.mode,meshmask=args.mesh,config=args.conf)
+	OGS2P = OGS2ParaView(name=args.name,path=args.path,mode=args.mode,meshmask=args.mesh,res=args.res,config=args.conf)
 	OGS2P.writeOGSFile()
 	OGS2P.genMesh(force_mesh=args.gen_mesh)

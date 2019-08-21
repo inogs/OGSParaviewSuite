@@ -45,7 +45,8 @@ public:
   // Description:
   // Lets the user select a multiplier factor for the depth
   vtkGetMacro(DepthScale, double);
-  vtkSetMacro(DepthScale, double);
+  void SetDepthScale(double);
+//  vtkSetMacro(DepthScale, double);
 
   // Description:
   // Lets the user select a projection type

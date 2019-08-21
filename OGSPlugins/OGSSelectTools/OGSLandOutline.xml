@@ -1,0 +1,144 @@
+<CustomFilterDefinitions>
+  <CustomProxyDefinition name="OGS Land Outline" group="filters">
+    <CompoundSourceProxy id="8233" servers="1">
+      <Proxy group="filters" type="FeatureEdges" id="7986" servers="1" compound_name="FeatureEdges1">
+        <Property name="BoundaryEdges" id="7986.BoundaryEdges" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="7986.BoundaryEdges.bool"/>
+        </Property>
+        <Property name="Coloring" id="7986.Coloring" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bool" id="7986.Coloring.bool"/>
+        </Property>
+        <Property name="FeatureAngle" id="7986.FeatureAngle" number_of_elements="1">
+          <Element index="0" value="30"/>
+          <Domain name="range" id="7986.FeatureAngle.range"/>
+        </Property>
+        <Property name="FeatureEdges" id="7986.FeatureEdges" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="7986.FeatureEdges.bool"/>
+        </Property>
+        <Property name="Input" id="7986.Input" number_of_elements="1">
+          <Proxy value="7736" output_port="0"/>
+          <Domain name="groups" id="7986.Input.groups"/>
+          <Domain name="input_type" id="7986.Input.input_type"/>
+        </Property>
+        <Property name="ManifoldEdges" id="7986.ManifoldEdges" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bool" id="7986.ManifoldEdges.bool"/>
+        </Property>
+        <Property name="NonManifoldEdges" id="7986.NonManifoldEdges" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="7986.NonManifoldEdges.bool"/>
+        </Property>
+      </Proxy>
+      <Proxy group="filters" type="OGSSelectLand" id="7469" servers="1" compound_name="OGSSelectLand1">
+        <Property name="AllScalars" id="7469.AllScalars" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="7469.AllScalars.bool"/>
+        </Property>
+        <Property name="Input" id="7469.Input" number_of_elements="1">
+          <Domain name="groups" id="7469.Input.groups"/>
+          <Domain name="input_array" id="7469.Input.input_array"/>
+          <Domain name="input_type" id="7469.Input.input_type"/>
+        </Property>
+        <Property name="SelectInputScalars" id="7469.SelectInputScalars" number_of_elements="5">
+          <Element index="0" value=""/>
+          <Element index="1" value=""/>
+          <Element index="2" value=""/>
+          <Element index="3" value="1"/>
+          <Element index="4" value="N3n"/>
+          <Domain name="array_list" id="7469.SelectInputScalars.array_list">
+            <String text="N3n"/>
+            <String text="coast mask"/>
+            <String text="land mask"/>
+            <String text="votemper"/>
+          </Domain>
+          <Domain name="field_list" id="7469.SelectInputScalars.field_list">
+            <Entry value="1" text="Cell Data"/>
+          </Domain>
+        </Property>
+        <Property name="ThresholdBetween" id="7469.ThresholdBetween" number_of_elements="2">
+          <Element index="0" value="0.5"/>
+          <Element index="1" value="1"/>
+        </Property>
+        <Property name="UseContinuousCellRange" id="7469.UseContinuousCellRange" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bool" id="7469.UseContinuousCellRange.bool"/>
+        </Property>
+        <Property name="mask_field" id="7469.mask_field" number_of_elements="1">
+          <Element index="0" value="land mask"/>
+          <Domain name="array_list" id="7469.mask_field.array_list">
+            <String text="N3n"/>
+            <String text="basins mask"/>
+            <String text="coast mask"/>
+            <String text="e1"/>
+            <String text="e2"/>
+            <String text="e3"/>
+            <String text="land mask"/>
+            <String text="votemper"/>
+            <String text="Metadata"/>
+          </Domain>
+        </Property>
+      </Proxy>
+      <Proxy group="filters" type="Cut" id="7736" servers="1" compound_name="Slice1">
+        <Property name="ContourValues" id="7736.ContourValues" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bounds" id="7736.ContourValues.bounds"/>
+        </Property>
+        <Property name="CutFunction" id="7736.CutFunction" number_of_elements="1">
+          <Proxy value="7732"/>
+          <Domain name="groups" id="7736.CutFunction.groups"/>
+          <Domain name="proxy_list" id="7736.CutFunction.proxy_list">
+            <Proxy value="7732"/>
+            <Proxy value="7733"/>
+            <Proxy value="7734"/>
+            <Proxy value="7735"/>
+          </Domain>
+        </Property>
+        <Property name="Input" id="7736.Input" number_of_elements="1">
+          <Proxy value="7469" output_port="0"/>
+          <Domain name="groups" id="7736.Input.groups"/>
+          <Domain name="input_type" id="7736.Input.input_type"/>
+        </Property>
+        <Property name="InputBounds" id="7736.InputBounds">
+          <Domain name="bounds" id="7736.InputBounds.bounds"/>
+        </Property>
+        <Property name="PreserveInputCells" id="7736.PreserveInputCells" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bool" id="7736.PreserveInputCells.bool"/>
+        </Property>
+        <Property name="Triangulate the slice" id="7736.Triangulate the slice" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="7736.Triangulate the slice.bool"/>
+        </Property>
+      </Proxy>
+      <Proxy group="implicit_functions" type="Plane" id="7732" servers="1" compound_name="auto_7732">
+        <Property name="Normal" id="7732.Normal" number_of_elements="3">
+          <Element index="0" value="0"/>
+          <Element index="1" value="0"/>
+          <Element index="2" value="1"/>
+          <Domain name="range" id="7732.Normal.range"/>
+        </Property>
+        <Property name="Offset" id="7732.Offset" number_of_elements="1">
+          <Element index="0" value="0"/>
+        </Property>
+        <Property name="Origin" id="7732.Origin" number_of_elements="3">
+          <Element index="0" value="2516247.4658203125"/>
+          <Element index="1" value="1136327.7763671875"/>
+          <Element index="2" value="0"/>
+          <Domain name="range" id="7732.Origin.range"/>
+        </Property>
+      </Proxy>
+      <ExposedProperties>
+        <Property name="FeatureAngle" proxy_name="FeatureEdges1" exposed_name="Feature Angle"/>
+        <Property name="Input" proxy_name="OGSSelectLand1" exposed_name="Input"/>
+        <Property name="mask_field" proxy_name="OGSSelectLand1" exposed_name="Land mask: "/>
+      </ExposedProperties>
+      <OutputPort name="Output" proxy="FeatureEdges1" port_index="0"/>
+      <Hints>
+        <ShowInMenu category="OGS" />
+      </Hints>
+    </CompoundSourceProxy>
+  </CustomProxyDefinition>
+</CustomFilterDefinitions>

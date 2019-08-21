@@ -6,9 +6,9 @@
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
 
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
+	 This software is distributed WITHOUT ANY WARRANTY; without even
+	 the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+	 PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 
@@ -140,7 +140,7 @@ int vtkOGSDerivatives::RequestData( vtkInformation *vtkNotUsed(request),
 	if (vtke3) e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
 
 	// Cell centers, update only when request info
-	if (this->isReqInfo) {
+	if (this->isReqInfo || this->xyz.isempty()) {
 		this->isReqInfo = false;
 		
 		// Recover Metadata array (depth factor)
@@ -261,6 +261,6 @@ int vtkOGSDerivatives::RequestInformation(vtkInformation* vtkNotUsed(request),
 	if (this->procId > 0) return 1;
 	#endif
 
-  	this->isReqInfo = true;
-  	return 1;
+	this->isReqInfo = true;
+	return 1;
 }

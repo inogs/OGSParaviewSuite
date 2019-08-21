@@ -225,6 +225,18 @@ void vtkOGSDepthLineSource::GetLonLat(double &lon, double &lat) {
 }
 
 // ----------------------------------------------------------------------
+void vtkOGSDepthLineSource::SetDepthScale(double d) {
+	// Recover depth range
+	double d1,d2;
+	this->GetDepthRange(d1,d2);
+	// Set new depth scale
+	this->DepthScale = d;
+	// Set new depth range
+	this->SetDepthRange(d1,d2);
+	this->Modified();
+}
+
+// ----------------------------------------------------------------------
 void vtkOGSDepthLineSource::SetDepthRange(double d1, double d2) {
 	this->Point1[2] = d1*this->DepthScale;
 	this->Point2[2] = -d2*this->DepthScale;

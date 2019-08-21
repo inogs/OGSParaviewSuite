@@ -1,0 +1,446 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="writers">
+    <!-- Writer NPY -->
+    <WriterProxy name="OGSNPZWriter"
+                 class="vtkOGSNPZWriter"
+                 label="OGS NPZ Writer">
+      <Documentation short_help="Write mesh data to a NPZ file.">
+        Writes mesh data as a NPZ data file. Each variable is stored as an array on the file.
+      </Documentation>
+
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the input to the OGS NPZ Writer.</Documentation>
+      </InputProperty>
+
+      <!-- File Name -->
+      <StringVectorProperty name="FileName"
+                            animateable="0"
+                            command="SetFileName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="npz" file_description="Numpy npz file" />
+        </Hints>
+        <Documentation>
+          This property specifies the file name for the OGS NPZ Writer.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Selection of depth scale factor -->
+      <DoubleVectorProperty name="DepthScale"
+                            label="Scale factor for depth:"
+                            command="Setdfact"
+                            number_of_elements="1"
+                            default_values="1000."
+                            panel_visibility="advanced">
+        <Documentation>
+          Factor in which the depth is multiplied.
+        </Documentation>                            
+      </DoubleVectorProperty>
+
+      <!-- Selection of single variable -->
+      <IntVectorProperty name="SingleVariable"
+                         label="Process Single Variable?"
+                         command="Setsinglevar"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single variable or all the variables.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Selection of Variables -->
+      <StringVectorProperty name="varname"
+                            label="Variable: "
+                            command="Setvarname"
+                            animateable="1"
+                            default_values=""
+                            number_of_elements="1">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars"
+                         input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="SingleVariable" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          Name of the variable to store.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Appending variables to an existing file -->
+      <IntVectorProperty name="Append"
+                         label="Append?"
+                         command="Setappend"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Wether to append the variables to the file or write it new.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Time Series -->
+      <IntVectorProperty name="TimeSeries"
+                         label="Process Multiple Timesteps?"
+                         command="Settimeseries"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single time frame or all the time steps.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                            command="SetStartEnd"
+                            default_values="0 0"
+                            name="StartEnd"
+                            label="Frames: "
+                            number_of_elements="2">
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="TimeSeries" function="boolean" />
+          </PropertyWidgetDecorator>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="Start frame: "/>
+            <ComponentLabel component="1" label="End frame: "/>
+          </ShowComponentLabels>
+        </Hints>
+        <Documentation>
+          Start and end time frame.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <WriterFactory extensions="npz" file_description="Numpy npz file" />
+      </Hints>
+    </WriterProxy>
+    <!-- END Writer NPY -->
+    <!-- Writer NPY Table-->
+    <WriterProxy name="OGSNPZTableWriter"
+                 class="vtkOGSNPZTableWriter"
+                 label="OGS NPZ Table Writer">
+      <Documentation short_help="Write table data to a NPZ file.">
+        Writes table data as a NPZ data file. Each column is stored as an array on the file.
+      </Documentation>
+
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkTable" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the input to the OGS NPZ Writer.</Documentation>
+      </InputProperty>
+
+      <!-- File Name -->
+      <StringVectorProperty name="FileName"
+                            animateable="0"
+                            command="SetFileName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="npz" file_description="Numpy npz file" />
+        </Hints>
+        <Documentation>
+          This property specifies the file name for the OGS NPZ Writer.
+        </Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <WriterFactory extensions="npz" file_description="Numpy npz file" />
+      </Hints>
+    </WriterProxy>
+    <!-- END Writer NPY Table -->
+    <!-- Writer FIELD -->
+    <WriterProxy name="OGSFieldWriter"
+                 class="vtkOGSFieldWriter"
+                 label="OGS Field Writer">
+      <Documentation short_help="Write mesh data to a binary file.">
+        Writes mesh data and one variable data as a binary file. The stride can either be as in Fortran or C/C++. 
+      </Documentation>
+
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the input to the OGS NPZ Writer.</Documentation>
+      </InputProperty>
+
+      <!-- File Name -->
+      <StringVectorProperty name="FileName"
+                            animateable="0"
+                            command="SetFileName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="field" file_description="Binary Field file" />
+        </Hints>
+        <Documentation>
+          This property specifies the file name for the OGS NPZ Writer.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Selection of depth scale factor -->
+      <DoubleVectorProperty name="DepthScale"
+                            label="Scale factor for depth:"
+                            command="Setdfact"
+                            number_of_elements="1"
+                            default_values="1000."
+                            panel_visibility="advanced">
+        <Documentation>
+          Factor in which the depth is multiplied.
+        </Documentation>                            
+      </DoubleVectorProperty>
+
+      <!-- Selection of Variables -->
+      <StringVectorProperty name="varname"
+                            label="Variable: "
+                            command="Setvarname"
+                            animateable="1"
+                            default_values=""
+                            number_of_elements="1">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars"
+                         input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the variable to store.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Time Series -->
+      <IntVectorProperty name="TimeSeries"
+                         label="Process Multiple Timesteps?"
+                         command="Settimeseries"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single time frame or all the time steps.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                            command="SetStartEnd"
+                            default_values="0 0"
+                            name="StartEnd"
+                            label="Frames: "
+                            number_of_elements="2">
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="TimeSeries" function="boolean" />
+          </PropertyWidgetDecorator>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="Start frame: "/>
+            <ComponentLabel component="1" label="End frame: "/>
+          </ShowComponentLabels>
+        </Hints>
+        <Documentation>
+          Start and end time frame.
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- Appending variables to an existing file -->
+      <IntVectorProperty name="Stride"
+                         label="Fortran Stride"
+                         command="Setfstride"
+                         default_values="1"
+                         number_of_elements="1">
+       <Documentation>
+        Use Fortran stride when writing the binary file.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <WriterFactory extensions="field" file_description="Binary Field file" />
+      </Hints>
+    </WriterProxy>
+    <!-- END Writer FIELD -->
+    <!-- Writer NetCDF -->
+    <WriterProxy name="OGSNetCDFWriter"
+                 class="vtkOGSNetCDFWriter"
+                 label="OGS NetCDF Writer">
+      <Documentation short_help="Write mesh data to a NetCDF file.">
+        Writes mesh data as a NetCDF data file. Each variable is stored as a 1D array on the file.
+      </Documentation>
+
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" />
+        <Documentation>This property specifies the input to the OGS NetCDF Writer.</Documentation>
+      </InputProperty>
+
+      <!-- File Name -->
+      <StringVectorProperty name="FileName"
+                            animateable="0"
+                            command="SetFileName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="nc" file_description="NetCDF" />
+        </Hints>
+        <Documentation>
+          This property specifies the file name for the OGS NetCDF Writer.
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="OGSFile"
+                            label="OGS master file: "
+                            animateable="0"
+                            command="SetOGSFile"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files"/>
+        <Hints>
+            <FileChooser extensions="ogs" file_description="OGS file" />
+        </Hints>
+        <Documentation>
+          This property specifies the file name for the OGS NetCDF Writer.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Selection of depth scale factor -->
+      <DoubleVectorProperty name="DepthScale"
+                            label="Scale factor for depth:"
+                            command="Setdfact"
+                            number_of_elements="1"
+                            default_values="1000."
+                            panel_visibility="advanced">
+        <Documentation>
+          Factor in which the depth is multiplied.
+        </Documentation>                            
+      </DoubleVectorProperty>
+
+      <!-- Selection of single variable -->
+      <IntVectorProperty name="SingleVariable"
+                         label="Process Single Variable"
+                         command="Setsinglevar"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single variable or all the variables.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Selection of Variables -->
+      <StringVectorProperty name="varname"
+                            label="Variable: "
+                            command="Setvarname"
+                            animateable="1"
+                            default_values=""
+                            number_of_elements="1">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars"
+                         input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="SingleVariable" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          Name of the variable to store.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Selection of single variable -->
+      <IntVectorProperty name="SaveAll"
+                         label="Save Mesh and Mask Variables"
+                         command="SetSaveAll"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to save the mesh dependent variables and masks.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Time Series -->
+      <IntVectorProperty name="TimeSeries"
+                         label="Process Multiple Timesteps?"
+                         command="Settimeseries"
+                         default_values="0"
+                         number_of_elements="1">
+       <Documentation>
+        Whether to process a single time frame or all the time steps.
+      </Documentation>
+      <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty animateable="1"
+                            command="SetStartEnd"
+                            default_values="0 0"
+                            name="StartEnd"
+                            label="Frames: "
+                            number_of_elements="2">
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="TimeSeries" function="boolean" />
+          </PropertyWidgetDecorator>
+          <ShowComponentLabels>
+            <ComponentLabel component="0" label="Start frame: "/>
+            <ComponentLabel component="1" label="End frame: "/>
+          </ShowComponentLabels>
+        </Hints>
+        <Documentation>
+          Start and end time frame.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <WriterFactory extensions="nc" file_description="NetCDF" />
+      </Hints>
+    </WriterProxy>
+    <!-- END Writer NetCDF -->
+  </ProxyGroup>
+</ServerManagerConfiguration>

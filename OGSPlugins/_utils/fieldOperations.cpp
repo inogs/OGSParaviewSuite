@@ -30,7 +30,7 @@ namespace field
 		desired uniquevals.
 
 	*/
-	field::Field<int> countDepthLevels(v3::V3v &xyz, std::vector<double> &uniquevals, double epsi) {
+	field::Field<int> countDepthLevels(v3::V3v &xyz, std::vector<double> &uniquevals, double epsi, bool addlayer) {
 
 		field::Field<int> cId2zId(xyz.len(),1);
 
@@ -60,7 +60,7 @@ namespace field
 			}
 		} else {
 			// Add one extra depth level in uniquevals corresponding to the bottom
-			uniquevals.push_back( 2.*xyz[-1][2] );
+			if (addlayer) uniquevals.push_back( 2.*xyz[-1][2] );
 			// The user has inputed a range of depth levels, we shall search within
 			// these range and set the connectivity matrix appropriately.
 			for (itId = cId2zId.begin(), itxyz = xyz.begin(); itxyz != xyz.end(); 

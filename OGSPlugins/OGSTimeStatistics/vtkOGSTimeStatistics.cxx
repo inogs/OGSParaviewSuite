@@ -168,7 +168,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 	// Define a vector containing the names of the arrays to compute and to exclude
 	std::string FileName;
 	std::vector<std::string> arrNames, arrNamesNotComputed{"e1","e2","e3",
-		"basins mask","coast mask","Okubo-Weiss mask","Q-criterion mask"};
+		"basins mask","coast mask","land mask","Okubo-Weiss mask","Q-criterion mask"};
 
 	VTKARRAY *vtkArray;
 	std::vector<field::Field<FLDARRAY>> arrFields;
@@ -312,8 +312,12 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 				// Load the variable on a temporal field
 				arrayTemp.set_dim(arrFields[varId].get_n(),arrFields[varId].get_m());
 
-				if ( NetCDF::readNetCDF2F3(ogsdata.var_path(arrNames[varId],ii).c_str(),
-											"vozocrtx","vomecrty","vovecrtz", arrayTemp ) != NETCDF_OK )	{					    								  
+				std::vector<std::string> vel_vars(3);
+				vel_vars[0] = std::string("vozocrtx");
+				vel_vars[1] = std::string("vomecrty");
+				vel_vars[2] = std::string("vovecrtz");
+
+				if ( NetCDF::readNetCDF(ogsdata.var_path(arrNames[varId],ii).c_str(), vel_vars.data(), arrayTemp) != NETCDF_OK ) {					    								  
 					vtkErrorMacro("Cannot read variable <"<<arrNames[varId]<<"> in NetCDF! Aborting!"); return 0;
 				}
 				// Projecting the velocity field to the UVW grid is done a the end
@@ -321,7 +325,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 				// Load the variable on a temporal field
 				arrayTemp.set_dim(arrFields[varId].get_n(),arrFields[varId].get_m());
 
-				if ( NetCDF::readNetCDF2F(ogsdata.var_path(arrNames[varId],ii).c_str(), 
+				if ( NetCDF::readNetCDF(ogsdata.var_path(arrNames[varId],ii).c_str(), 
 					ogsdata.var_vname(arrNames[varId]), arrayTemp) != NETCDF_OK ) {
 					vtkErrorMacro("Cannot read variable <"<<arrNames[varId]<<"> in NetCDF! Aborting!"); return 0;
 				}

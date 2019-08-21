@@ -97,7 +97,7 @@ def installOGSMesh(pvpath,plugin_dir):
 	os.system(\
 		"""
 cd %s
-g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC OGS.cpp netcdfio.cpp
+g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC OGS.cpp netcdfio.cpp Projections.cpp
 cd -
 		""" % plugin_dir)
 	# Create a folder in the installation directory
