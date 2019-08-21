@@ -124,9 +124,10 @@ namespace field
 			ind  = PNTIND(ii+1,jj,kk,nx,ny); ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 		}
 		// Compute the derivatives with respect to x
-		for (int gg = 0; gg < f.get_m(); ++gg) {
+		#pragma loop_count min(3), max(9), avg(3) // for vectorization
+		for (int gg = 0; gg < f.get_m(); ++gg)
 			deri[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/(xyz[ind][0] - xyz[ind1][0]); // dqdx
-		}
+
 
 		/* DERIVATIVES WITH RESPECT TO Y */
 		if (jj == 0) {
@@ -139,7 +140,8 @@ namespace field
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 		}
-		// Compute the derivatives with respect to x
+		// Compute the derivatives with respect to y
+		#pragma loop_count min(3), max(9), avg(3) // for vectorization
 		for (int gg = 0; gg < f.get_m(); ++gg)
 			deri[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/(xyz[ind][1] - xyz[ind1][1]); // dqdy
 
@@ -154,7 +156,8 @@ namespace field
 			ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind  = PNTIND(ii,jj,kk+1,nx,ny); ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 		}
-		// Compute the derivatives with respect to x
+		// Compute the derivatives with respect to z
+		#pragma loop_count min(3), max(9), avg(3) // for vectorization
 		for (int gg = 0; gg < f.get_m(); ++gg)
 			deri[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/-(xyz[ind][2] - xyz[ind1][2]); // dqdz
 	}
@@ -162,7 +165,8 @@ namespace field
 	Field<T> gradXYZ2(int nx, int ny, int nz, v3::V3v &xyz, 
 		Field<T> &f, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
-		Field<T> grad(f.get_n(),3*f.get_m());
+		Field<T> grad(f.get_n(),3*f.get_m(),0.);
+		bool isvector = f.get_m() == 3;
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -173,17 +177,17 @@ namespace field
 					// Compute the gradient
 					gradXYZ2_ijk(ii,jj,kk,nx,ny,nz,xyz,f,grad[ind]);
 					// Computation of the divergence
-					if (!div.isempty()) {
+					if (isvector && !div.isempty()) {
 						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
-					if (!curl.isempty()) {
+					if (isvector && !curl.isempty()) {
 						curl[ind][0] = grad[ind][7] - grad[ind][5];
 						curl[ind][1] = grad[ind][2] - grad[ind][6];
 						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
-					if (!Q.isempty()) {
+					if (isvector && !Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
 									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
@@ -211,6 +215,7 @@ namespace field
 			ind1 = PNTIND(ii+1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[0 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./(xyz[ind1][0] - xyz[ind2][0]);
 		} else if (ii >= nx-2) {
@@ -218,6 +223,7 @@ namespace field
 			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[0 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./(xyz[ind][0] - xyz[ind1][0]);
 		} else {
@@ -226,6 +232,7 @@ namespace field
 			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind2][gg] + f[ind3][gg])/6./(xyz[ind1][0] - xyz[ind2][0]);
 		}
@@ -236,6 +243,7 @@ namespace field
 			ind1 = PNTIND(ii,jj+1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[1 + 3*gg] = (-f[ind][gg] + 4.*f[ind1][gg] - 3.*f[ind2][gg])/2./(xyz[ind1][1] - xyz[ind2][1]);
 		} else if (jj >= ny-2) {
@@ -243,6 +251,7 @@ namespace field
 			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[1 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./(xyz[ind][1] - xyz[ind1][1]);
 		} else {
@@ -261,6 +270,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk+1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[2 + 3*gg] = (-f[ind][gg] + 4.*f[ind1][gg] - 3.*f[ind2][gg])/-2./(xyz[ind1][2] - xyz[ind2][2]);
 		} else if (kk >= nz-2) {
@@ -268,6 +278,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[2 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/-2./(xyz[ind][2] - xyz[ind1][2]);
 		} else {
@@ -276,6 +287,7 @@ namespace field
 			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg)
 				deri[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind2][gg] + f[ind3][gg])/-6./(xyz[ind1][2] - xyz[ind2][2]);			
 		}
@@ -284,7 +296,8 @@ namespace field
 	Field<T> gradXYZ4(int nx, int ny, int nz, v3::V3v &xyz, 
 		Field<T> &f, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
-		Field<T> grad(f.get_n(),3*f.get_m());
+		Field<T> grad(f.get_n(),3*f.get_m(),0.);
+		bool isvector = f.get_m() == 3;
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -295,17 +308,17 @@ namespace field
 					// Compute the gradient
 					gradXYZ4_ijk(ii,jj,kk,nx,ny,nz,xyz,f,grad[ind]);
 					// Computation of the divergence
-					if (!div.isempty()) {
+					if (isvector && !div.isempty()) {
 						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
-					if (!curl.isempty()) {
+					if (isvector && !curl.isempty()) {
 						curl[ind][0] = grad[ind][7] - grad[ind][5];
 						curl[ind][1] = grad[ind][2] - grad[ind][6];
 						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
-					if (!Q.isempty()) {
+					if (isvector && !Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
 									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
@@ -339,6 +352,7 @@ namespace field
 			ind  = PNTIND(ii+1,jj,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = 0.; // dqdx
 				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e1[ind1][1]; // dqdx
@@ -348,6 +362,7 @@ namespace field
 			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind1][1]; // dqdx
 				deri2[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind][1];  // dqdx
@@ -357,6 +372,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e1[ind2][1]; // dqdx
 				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e1[ind1][1]; // dqdx
@@ -368,6 +384,7 @@ namespace field
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = 0.; // dqdx
 				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e2[ind1][2]; // dqdx
@@ -377,6 +394,7 @@ namespace field
 			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e2[ind1][2]; // dqdx
 				deri2[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e2[ind][2];  // dqdx
@@ -386,6 +404,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e2[ind2][2]; // dqdx
 				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e2[ind1][2]; // dqdx
@@ -397,6 +416,7 @@ namespace field
 			ind  = PNTIND(ii,jj,kk+1,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = 0.; // dqdx
 				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e3[ind1][3]; // dqdx
@@ -406,6 +426,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e3[ind1][3]; // dqdx
 				deri2[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e3[ind][3];  // dqdx
@@ -415,6 +436,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e3[ind2][3]; // dqdx
 				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e3[ind1][3]; // dqdx
@@ -422,7 +444,8 @@ namespace field
 		}
 
 		/* PROJECT FROM UVW TO T */
-		for (int gg = 0; gg < 3; ++gg) {
+		#pragma loop_count min(3), max(9), avg(3) // for vectorization
+		for (int gg = 0; gg < f.get_m(); ++gg) {
 			T d1_UVW[3] = {deri1[0 + 3*gg],deri1[1 + 3*gg],deri1[2 + 3*gg]};
 			T d2_UVW[3] = {deri2[0 + 3*gg],deri2[1 + 3*gg],deri2[2 + 3*gg]};
 			UVW2T_ijk(ii,jj,kk,nx,ny,d1_UVW,d2_UVW,e1,e2,e3,deri + 3*gg);
@@ -433,6 +456,7 @@ namespace field
 		Field<T> &e1, Field<T> &e2, Field<T> &e3, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
 		Field<T> grad(f.get_n(),3*f.get_m(),0.);
+		bool isvector = f.get_m() == 3;
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -443,17 +467,17 @@ namespace field
 					// Compute the gradient on UVW
 					gradOGS1_ijk(ii,jj,kk,nx,ny,nz,f,e1,e2,e3,grad[ind]);
 					// Computation of the divergence
-					if (!div.isempty()) {
+					if (isvector && !div.isempty()) {
 						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
-					if (!curl.isempty()) {
+					if (isvector &&  !curl.isempty()) {
 						curl[ind][0] = grad[ind][7] - grad[ind][5];
 						curl[ind][1] = grad[ind][2] - grad[ind][6];
 						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
-					if (!Q.isempty()) {
+					if (isvector && !Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
 									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
@@ -488,6 +512,7 @@ namespace field
 			ind  = PNTIND(ii+1,jj,kk,nx,ny);
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = 0.;
 				deri2[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind1][1]; // dqdx
@@ -497,6 +522,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e1[ind2][1];    // dqdx
 				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e1[ind1][1]; // dqdx
@@ -506,6 +532,7 @@ namespace field
 			ind1 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (f[ind][gg] - f[ind2][gg])/2./e1[ind1][1]; // dqdx
 				deri2[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e1[ind][1];     // dqdx
@@ -516,6 +543,7 @@ namespace field
 			ind2 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (f[ind1][gg] - f[ind3][gg])/2./e1[ind2][1]; // dqdx
 				deri2[0 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e1[ind1][1]; // dqdx
@@ -527,6 +555,7 @@ namespace field
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = 0.;
 				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e2[ind1][2]; // dqdx
@@ -536,6 +565,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e2[ind2][2];    // dqdx
 				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e2[ind1][2]; // dqdx
@@ -545,6 +575,7 @@ namespace field
 			ind1 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (f[ind][gg] - f[ind2][gg])/2./e2[ind1][2]; // dqdx
 				deri2[1 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e2[ind][2];     // dqdx
@@ -555,6 +586,7 @@ namespace field
 			ind2 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind3 = PNTIND(ii,jj-2,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (f[ind1][gg] - f[ind3][gg])/2./e2[ind2][2]; // dqdx
 				deri2[1 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e2[ind1][2]; // dqdx
@@ -566,6 +598,7 @@ namespace field
 			ind  = PNTIND(ii,jj,kk+1,nx,ny); 
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = 0.;
 				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind1][gg])/e3[ind1][3]; // dqdx
@@ -575,6 +608,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (f[ind1][gg] - f[ind2][gg])/e3[ind2][3];    // dqdx
 				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e3[ind1][3]; // dqdx
@@ -584,6 +618,7 @@ namespace field
 			ind1 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (f[ind][gg] - f[ind2][gg])/2./e3[ind1][3]; // dqdx
 				deri2[2 + 3*gg] = (f[ind][gg] - f[ind1][gg])/e3[ind][3];     // dqdx
@@ -594,6 +629,7 @@ namespace field
 			ind2 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (f[ind1][gg] - f[ind3][gg])/2./e3[ind2][3]; // dqdx
 				deri2[2 + 3*gg] = (f[ind][gg]  - f[ind2][gg])/2./e3[ind1][3]; // dqdx
@@ -601,7 +637,8 @@ namespace field
 		}
 
 		/* PROJECT FROM UVW TO T */
-		for (int gg = 0; gg < 3; ++gg) {
+		#pragma loop_count min(3), max(9), avg(3) // for vectorization
+		for (int gg = 0; gg < f.get_m(); ++gg) {
 			T d1_UVW[3] = {deri1[0 + 3*gg],deri1[1 + 3*gg],deri1[2 + 3*gg]};
 			T d2_UVW[3] = {deri2[0 + 3*gg],deri2[1 + 3*gg],deri2[2 + 3*gg]};
 			UVW2T_ijk(ii,jj,kk,nx,ny,d1_UVW,d2_UVW,e1,e2,e3,deri + 3*gg);
@@ -612,6 +649,7 @@ namespace field
 		Field<T> &e1, Field<T> &e2, Field<T> &e3, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
 		Field<T> grad(f.get_n(),3*f.get_m(),0.);
+		bool isvector = f.get_m() == 3;
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -622,17 +660,17 @@ namespace field
 					// Compute the gradient on UVW
 					gradOGS2_ijk(ii,jj,kk,nx,ny,nz,f,e1,e2,e3,grad[ind]);
 					// Computation of the divergence
-					if (!div.isempty()) {
+					if (isvector && !div.isempty()) {
 						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
-					if (!curl.isempty()) {
+					if (isvector && !curl.isempty()) {
 						curl[ind][0] = grad[ind][7] - grad[ind][5];
 						curl[ind][1] = grad[ind][2] - grad[ind][6];
 						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
-					if (!Q.isempty()) {
+					if (isvector && !Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
 									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
@@ -669,6 +707,7 @@ namespace field
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 			ind3 = PNTIND(ii-1,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (ii == 0) ? 0. : (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e1[ind3][1];
 				deri2[0 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./e1[ind2][1];
@@ -680,6 +719,7 @@ namespace field
 			ind3 = PNTIND(ii-1,jj,kk,nx,ny);
 			ind4 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e1[ind3][1];
 				deri2[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e1[ind2][1];
@@ -691,6 +731,7 @@ namespace field
 			ind3 = PNTIND(ii-2,jj,kk,nx,ny);
 			ind4 = PNTIND(ii-3,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e1[ind2][1];
 				deri2[0 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e1[ind1][1];
@@ -701,6 +742,7 @@ namespace field
 			ind2 = PNTIND(ii-2,jj,kk,nx,ny);
 			ind3 = PNTIND(ii-3,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e1[ind1][1];
 				deri2[0 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./e1[ind][1];
@@ -713,6 +755,7 @@ namespace field
 			ind4 = PNTIND(ii-2,jj,kk,nx,ny);
 			ind5 = PNTIND(ii-2,jj,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[0 + 3*gg] = (-f[ind1][gg] + 8.*f[ind2][gg] - 8.*f[ind4][gg] + f[ind5][gg])/12./e1[ind3][1];
 				deri2[0 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e1[ind2][1];
@@ -726,6 +769,7 @@ namespace field
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 			ind3 = PNTIND(ii,jj-1,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (jj == 0) ? 0. : (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e2[ind3][2];
 				deri2[1 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./e2[ind2][2];
@@ -737,6 +781,7 @@ namespace field
 			ind3 = PNTIND(ii,jj-1,kk,nx,ny);
 			ind4 = PNTIND(ii,jj-2,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e2[ind3][2];
 				deri2[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e2[ind2][2];
@@ -748,6 +793,7 @@ namespace field
 			ind3 = PNTIND(ii,jj-2,kk,nx,ny);
 			ind4 = PNTIND(ii,jj-3,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e2[ind2][2];
 				deri2[1 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e2[ind1][2];
@@ -758,6 +804,7 @@ namespace field
 			ind2 = PNTIND(ii,jj-2,kk,nx,ny);
 			ind3 = PNTIND(ii,jj-3,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e2[ind1][2];
 				deri2[1 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./e2[ind][2];
@@ -770,6 +817,7 @@ namespace field
 			ind4 = PNTIND(ii,jj-2,kk,nx,ny);
 			ind5 = PNTIND(ii,jj-3,kk,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[1 + 3*gg] = (-f[ind1][gg] + 8.*f[ind2][gg] - 8.*f[ind4][gg] + f[ind5][gg])/12./e2[ind3][2];
 				deri2[1 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e2[ind2][2];
@@ -783,6 +831,7 @@ namespace field
 			ind2 = PNTIND(ii,jj,kk,nx,ny);
 			ind3 = PNTIND(ii,jj,kk-1,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (kk == 0) ? 0. : (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e3[ind3][3];
 				deri2[2 + 3*gg] = (-3.*f[ind2][gg] + 4.*f[ind1][gg] - f[ind][gg])/2./e3[ind2][3];
@@ -794,6 +843,7 @@ namespace field
 			ind3 = PNTIND(ii,jj,kk-1,nx,ny);
 			ind4 = PNTIND(ii,jj,kk-2,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (-3.*f[ind3][gg] + 4.*f[ind2][gg] - f[ind1][gg])/2./e3[ind3][3];
 				deri2[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e3[ind2][3];
@@ -805,6 +855,7 @@ namespace field
 			ind3 = PNTIND(ii,jj,kk-2,nx,ny);
 			ind4 = PNTIND(ii,jj,kk-3,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e3[ind2][3];
 				deri2[2 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e3[ind1][3];
@@ -815,6 +866,7 @@ namespace field
 			ind2 = PNTIND(ii,jj,kk-2,nx,ny);
 			ind3 = PNTIND(ii,jj,kk-3,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (3.*f[ind1][gg] - 4.*f[ind2][gg] + f[ind3][gg])/2./e3[ind1][3];
 				deri2[2 + 3*gg] = (3.*f[ind][gg] - 4.*f[ind1][gg] + f[ind2][gg])/2./e3[ind][3];
@@ -827,6 +879,7 @@ namespace field
 			ind4 = PNTIND(ii,jj,kk-2,nx,ny);
 			ind5 = PNTIND(ii,jj,kk-3,nx,ny);
 
+			#pragma loop_count min(3), max(9), avg(3) // for vectorization
 			for (int gg = 0; gg < f.get_m(); ++gg) {
 				deri1[2 + 3*gg] = (-f[ind1][gg] + 8.*f[ind2][gg] - 8.*f[ind4][gg] + f[ind5][gg])/12./e3[ind3][3];
 				deri2[2 + 3*gg] = (-f[ind][gg] + 8.*f[ind1][gg] - 8.*f[ind3][gg] + f[ind4][gg])/12./e3[ind2][3];
@@ -834,7 +887,8 @@ namespace field
 		}
 
 		/* PROJECT FROM UVW TO T */
-		for (int gg = 0; gg < 3; ++gg) {
+		#pragma loop_count min(3), max(9), avg(3) // for vectorization
+		for (int gg = 0; gg < f.get_m(); ++gg) {
 			T d1_UVW[3] = {deri1[0 + 3*gg],deri1[1 + 3*gg],deri1[2 + 3*gg]};
 			T d2_UVW[3] = {deri2[0 + 3*gg],deri2[1 + 3*gg],deri2[2 + 3*gg]};
 			UVW2T_ijk(ii,jj,kk,nx,ny,d1_UVW,d2_UVW,e1,e2,e3,deri + 3*gg);
@@ -845,6 +899,7 @@ namespace field
 		Field<T> &e1, Field<T> &e2, Field<T> &e3, Field<T> &div, Field<T> &curl, Field<T> &Q) {
 		// Create output array
 		Field<T> grad(f.get_n(),3*f.get_m(),0.);
+		bool isvector = f.get_m() == 3;
 		// Loop the components
 		#pragma omp parallel for collapse(3)
 		for (int kk = 0; kk < nz; ++kk) {
@@ -855,17 +910,17 @@ namespace field
 					// Compute the gradient on UVW
 					gradOGS4_ijk(ii,jj,kk,nx,ny,nz,f,e1,e2,e3,grad[ind]);
 					// Computation of the divergence
-					if (!div.isempty()) {
+					if (isvector && !div.isempty()) {
 						div[ind][0] = grad[ind][0] + grad[ind][4] + grad[ind][8];
 					}
 					// Computation of the curl
-					if (!curl.isempty()) {
+					if (isvector && !curl.isempty()) {
 						curl[ind][0] = grad[ind][7] - grad[ind][5];
 						curl[ind][1] = grad[ind][2] - grad[ind][6];
 						curl[ind][2] = grad[ind][3] - grad[ind][1];
 					}
 					// Computation of the Q-criterion
-					if (!Q.isempty()) {
+					if (isvector && !Q.isempty()) {
 						Q[ind][0] = -0.5*(grad[ind][0]*grad[ind][0] + grad[ind][4]*grad[ind][4] + grad[ind][8]*grad[ind][8])
 									-grad[ind][1]*grad[ind][3]-grad[ind][2]*grad[ind][6]-grad[ind][5]*grad[ind][7];
 					}
