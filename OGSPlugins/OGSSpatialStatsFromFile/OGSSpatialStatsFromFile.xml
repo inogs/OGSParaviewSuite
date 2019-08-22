@@ -97,7 +97,7 @@
          </Documentation>
      </StringVectorProperty>
 
-     <!-- Name of basins mask array -->
+     <!-- Name of coasts mask array -->
      <StringVectorProperty name="cmask_field"
                            label="Coast mask: "
                            command="Setcmask_field"
@@ -114,6 +114,26 @@
          </ArrayListDomain>
          <Documentation>
             Name of the coast mask field
+         </Documentation>
+     </StringVectorProperty>
+
+     <!-- Name of land mask array -->
+     <StringVectorProperty name="lmask_field"
+                           label="Land mask: "
+                           command="Setlmask_field"
+                           animateable="1"
+                           default_values="land mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the land mask field
          </Documentation>
      </StringVectorProperty>
 
