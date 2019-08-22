@@ -32,6 +32,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSUtils "1.0"
   SERVER_MANAGER_XML OGSUtils.xml
-  SERVER_MANAGER_SOURCES ../_utils/Projections.cpp vtkOGSPointSource.cxx vtkOGSDepthLineSource.cxx
+  SERVER_MANAGER_SOURCES vtkOGSPointSource.cxx vtkOGSDepthLineSource.cxx
   REQUIRED_ON_SERVER
   )
