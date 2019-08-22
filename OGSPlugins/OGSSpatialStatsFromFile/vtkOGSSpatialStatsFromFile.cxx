@@ -76,6 +76,7 @@ vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){
 	this->FolderName  = NULL;
 	this->bmask_field = NULL;
 	this->cmask_field = NULL;
+	this->lmask_field = NULL;
 
 	this->per_coast = 0;
 	this->nProcs    = 0;
@@ -94,6 +95,7 @@ vtkOGSSpatialStatsFromFile::~vtkOGSSpatialStatsFromFile() {
 	this->SetFolderName(NULL);
 	this->Setbmask_field(NULL);
 	this->Setcmask_field(NULL);
+	this->Setlmask_field(NULL);
 
 	#ifdef PARAVIEW_USE_MPI
 		this->SetController(NULL);	
@@ -183,6 +185,7 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 		// Do not work with the basins, coasts mask, e1, e2 or e3
 		if (std::string(this->bmask_field) == arrName) continue;
 		if (std::string(this->cmask_field) == arrName) continue;
+		if (std::string(this->lmask_field) == arrName) continue;
 		if (std::string("e1")              == arrName) continue;
 		if (std::string("e2")              == arrName) continue;
 		if (std::string("e3")              == arrName) continue;

@@ -42,6 +42,7 @@ public:
   // Get the name of the mask fields to operate
   vtkSetStringMacro(bmask_field);
   vtkSetStringMacro(cmask_field);
+  vtkSetStringMacro(lmask_field);
 
   // Description:
   // If true, obtains the statistics per basin and per coast
@@ -85,7 +86,7 @@ private:
   void operator=(const vtkOGSSpatialStatsFromFile&) = delete;
 
   char *FolderName;
-  char *bmask_field, *cmask_field;
+  char *bmask_field, *cmask_field, *lmask_field;
 
   int per_coast, procId, nProcs;
 };
