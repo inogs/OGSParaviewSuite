@@ -39,7 +39,6 @@
 #include <cmath>
 #include <ctime>
 #include <chrono>
-#include <string>
 
 vtkStandardNewMacro(vtkOGSSpaghetti);
 vtkCxxSetObjectMacro(vtkOGSSpaghetti, CellLocatorPrototype, vtkAbstractCellLocator);
@@ -274,6 +273,12 @@ int vtkOGSSpaghetti::RequestInformation(vtkInformation* vtkNotUsed(request),
 		// Format and display
 		strftime(buff,256,"%Y%m%d-%H:%M:%S",&tm);
 		this->TimeValues->SetValue(ii,buff);
+	}
+
+	// Obtain the timestep index
+	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_st) { this->ii_start = ii; }
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_ed) { this->ii_end = ii; }
 	}
 
 	// The output data of this filter has no time associated with it. It is the
@@ -668,22 +673,12 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 
 //----------------------------------------------------------------------------
 void vtkOGSSpaghetti::SetStartTime(const char *tstep) {
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == std::string(tstep)) {
-			this->ii_start = ii; break;
-		}
-	}
+	this->tstep_st = std::string(tstep);
 	this->Modified();
 }
 
 void vtkOGSSpaghetti::SetEndTime(const char *tstep) {
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == std::string(tstep)) {
-			this->ii_end = ii; break;
-		}
-	}
+	this->tstep_ed = std::string(tstep);
 	this->Modified();
 }
 
