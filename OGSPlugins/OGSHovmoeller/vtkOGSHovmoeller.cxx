@@ -243,12 +243,8 @@ int vtkOGSHovmoeller::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 	// Obtain the timestep index
 	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_st) {
-			this->ii_start = ii;
-		}
-		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_ed) {
-			this->ii_end = ii;
-		}
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_st) { this->ii_start = ii; }
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_ed) { this->ii_end = ii; }
 	}
 
 	// The output data of this filter has no time associated with it. It is the
