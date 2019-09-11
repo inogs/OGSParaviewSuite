@@ -129,6 +129,12 @@ int vtkOGSTimeStatistics::RequestInformation(vtkInformation* vtkNotUsed(request)
 		this->TimeValues->SetValue(ii,buff);
 	}
 
+	// Obtain the timestep index
+	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_st) { this->ii_start = ii; }
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_ed) { this->ii_end = ii; }
+	}
+
 	// The output data of this filter has no time associated with it. It is the
 	// result of computations that happen over all time.
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
@@ -454,22 +460,12 @@ void RecoverMasterFileName(std::string &fname, vtkRectilinearGrid *input) {
 
 //----------------------------------------------------------------------------
 void vtkOGSTimeStatistics::SetStartTime(const char *tstep) {
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == std::string(tstep)) {
-			this->ii_start = ii; break;
-		}
-	}
+	this->tstep_st = std::string(tstep);
 	this->Modified();
 }
 
 void vtkOGSTimeStatistics::SetEndTime(const char *tstep) {
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == std::string(tstep)) {
-			this->ii_end = ii; break;
-		}
-	}
+	this->tstep_ed = std::string(tstep);
 	this->Modified();
 }
 

@@ -17,6 +17,8 @@
 
 #include "vtkDataSetAlgorithm.h"
 
+#include <string>
+
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
 class vtkStringArray;
@@ -60,6 +62,8 @@ private:
 
   int procId, nProcs;
   int ii_start, ii_end;
+
+  std::string tstep_st, tstep_ed;
 };
 
 #endif
