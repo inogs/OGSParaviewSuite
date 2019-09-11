@@ -102,8 +102,9 @@ def RequestData():
 		for objId in range(view.GetNumberOfVisibleDataObjects()):
 			obj = view.GetVisibleDataObjectForRendering(objId)
 			# Recover the depth
-			dfact = float(obj.GetFieldData().GetAbstractArray('Metadata').GetValue(2))
-			z     = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/dfact
+			metadata = obj.GetFieldData().GetAbstractArray('Metadata')
+			dfact    = float(metadata.GetValue(2)) if metadata else 1.
+			z        = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/dfact
 			# For each variable, decide if the plot is needed
 			for varId in range(obj.GetPointData().GetNumberOfArrays()):         
 				varname = obj.GetPointData().GetArray(varId).GetName()
