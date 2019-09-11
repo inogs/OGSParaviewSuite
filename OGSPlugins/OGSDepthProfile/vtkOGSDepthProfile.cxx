@@ -131,7 +131,7 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 		// Make sure the metadata array is passed to the output
 		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
 			source->GetFieldData()->GetAbstractArray("Metadata"));
-		output->GetFieldData()->AddArray(vtkmetadata);
+		if (vtkmetadata) output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
 	return 1;
