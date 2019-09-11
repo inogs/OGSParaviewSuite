@@ -21,6 +21,7 @@
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
 #include <vector>
+#include <string>
 
 #include "../_utils/V3.h"
 #include "../_utils/field.h"
@@ -131,6 +132,8 @@ private:
 
   char *field, *FolderName, *bmask_field, *cmask_field;
   bool isReqInfo;
+
+  std::string tstep_st, tstep_ed;
 
   double epsi, dfact;
 
