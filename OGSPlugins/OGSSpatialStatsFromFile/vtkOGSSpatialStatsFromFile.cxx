@@ -122,15 +122,14 @@ int vtkOGSSpatialStatsFromFile::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// We just want to copy the mesh, not the variables
 	output->CopyStructure(input);
-
-	// Copy Metadata array
-	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-		input->GetFieldData()->GetAbstractArray("Metadata"));
-	output->GetFieldData()->AddArray(vtkmetadata);
-
+	output->GetFieldData()->PassData(input->GetFieldData());
+	
 	this->UpdateProgress(0.);
 
 	// First we need to recover the date from the metadata
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		input->GetFieldData()->GetAbstractArray("Metadata"));
+	
 	std::string filename = std::string(this->FolderName) + 
 		                   std::string("/ave.") + 
 		                   vtkmetadata->GetValue(0) + 
