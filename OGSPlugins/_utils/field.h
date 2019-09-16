@@ -102,7 +102,7 @@ namespace field
 					inline       pointer   operator*()            { return (*f)[i]; }
 					inline const pointer   operator*() const      { return (*f)[i]; }
 					inline       reference operator[](int j)      { return (*f)[i][j]; }
-					inline const reference operator[](int j)const { return (*f)[i][j]; }
+					inline       reference operator[](int j)const { return (*f)[i][j]; }
 
 					inline       iterator& operator++()           { ++i; return *this; }
 					inline       iterator& operator--()           { --i; return *this; }

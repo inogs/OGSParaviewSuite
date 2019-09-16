@@ -191,7 +191,7 @@ void vtkOGSNPZWriter::WriteData() {
 	// Save the variables, depending if we are saving a single variable or multiple variables
 	if (this->singlevar) {
 		// Load and store the variable
-		if (std::string(this->varname) == std::string("basins mask") || vname == std::string("land mask") ||
+		if (std::string(this->varname) == std::string("basins mask") || std::string(this->varname) == std::string("land mask") ||
 			std::string(this->varname) == std::string("coast mask")) {
 			// Use mask uint8
 			field::Field<FLDMASK> array;
@@ -210,7 +210,7 @@ void vtkOGSNPZWriter::WriteData() {
 			// Load vtkArray
 			vtkArray = (iscelld) ? input->GetCellData()->GetArray(varId) : input->GetPointData()->GetArray(varId);
 			// Load and store the variable
-			if (std::string(vtkArray->GetName()) == std::string("basins mask") || vname == std::string("land mask") ||
+			if (std::string(vtkArray->GetName()) == std::string("basins mask") || std::string(vtkArray->GetName()) == std::string("land mask") ||
 				std::string(vtkArray->GetName()) == std::string("coast mask")) {
 				// Use mask uint8
 				field::Field<FLDMASK> array;
