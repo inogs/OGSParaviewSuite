@@ -159,6 +159,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 
 	// Copy the mesh, not the variables
 	output->CopyStructure(input);
+	output->GetFieldData()->PassData(input->GetFieldData());
 
 	/* INITIALIZATION PHASE
 
@@ -404,10 +405,6 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 			output->GetCellData()->AddArray(vtkArray);
 			vtkArray->Delete();
 		}
-		// Make sure the metadata array is passed to the output
-		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-			input->GetFieldData()->GetAbstractArray("Metadata"));
-		output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
 	this->UpdateProgress(1.);
