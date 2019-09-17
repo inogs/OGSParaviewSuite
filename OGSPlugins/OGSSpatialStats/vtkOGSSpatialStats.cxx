@@ -301,7 +301,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 			// This code uses the weighted variant of Welford's online algorithm for
 			// the standard deviation.
 			// West, D. H. D. "Updating mean and variance estimates: An improved method." Communications of the ACM 22.9 (1979): 532-535.
-			double sum_weight = 0., meanval = 0., meanval_old = 0., stdval = 0., maxval = 0., minval = 1.e20;
+			double sum_weight = 0., meanval = 0., meanval_old = 0., stdval = 0., maxval = -1.e20, minval = 1.e20;
 
 			for (int ii=0; ii<mValuesPerLayer[zId].size(); ++ii) {
 				double v = mValuesPerLayer[zId][ii];
