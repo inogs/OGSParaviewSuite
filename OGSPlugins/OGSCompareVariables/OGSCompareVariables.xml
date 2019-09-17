@@ -1,0 +1,84 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSCompareVariables"
+                class="vtkOGSCompareVariables" 
+                label="OGS Compare Variables">
+     <Documentation
+        long_help="This plugin enables to compare variables and set a field to show the comparison."
+        short_help="Enables to compare variables.">
+        This plugin enables the user to compare different variables and set a field to
+        visually show the comparison. The value of the field is set by the user and it 
+        is set according to which variable is greater (or lower).
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Mode of operation -->
+     <IntVectorProperty name="mode"
+                        label="Mode"
+                        command="Setmode"
+                        number_of_elements="1"
+                        default_values="0">
+        <EnumerationDomain name="enum">
+          <Entry text="Maximum" value="0" />
+          <Entry text="Minimum" value="1" />
+        </EnumerationDomain>
+        <Documentation>
+          Set the mode of operation, whether the minimum or maximum value will
+          be used for the comparison.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Variables Properties -->
+     <StringVectorProperty name="variables"
+                           label="Variables"
+                           command="Setvariables"
+                           default_values=""
+                           number_of_elements="1">
+        <Documentation>
+          The variables to be compared should be written here in the
+          following synthax:
+
+            var_name = value.
+          
+          The value given here will be the one used in the comparison
+          field.
+        </Documentation>
+        <Hints>
+          <Widget type="multi_line" syntax="python"/>
+        </Hints>
+     </StringVectorProperty>
+
+     <!-- Default value -->
+     <DoubleVectorProperty name="defaultvalue"
+                           label="Default fill value: "
+                           command="Setdefval"
+                           number_of_elements="1"
+                           default_values="0."
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the default fill value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+     </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
