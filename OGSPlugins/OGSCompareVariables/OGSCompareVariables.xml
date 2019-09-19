@@ -61,6 +61,19 @@
         </Hints>
      </StringVectorProperty>
 
+     <!-- Array Name -->
+     <StringVectorProperty name="arrayname"
+                           label="Array name: "
+                           animateable="0"
+                           command="Setarrname"
+                           default_values="comparison"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+        <Documentation>
+          This property specifies name of the resulting array.
+        </Documentation>
+     </StringVectorProperty>
+
      <!-- Default value -->
      <DoubleVectorProperty name="defaultvalue"
                            label="Default fill value: "

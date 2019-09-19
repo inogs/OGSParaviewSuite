@@ -119,6 +119,7 @@ void compareVarMin(field::Field<FLDARRAY> &f, std::vector<field::Field<FLDARRAY>
 //----------------------------------------------------------------------------
 vtkOGSCompareVariables::vtkOGSCompareVariables() {
 	this->variables = NULL;
+	this->arrname   = NULL;
 	this->mode      = 0;
 	this->nProcs    = 0;
 	this->procId    = 0;
@@ -133,6 +134,7 @@ vtkOGSCompareVariables::vtkOGSCompareVariables() {
 //----------------------------------------------------------------------------
 vtkOGSCompareVariables::~vtkOGSCompareVariables() {
 	this->Setvariables(0);
+	this->Setarrname(0);
 
 	#ifdef PARAVIEW_USE_MPI
 		this->SetController(NULL);	
@@ -228,7 +230,7 @@ int vtkOGSCompareVariables::RequestData(vtkInformation *vtkNotUsed(request),
 	this->UpdateProgress(0.75);
 
 	// Add array to output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("comp",comp);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->arrname,comp);
 	// Add the new variable to the input
 	if (celldata)
 		output->GetCellData()->AddArray(vtkArray);

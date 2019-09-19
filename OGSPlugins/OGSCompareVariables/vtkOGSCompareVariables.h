@@ -44,6 +44,10 @@ public:
   // Parse variable text in TextBox
   vtkSetStringMacro(variables);
 
+  // Description:
+  // Parse array name
+  vtkSetStringMacro(arrname);
+
   #ifdef PARAVIEW_USE_MPI
     // Description:
     // Set the controller use in compositing (set to
@@ -69,7 +73,7 @@ private:
   void operator=(const vtkOGSCompareVariables&) = delete;
 
   int mode, procId, nProcs;
-  char *variables;
+  char *variables, *arrname;
   double defval;
 };
 
