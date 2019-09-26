@@ -211,9 +211,9 @@ class OGSmesh(object):
 		'''
 		Wrapper for the C function writeOGSMesh inside the OGSmesh.so library. 
 		'''
-		writeMesh    = self._OGSlib.OGSWriteMesh
-		OGS.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_uint8_p,c_uint8_p,c_uint8_p]
-		OGS.restype  = c_int
+		writeMesh          = self._OGSlib.OGSWriteMesh
+		writeMesh.argtypes = [c_char_p,c_char_p,c_int,c_int,c_int,c_double_p,c_double_p,c_double_p,c_uint8_p,c_uint8_p,c_uint8_p]
+		writeMesh.restype  = c_int
 
 		# Compute sizes of vectors
 		nLon = Lon2Meters.shape[0]
@@ -221,7 +221,7 @@ class OGSmesh(object):
 		nLev = nav_lev.shape[0]
 
 		# Return class instance
-		return writeMesh(fname,wrkdir,c_int(nLon),c_int(nLat),c_int(nLev),\
+		return writeMesh(fname.encode('utf-8'),wrkdir.encode('utf-8'),c_int(nLon),c_int(nLat),c_int(nLev),\
 						 Lon2Meters.ctypes.data_as(c_double_p),\
 					     Lat2Meters.ctypes.data_as(c_double_p),\
 					     nav_lev.ctypes.data_as(c_double_p),\

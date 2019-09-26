@@ -33,7 +33,12 @@
 # Arnau Miro, OGS (2018)
 
 import os, sys, datetime, argparse
-import numpy as np, glob as gl, ConfigParser as cp
+import sys,numpy as np, glob as gl
+
+if sys.version_info[0] < 3:
+	import ConfigParser as cp
+else:
+	import configparser as cp
 
 import OGSmesh
 
