@@ -58,7 +58,7 @@ cp $SUITEDIR/superbuild/versions/versions_new.cmake versions.cmake
 cp $SUITEDIR/superbuild/versions/versions_superbuild_py27.cmake superbuild/versions.cmake
 
 # Build
-cd ../ && mkdir paraview-build && cd paraview-build
+cd ../ && mkdir -p paraview-build && cd paraview-build
 cmake ../paraview-superbuild/ \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
    -DBUILD_TESTING=OFF \
@@ -111,7 +111,7 @@ cmake ../paraview-superbuild/ \
    -Dparaview_PLUGIN_OGSVariableAggregator_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVariableAggregator \
    -Dparaview_PLUGIN_OGSUtils_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSUtils \
    -Dparaview_PLUGIN_OGSWriter_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSWriter \
-   -Dparaview_PLUGIN_OGSWriter_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSCompareVariables 
+   -Dparaview_PLUGIN_OGSCompareVariables_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSCompareVariables
 
 # Prompt user to check configuration
 printf "Deploying ParaView $PV_VERS in $INSTALL_PREFIX.\n"
@@ -134,25 +134,30 @@ curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}
 curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
 tar xzf extra_src.tar.gz
 
-module load python/2.7.15
+# Load environment
+export PATH=$PATH:$INSTALL_PREFIX/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_PREFIX/lib:$INSTALL_PREFIX/lib/paraview-5.6
+export PYTHONPATH=$PYTHONPATH:$INSTALL_PREFIX/lib/python2.7/site-packages
 
-# Unpack cftime wheel
-unzip extra_src/cftime-1.0.3.4.whl -d $INSTALL_PREFIX/lib/python2.7/site-packages/
-# Unpack netCDF4 wheel
-unzip extra_src/netCDF4-1.4.2.whl -d $INSTALL_PREFIX/lib/python2.7/site-packages/
+# Install netCDF4
+./install/bin/pip install netcdf4
+cp -r install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/lib/python2.7/site-packages/
+
 # Compile and install geos
 tar xf extra_src/geos-3.7.0.tar.bz2 && cd geos-3.7.0
-./configure --prefix=$INSTALL_PREFIX
+./configure --prefix=$PWD/install
+export GEOS_DIR=$PWD/install
 make -j $NPROCS install
+ln -s $PWD/install/lib $PWD/install/lib64
 cd ../
 # Compile and install basemap
 tar xfz extra_src/basemap-1.1.0.tar.gz && cd basemap-1.1.0
-export GEOS_DIR=$INSTALL_PREFIX
-ln -s $INSTALL_PREFIX/lib $INSTALL_PREFIX/lib64
 python setup.py build
 cp build/lib.linux-x86_64-2.7/_geoslib.so $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r build/lib.linux-x86_64-2.7/mpl_toolkits/basemap $INSTALL_PREFIX/lib/python2.7/site-packages/mpl_toolkits
+cp -r build/lib.linux-x86_64-2.7/mpl_toolkits/basemap $INSTALL_PREFIX/lib/python2.7/site-packages/mpl_toolkits/
 cd ../
+
 # Compile and install proj
 tar xzf extra_src/proj-6.1.0.tar.gz && cd proj-6.1.0
 ./configure --prefix=$INSTALL_PREFIX
@@ -164,9 +169,8 @@ tar xzf extra_src/pyproj-1.9.6.tar.gz && cd pyproj-1.9.6
 python setup.py build
 cp -r build/lib.linux-x86_64-2.7/pyproj $INSTALL_PREFIX/lib/python2.7/site-packages/
 cd ../
-# Remove dist-info folders
-rm -rf $INSTALL_PREFIX/lib/python2.7/site-packages/*.dist-info
-# Also copy ffmpeg
+
+# Copy ffmpeg
 cp install/bin/ffmpeg $INSTALL_PREFIX/bin
 cd ..
 printf "Install done successfully!\n"
