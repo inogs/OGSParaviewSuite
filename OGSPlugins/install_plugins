@@ -93,15 +93,15 @@ def installOGSMesh(pvpath,plugin_dir):
 	'''
 	Installs the OGSMesh python class into ParaView
 	'''
+	# Create a folder in the installation directory
+	install_dir = os.path.join(pvpath,"lib")
 	# Compile the shared library
 	os.system(\
 		"""
 cd %s
-g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC -fopenmp OGS.cpp netcdfio.cpp
+g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC -fopenmp -std=c++11 OGS.cpp netcdfio.cpp -L %s -l vtkNetCDF-pv5.6
 cd -
-		""" % plugin_dir)
-	# Create a folder in the installation directory
-	install_dir = os.path.join(pvpath,"lib")
+		""" % (plugin_dir,install_dir))
 	# Copy
 	os.system("cp %s/libOGS.so %s" % (plugin_dir,install_dir))
 	os.system("cp %s/python/OGSmesh.py %s" % (plugin_dir,os.path.join(install_dir,"python*","site-packages")))
