@@ -1,6 +1,6 @@
 superbuild_set_revision(expat
-  URL     "http://www.paraview.org/files/dependencies/expat-2.2.5.tar.bz2"
-  URL_MD5 789e297f547980fc9ecc036f9a070d49)
+  URL     "http://www.paraview.org/files/dependencies/expat-2.2.6.tar.bz2"
+  URL_MD5 ca047ae951b40020ac831c28859161b2)
 
 superbuild_set_revision(llvm
   URL     "https://www.paraview.org/files/dependencies/llvm-7.0.0.src.tar.xz"
@@ -107,12 +107,16 @@ superbuild_set_revision(embree
   URL_MD5 f414fefe6167ba58102fd0eb06c9ee5b)
 
 superbuild_set_revision(ospray
-  URL     "https://www.paraview.org/files/dependencies/ospray-1.6.1.tar.gz"
-  URL_MD5 58cfed6a24e8023389f63f65455466aa)
+  URL     "https://www.paraview.org/files/dependencies/ospray-1.8.4.tar.gz"
+  URL_MD5 359a56552d981d057bfbd3e97f4fc0b7)
 
 superbuild_set_revision(ospraymaterials
-  URL     "https://www.paraview.org/files/data/OSPRayMaterials-0.1.tar.gz"
-  URL_MD5 0b95d2ad4fa79d457278c48125f3d111)
+  URL     "https://www.paraview.org/files/data/OSPRayMaterials-0.2.tar.gz"
+  URL_MD5 3b2716318ec8bf719373f25737b0bddc)
+
+superbuild_set_revision(openimagedenoise
+  URL     "https://www.paraview.org/files/dependencies/oidn-0.8.1.src.tar.gz"
+  URL_MD5 4951edc5422682b639595c9fc8dbadcc)
 
 superbuild_set_revision(openvr
   URL     "https://www.paraview.org/files/dependencies/openvr_1.0.10_win_thin.zip"
@@ -123,12 +127,12 @@ superbuild_set_revision(paraviewwebvisualizer
   URL_MD5 999c4031749bbaac7e01149fe3b0c777)
 
 superbuild_set_revision(paraviewweblite
-  URL     "https://www.paraview.org/files/dependencies/paraview-lite-1.2.0.tgz"
-  URL_MD5 5ca744b9477494fc7fd3ab7cae97472d)
+  URL     "https://www.paraview.org/files/dependencies/paraview-lite-1.2.1.tgz"
+  URL_MD5 1bc268619117f8539fcce1dfb6a43722)
 
 superbuild_set_revision(paraviewwebglance
-  URL     "https://registry.npmjs.org/paraview-glance/-/paraview-glance-3.0.0.tgz"
-  URL_MD5 ed193e3de082859937f041396ca666f3)
+  URL     "https://registry.npmjs.org/paraview-glance/-/paraview-glance-3.0.3.tgz"
+  URL_MD5 4eacd4ef01f86dcb53d84ef1fb75938f)
 
 superbuild_set_revision(paraviewweblightviz
   URL     "https://www.paraview.org/files/dependencies/light-viz-1.18.1.tar.gz"
@@ -149,16 +153,64 @@ superbuild_set_revision(las
 if (WIN32)
   set(nvidiaindex_platform "windows-x64")
   set(nvidiaindex_2_1_md5 "f6efc09092771eb0bfb375a503a95c04")
-  set(nvidiaindex_2_2_md5 "069d10b30541421aa9e588d935577c18")
+  set(nvidiaindex_2_2_md5 "93bb894e7951227862ea308f7d6e2e18")
+  set(nvidiaindex_2_3_md5 "f7374dfe3eec789b07957e4924fa029f")
 elseif (UNIX AND NOT APPLE)
   set(nvidiaindex_platform "linux")
   set(nvidiaindex_2_1_md5 "9fd5af702af6a6a6f2aba3a960703fb3")
-  set(nvidiaindex_2_2_md5 "78ba0cb4d0aaf3209987e6dc47c1280c")
+  set(nvidiaindex_2_2_md5 "b97518f8b5d05497455e90ba5a0712f1")
+  set(nvidiaindex_2_3_md5 "9c57d22f065f2ac7c978e6e6e06ebb69")
 endif ()
 superbuild_set_selectable_source(nvidiaindex
-  SELECT 2.2 DEFAULT
-    URL     "http://www.paraview.org/files/dependencies/nvidia-index-libs-2.2.20181019-${nvidiaindex_platform}.tar.bz2"
+  SELECT 2.3 DEFAULT
+    URL     "http://www.paraview.org/files/dependencies/nvidia-index-libs-2.3.20190820-${nvidiaindex_platform}.tar.bz2"
+    URL_MD5 "${nvidiaindex_2_3_md5}"
+  SELECT 2.2
+    URL     "http://www.paraview.org/files/dependencies/nvidia-index-libs-2.2.20181218-${nvidiaindex_platform}.tar.bz2"
     URL_MD5 "${nvidiaindex_2_2_md5}"
   SELECT 2.1
     URL     "http://www.paraview.org/files/dependencies/nvidia-index-libs-2.1.20180314-${nvidiaindex_platform}.tar.bz2"
     URL_MD5 "${nvidiaindex_2_1_md5}")
+
+# These two packages are only available at these URLs from inside Kitware. They
+# are available from NVIDIA at these URLs:
+#   - https://developer.nvidia.com/designworks/optix/download
+#   - https://developer.nvidia.com/mdl-sdk
+if (WIN32)
+  set(nvidiaoptix_platform "win64")
+  set(nvidiaoptix_md5 "1cc3026f4a1fc945e7158e8a66f8f9bd")
+elseif (UNIX AND NOT APPLE)
+  set(nvidiaoptix_platform "linux64")
+  set(nvidiaoptix_md5 "b5e9cdcb691ad7813e4e24986579a1ef")
+endif ()
+superbuild_set_revision(nvidiaoptix
+  URL     "http://www.paraview.org/files/dependencies/internal/NVIDIA-OptiX-SDK-6.0.0-${nvidiaoptix_platform}-25650775.tar.gz"
+  URL_MD5 "${nvidiaoptix_md5}")
+
+superbuild_set_revision(nvidiamdl
+  URL     "http://www.paraview.org/files/dependencies/internal/mdl-sdk-314800.830.tar.bz2"
+  URL_MD5 "d500a122918741eb418887d66e03325b")
+
+superbuild_set_revision(visrtx
+  URL     "http://www.paraview.org/files/dependencies/visrtx-v0.1.6.tar.gz"
+  URL_MD5 "c5fef9abd9d56bbbf2c222f0b0943e41")
+
+superbuild_set_revision(mili
+  URL     "https://www.paraview.org/files/dependencies/mili-15.1.tar.gz"
+  URL_MD5 "8848db9a5e692c010806d64b8c5e46a4")
+
+superbuild_set_revision(zfp
+  URL     "https://www.paraview.org/files/dependencies/zfp-0.5.5.tar.gz"
+  URL_MD5 "bc7e5fb1cd4345d17f7b9d470a1f23e7")
+
+superbuild_set_selectable_source(adios2
+  SELECT v2.4.0 DEFAULT
+    URL     "https://www.paraview.org/files/dependencies/adios2-v2.4.0.tar.gz"
+    URL_MD5 "4b0e66392b5c91cc4822be9ce800a2e8"
+  SELECT git CUSTOMIZABLE
+    GIT_REPOSITORY "https://github.com/ornladios/ADIOS2.git"
+    GIT_TAG        "origin/master")
+
+superbuild_set_revision(libfabric
+  URL     "http://www.paraview.org/files/dependencies/libfabric-1.8.0.tar.bz2"
+  URL_MD5 "c19c257856cb6e5094e73bf727e2d76c")
