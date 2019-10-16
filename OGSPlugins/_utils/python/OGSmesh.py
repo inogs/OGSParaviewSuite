@@ -2,12 +2,12 @@
 #
 # Python class to deal with mesh conversion to ParaView
 #
-# Arnau Miro, OGS (2018)
-
+# (c) OGS, Arnau Miro (2018)
 from __future__ import print_function
 
 import os, sys, argparse
 import numpy as np, ctypes as ct
+import cartopy.crs as ccrs, cartopy.feature as cfeat, shapely.geometry as sgeom
 
 from mpl_toolkits.basemap import Basemap
 
@@ -35,37 +35,70 @@ class OGSmesh(object):
 	This class needs the libOGS.so that is generally deployed along with
 	this class by the deployment scripts of the OGSParaView Suite.
 	'''
-	def __init__(self,maskpath,maskname="meshmask.nc",maptype='merc',res='l',lib='libOGS'):
+	def __init__(self,maskpath,maskname="meshmask.nc",res='simple',lib='libOGS'):
 		'''
 		Class constructor for OGSmesh.
 
 		Inputs:
-			> maskpath: Full path to the mask file.
-			> maskname: Name of the mask file (default: meshmask.nc)
-			> maptype:  Kind of map projection (default: merc).
-			> res:      Resolution for basemap (default: l)
-			> lib:      Full path to the OGSmesh.so library.
+			> maskpath   : Full path to the mask file.
+			> maskname   : Name of the mask file (default: meshmask.nc)
+			> projection : Kind of map projection (default: merc).
+			> res        : Resolution for basemap (default: l)
+			> lib        : Full path to the OGSmesh.so library.
 		'''
 		# Class variables
-		self._maskpath = maskpath
-		self._maskname = maskname
-		self._map      = maptype
-		self._res      = res
-		self._mask     = None     # meshmask will update after being read
-		self._mproj    = None     # applyProjection will update after being generated
+		self._maskpath    = maskpath
+		self._maskname    = maskname
+		self._res         = res
+
+		# Class properties
+		self._mask        = None
+		self._basins_mask = []
+		self._coasts_mask = []
+		self._land_mask   = []
 
 		# Interface with the C functions
 		lib += '.dylib' if sys.platform == 'darwin' else '.so'
 		self._OGSlib   = ct.cdll.LoadLibrary(lib)
 
 	@property
-	def map(self):
-		return self._map
-	@map.setter
-	def map(self,maptype):
-		self._map = maptype
-			
-	def readMeshMask(self,fname):
+	def mask(self):
+		if self._mask == None:
+			_, _, _, _, self._mask = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
+		return self._mask
+	@mask.setter
+	def mask(self,maskfile):
+		_, _, _, _, self._mask = self.readMeshMask(maskfile)
+
+	@property
+	def basins_mask(self):
+		if self._basins_mask == []:
+			self._basins_mask = self.generateBasinsMask(self.mask)
+		return self._basins_mask
+	@basins_mask.setter
+	def basins_mask(self,basins_mask):
+		self._basins_mask = basins_mask
+
+	@property
+	def coasts_mask(self):
+		if self._coasts_mask == []:
+			self._coasts_mask = self.generateCoastsMask(self.mask)
+		return self._coasts_mask
+	@coasts_mask.setter
+	def coasts_mask(self,coasts_mask):
+		self._coasts_mask = coasts_mask
+
+	@property
+	def land_mask(self):
+		if self._land_mask == []:
+			self._land_mask = self.generateLandMask(self._res,self.mask,self.coasts_mask,self.is_land)
+		return self._land_mask
+	@land_mask.setter
+	def land_mask(self,land_mask):
+		self._land_mask = land_mask
+		
+	@staticmethod	
+	def readMeshMask(fname):
 		'''
 		Reads the meshmask.nc file and extracts the dimensions of the mesh
 		as well as the longitude, latitude and nav_lev vectors.
@@ -77,11 +110,11 @@ class OGSmesh(object):
 		'''
 		# Load the meshmask (requires bit.sea)
 		# This first mask is for loading the cell centered masks
-		self._mask = Mask(fname,zlevelsvar="nav_lev",ylevelsmatvar="gphit", xlevelsmatvar="glamt")
+		mask1 = Mask(fname,zlevelsvar="nav_lev",ylevelsmatvar="gphit", xlevelsmatvar="glamt")
 		# This mask is for generating the mesh points
 		mask = Mask(fname,zlevelsvar="gdepw",ylevelsmatvar="gphif", xlevelsmatvar="glamf")
 		# Set variables
-		dims    = list(mask.shape) # We need to add the missing points
+		dims     = list(mask.shape) # We need to add the missing points
 		dims[0] += 1
 		dims[1] += 1
 		dims[2] += 1
@@ -95,30 +128,21 @@ class OGSmesh(object):
 		nav_lev = np.append(mask.zlevels,mask.zlevels[-1] + (mask.zlevels[-1] - mask.zlevels[-2])/2.)
 
 		# Return
-		return dims, Lon, Lat, nav_lev
+		return dims, Lon, Lat, nav_lev, mask1
 
-	def getMeshResolution(self,dims):
-		'''
-		Returns the mesh resolution as a string (either "low", "mid" or "high")
-		according to the dimensions of the mesh read.
-
-		Inputs:
-			> dims: dimensions.
-		'''
-		if dims == (43, 160, 394):   return "low"
-		if dims == (72, 253, 722):   return "mid"
-		if dims == (125, 380, 1085): return "high"
-
-		return None
-
-	def generateBasinsMask(self):
+	@staticmethod
+	def generateBasinsMask(mask):
 		'''
 		Generate the basins_mask field where all basins are numbered from 1
 		to the number of basins.
-		'''
-		return np.array([SubMask(sub, maskobject=self._mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
 
-	def generateCoastsMask(self):
+		Inputs:
+			> mask : the mask object
+		'''
+		return np.array([SubMask(sub, maskobject=mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
+
+	@staticmethod
+	def generateCoastsMask(mask):
 		'''
 		Generate the continental shelf mask field where coastal areas 
 		are separated from the open sea (at depth 200m).
@@ -126,18 +150,21 @@ class OGSmesh(object):
 		FIX AMAL: the intersection with the med mask and mask_at_level
 		returns zero for the last value of the mask, even if the depth is less
 		than 200. To avoid that, we get the next depth value from 200.
+
+		Inputs:
+			> mask : the mask object
 		'''
-		dims = self._mask.shape
+		dims = mask.shape
 
 		# Extract mask at level 200
 		# This is all the places that have water at depth = 200 m
-		jk_m       = self._mask.getDepthIndex(200.)
-		mask200_2D = self._mask.mask[jk_m+1,:,:].copy() # FIX AMAL
+		jk_m       = mask.getDepthIndex(200.)
+		mask200_2D = mask.mask[jk_m+1,:,:].copy() # FIX AMAL
 		mask200_3D = np.array([mask200_2D for i in range(dims[0])])
 		
 		# Extract mask for mediterranean sea
 		# We want all the places that belong to the MED and that are water from 0 to 200 m
-		s = SubMask(OGS.P.basin_list[-1], maskobject=self._mask)
+		s = SubMask(OGS.P.basin_list[-1], maskobject=mask)
 
 		# Define coasts mask
 		coasts_mask = np.zeros(dims,dtype=c_uint8)
@@ -146,66 +173,135 @@ class OGSmesh(object):
 
 		return coasts_mask
 
-	def generateLandMask(self,coasts_mask):
+	@staticmethod
+	def generateLandMask(res,mask,coasts_mask,is_land_fun):
 		'''
 		Generate the mask field that shows true when a point is in
 		a land area and false when it is on the water. This mask accounts
 		for the atlantic buffer, the gulf of Bizcaya and the black sea so
 		that the continents are easily recognizable.
+
+		Inputs:
+			> res         : the resolution for the land ('10m', '50m', '110m' or 'simple')
+			> mask        : a mask object
+			> coasts_mask : the coasts mask
+			> is_land_fun : function that returns if a point is land or not
 		'''
 		# Create a containing array
-		dims = self._mask.shape
+		dims = mask.shape
 		land_mask = np.zeros(dims,dtype=c_uint8)
 
 		# Anything that is not water will be land
 		land_mask[coasts_mask == 0] = 1
-		# Loop the surface level and decide whether the point
-		# belongs to land or water.
-		for jj in range(dims[1]):
-			for ii in range(dims[2]):
-				# Abort the points that are in the water to capture the battimetry
-				if not land_mask[0,jj,ii]: continue
-				# Obtain the projected points
-				xpt,ypt = self._mproj(self._mask.xlevels[jj,ii],self._mask.ylevels[jj,ii])
-				# Update land mask
-				land_mask[:,jj,ii] = 1 if self._mproj.is_land(xpt,ypt) else 0
+
+		if not res == 'simple':
+			# Load the land feature
+			g_land = [g for g in cfeat.NaturalEarthFeature('physical', 'land', res).geometries()]
+			ig = 0
+
+			# Loop the surface level and decide whether the point
+			# belongs to land or water.
+			for jj in range(dims[1]):
+				for ii in range(dims[2]):
+					# Abort the points that are in the water to capture the battimetry
+					if not land_mask[0,jj,ii]: continue
+
+					# The points of the meshmask are in degrees, which is what cartopy needs
+					xpt = mask.xlevels[jj,ii]
+					ypt = mask.ylevels[jj,ii]
+
+					# Update the land mask
+					island,ig = is_land_fun(xpt,ypt,g_land,ig)
+					land_mask[:,jj,ii] = 1 if island else 0
 
 		return land_mask
 
-	def applyProjection(self,dims,Lon,Lat,Lon0=0.,Lat0=0.):
+	@staticmethod
+	def applyProjection(proj,Lon,Lat,**kwargs):
 		'''
 		Applies a map projection to the longitude and latitude
 		vectors. The kind of map projection is defined in the
 		class definition.
 
 		Inputs:
-			> dims: dimensions.
-			> Lon:  longitude vector.
-			> Lat:  latitude vector.
+			> proj    : kind of map projection.
+			> Lon     : longitude vector.
+			> Lat     : latitude vector.
+			> **kargs : arguments when creating the projection
+		'''			
+		# Load the PlateCarree which lets us transform degrees to meters
+		crs_degs = ccrs.PlateCarree()
+		crs_proj = None
+
+		# Recover the kind of projection from cartopy
+		try:
+			# Projection can either be a name or a epsg nomenclature
+			# check if we are dealing with epsg
+			if (proj.find('epsg') >= 0):
+				# We have an epsg code in the format epsg:<code>
+				# pyepsg needs to be installed for that to work
+				crs_proj = ccrs.epsg(code=int(proj.split('_')[1]))
+			else:
+				# We have a normal projection name
+				# Let's first check for two particular names
+				if (proj.lower() == 'cylindrical'):
+					# Use epsg4087 : WGS 84 / World Equidistant Cylindrical (https://epsg.io/4087)
+					crs_proj = ccrs.epsg(4087)
+				elif (proj.lower() == 'google'):
+					# Google Mercator projection (https://scitools.org.uk/cartopy/docs/latest/cartopy_outline.html?highlight=google_mercator)
+					crs_proj = ccrs.GOOGLE_MERCATOR
+				else:
+					# Use the name to generate a projection
+					crs_proj = getattr(ccrs,proj)(**kwargs)
+		except:
+			raise ValueError('Problems with projection %s!' % proj)
+
+		# At this point we should have a projection and 
+		# we should be ready to perform the projection
+
+		if (Lon.shape[0] > 1):
+			out = crs_proj.transform_points(crs_degs,Lon,Lat)
+
+			# Obtain Lon2Meters and Lat2Meters to generate the rectilinear grid.
+			Lon2Meters = np.sort(out[60,:,0])              # Longitude 2 meters
+			Lat2Meters = np.sort(out[:,out.shape[1]//2,1]) # Latitude  2 meters
+		else:
+			out = crs_proj.transform_point(Lon,Lat,crs_degs)
+			Lon2Meters = out[0]
+			Lat2Meters = out[1]
+
+		return Lon2Meters, Lat2Meters
+
+	@staticmethod
+	def is_land(lon,lat,geoms,ig=0):
 		'''
-		# Define map projection
-		self._mproj = Basemap(projection = self._map, \
-						      lat_0      = Lat0, \
-						      lon_0      = Lon0, \
-                              llcrnrlon  = -8.9, \
-                              llcrnrlat  = 30.1, \
-                              urcrnrlon  = 37,   \
-                              urcrnrlat  = 46.0, \
-                              resolution = self._res, \
-                              area_thresh= 500. # Area threshold so that small water bodies are not painted
-                             )
-		# Initialize arrays
-		nLon = dims[2]; Lon2Meters = np.zeros((nLon,),dtype=np.double)
-		nLat = dims[1]; Lat2Meters = np.zeros((nLat,),dtype=np.double)
-		# Perform projection
-		for ii in range(0,nLon):
-			xpt,_          = self._mproj(Lon[60,ii],Lat[60,0]) # FIXED NEW
-			Lon2Meters[ii] = xpt if not self._map == 'cyl' else 6371e3*np.deg2rad(xpt)
-		for jj in range(0,nLat):
-			_,ypt          = self._mproj(Lon[0,nLon/2],Lat[jj,nLon/2])
-			Lat2Meters[jj] = ypt if not self._map == 'cyl' else 6371e3*np.deg2rad(ypt)
-		# Return
-		return np.sort(Lon2Meters), np.sort(Lat2Meters)
+		Given  a point in degrees return if it belongs to land
+
+		Inputs:
+			> lon   : longitude of the point (in degrees)
+			> lat   : latitude of the point (in degrees)
+			> geoms : geometries of the land areas
+			> ig    : previous iteration point, for a faster algorithm
+		'''
+		point = sgeom.Point(lon,lat)
+
+		# check if the point is contained on the same ig element
+		if geoms[ig].contains(point):
+			return True, ig
+
+		# scan from ig to the end
+		lg = len(geoms)
+		for ii in range(ig,lg):
+			if geoms[ii].contains(point):
+				return True, ii
+
+		# scan from 0 to ig
+		for ii in range(0,ig):
+			if geoms[ii].contains(point):
+				return True, ii
+
+		# the point is not land
+		return False, ig
 
 	def OGSwriteMesh(self,fname,wrkdir,Lon2Meters,Lat2Meters,nav_lev,basins_mask,coast_mask,land_mask):
 		'''
@@ -230,7 +326,7 @@ class OGSmesh(object):
 					     land_mask.ctypes.data_as(c_uint8_p)
 					    )
 
-	def createOGSMesh(self,fname="mesh.ogsmsh",path="."):
+	def createOGSMesh(self,fname="mesh.ogsmsh",path=".",proj='Mercator',projkwargs=dict()):
 		'''
 		creates a binary file containing all the mesh information for ParaView as well as
 		the basins and coasts masks.
@@ -240,19 +336,14 @@ class OGSmesh(object):
 			as the meshmask.nc file (Default: mesh.ogsmsh).
 		'''
 		# Read the mesh mask
-		dims, Lon, Lat, nav_lev = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
+		dims, Lon, Lat, nav_lev, self._mask = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
 
 		# Project latitude and longitude according to map specifics
-		Lon2Meters, Lat2Meters = self.applyProjection(dims,Lon,Lat)
-
-		# Obtain the coasts_mask and the basins_mask
-		basins_mask = self.generateBasinsMask()
-		coasts_mask = self.generateCoastsMask()
-		land_mask   = self.generateLandMask(coasts_mask)
+		Lon2Meters, Lat2Meters = self.applyProjection(proj,Lon,Lat,**projkwargs)
 
 		# Save into file
 		self.OGSwriteMesh(fname,path,Lon2Meters,Lat2Meters,nav_lev,
-			basins_mask.ravel(),coasts_mask.ravel(),land_mask.ravel());
+			self.basins_mask.ravel(),self.coasts_mask.ravel(),self.land_mask.ravel());
 
 '''
 	MAIN
@@ -264,19 +355,18 @@ if __name__ == '__main__':
 	argpar = argparse.ArgumentParser(prog="OGSmesh",description="Convert mesh for ParaView usage.")
 	argpar.add_argument('-i','--input',type=str,help='Full path to meshmask directory',required=True,dest='inpath')
 	argpar.add_argument('-o','--output',type=str,help='Name of the output mesh file',dest='outfile')
-	argpar.add_argument('-m','--map',type=str,help='Projection type (default: merc)',dest='map')
-	argpar.add_argument('-r','--res',type=str,help='Map resolution (default: l)',dest='res')
+	argpar.add_argument('-p','--proj',type=str,help='Projection type (default: Mercator)',dest='proj')
+	argpar.add_argument('-r','--res',type=str,help='Map resolution (default: simple)',dest='res')
 
 	# parse input arguments
 	args=argpar.parse_args()
-	if not args.map: args.map = 'merc'
-	if not args.res: args.res = 'l'
+	if not args.outfile: args.outfile = 'mesh.ogsmsh'
+	if not args.proj:    args.proj    = 'Mercator'
+	if not args.res:     args.res     = 'simple'
 
 	# Define class instance
-	mesh = OGSmesh(args.inpath,maptype=args.map,res=args.res)
+	mesh = OGSmesh(args.inpath,res=args.res)
+	projkwargs = {'false_easting':989634.3811336625,'false_northing':-3512473.95569}
 
 	# Generate the mesh file
-	if not args.outfile:
-		mesh.createOGSMesh()
-	else:
-		mesh.createOGSMesh(args.outfile)
+	mesh.createOGSMesh(fname=args.outfile,proj=args.proj,projkwargs=projkwargs)
