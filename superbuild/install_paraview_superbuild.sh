@@ -162,7 +162,7 @@ cd ../
 # Compile and install proj
 tar xzf extra_src/proj-6.1.0.tar.gz && cd proj-6.1.0
 ./configure --prefix=$INSTALL_PREFIX
-unzip extra_src/proj-datumgrid-1.8.zip -d data/
+unzip ../extra_src/proj-datumgrid-1.8.zip -d data/
 make -j $NPROCS install
 cd ../
 # Compile and install pyproj
