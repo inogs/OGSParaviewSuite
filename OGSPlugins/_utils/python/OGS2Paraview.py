@@ -27,10 +27,7 @@
 import os, sys, datetime, argparse, json
 import sys,numpy as np, glob as gl
 
-if sys.version_info[0] < 3:
-	import ConfigParser as cp
-else:
-	import configparser as cp
+import configparser as cp
 
 from OGSmesh import OGSmesh
 
@@ -54,7 +51,7 @@ class OGS2ParaView:
 		# Mode
 		self._mode = mode
 		# Dictionaries
-		self.vardicts    = [dict() for i in xrange(5)]
+		self.vardicts    = [dict() for i in range(5)]
 		self.time_list   = None
 		self.projections = None
 		self.resolution  = 'simple'
@@ -86,7 +83,7 @@ class OGS2ParaView:
 		if not os.path.exists(self.cfgfile):
 			raise ValueError("Configuration file in <%s> not found!\nAborting..." % self.cfgfile)
 		# Open config parser
-		cfgpar = cp.ConfigParser()
+		cfgpar = cp.RawConfigParser()
 		cfgpar.read(self.cfgfile)
 
 		# Read variables
