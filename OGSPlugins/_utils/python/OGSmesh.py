@@ -9,8 +9,6 @@ import os, sys, argparse
 import numpy as np, ctypes as ct
 import cartopy.crs as ccrs, cartopy.feature as cfeat, shapely.geometry as sgeom
 
-from mpl_toolkits.basemap import Basemap
-
 # Imports from bit.sea python module
 from commons.mask import Mask
 from commons.submask import SubMask
