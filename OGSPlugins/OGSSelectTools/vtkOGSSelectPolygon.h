@@ -19,6 +19,8 @@
 #include "vtkDataSet.h"
 #include "vtkThreshold.h"
 
+#include <string>
+
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
 #ifdef PARAVIEW_USE_MPI
@@ -63,9 +65,10 @@ private:
   vtkOGSSelectPolygon(const vtkOGSSelectPolygon&) = delete;
   void operator=(const vtkOGSSelectPolygon&) = delete;
 
-  int procId, nProcs, projId, Invert;
+  int procId, nProcs, Invert;
   double dfact;
   char *strPoints;
+  std::string projName;
 };
 
 #endif
