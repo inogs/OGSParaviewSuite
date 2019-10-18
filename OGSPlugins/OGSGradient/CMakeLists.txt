@@ -26,10 +26,9 @@ endif()
 
 if(NOT APPLE)
 # OpenMP does not work with Apple's clang so we deactivate it.
-	set ( CMAKE_C_FLAGS   "-fopenmp")
-	set ( CMAKE_CXX_FLAGS "-fopenmp")
+  set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
+  set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
-
 
 ADD_PARAVIEW_PLUGIN(OGSGradient "1.0"
   SERVER_MANAGER_XML OGSGradient.xml
