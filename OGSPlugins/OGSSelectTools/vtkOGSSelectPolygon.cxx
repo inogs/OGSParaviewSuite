@@ -122,6 +122,7 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 		input->GetFieldData()->GetAbstractArray("Metadata"));
 	this->dfact    = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : this->dfact;
 	this->projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
+	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
 
 	// Parse the points inputted by the user, project to meters and define the polygon
 	std::vector<std::string> aux;
@@ -143,7 +144,6 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 		// Convert to double
 		double lon = std::stod(aux2[1]), lat = std::stod(aux2[0]);
 		// Project
-		std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
 		p.transform_point("degrees",this->projName,lon,lat);
 		// Store point
 		points.push_back( Geom::Point<double>(lon,lat,0.) );
