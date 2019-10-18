@@ -577,7 +577,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	vtkmetadata->SetValue(6,aux_str.c_str());
 
 	// Set the projection id
-	vtkmetadata->SetValue(7,std::to_string(this->projId));
+	vtkmetadata->SetValue(7,this->projName.c_str());
 
 	// Add array to mesh
 	this->Mesh->GetFieldData()->AddArray(vtkmetadata);
