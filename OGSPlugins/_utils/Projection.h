@@ -83,6 +83,8 @@ namespace PROJ
 			}
 
 			inline int proj_transform_point(const char *from, const char *to, double *x, double *y) {
+				if (from==NULL || to==NULL) return PROJ_ERR;
+				
 				source = pj_init_plus(from); 
 				target = pj_init_plus(to);
 				alloc = true;
