@@ -176,7 +176,7 @@ namespace v3
 					using _category         = std::random_access_iterator_tag;
 
 					inline iterator() : v(nullptr), i(0) {}
-					inline iterator(V3v* v, int i) : v(v), i(i) {}
+					inline iterator(V3v* vv, int ii) : v(vv), i(ii) {}
 
 					inline       V3&       operator*()            { return (*v)[i]; }
 					inline const V3&       operator*() const      { return (*v)[i]; }
