@@ -20,7 +20,6 @@
 // so as not to incur in compilation duplicates
 #include "vtknetcdf/include/netcdf.h"
 #include "netcdfio.hpp"
-#include "Projections.hpp"
 
 #include <algorithm>
 
@@ -446,73 +445,9 @@ namespace NetCDF
 
 		return NETCDF_OK;		
 	}
-	int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], v3::V3v &xyz, double **data) {
-		
-		std::vector<double> lon(dims[0]), lat(dims[1]), depth(dims[2]);
 
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int jj = 0; jj < dims[1]; ++jj) {
-			for (int ii = 0; ii < dims[0]; ++ii) {
-				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
-				// Compute the spatial coordinates
-				PROJ::ProjInvMercator(lon[ii], lat[jj], &xyz[ind][0]);
-			}
-		}
-
-		// Convert V3v to depth positive down
-		for (int kk = 0; kk < dims[2]; ++kk) {
-			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
-			depth[kk] = -xyz[ind][2];
-		}
-
-		return writeNetCDF(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
-	}
-	int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], v3::V3v &xyz, float **data) {
-		
-		std::vector<float> lon(dims[0]), lat(dims[1]), depth(dims[2]);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int jj = 0; jj < dims[1]; ++jj) {
-			for (int ii = 0; ii < dims[0]; ++ii) {
-				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
-				// Compute the spatial coordinates
-				double aux_lon, aux_lat;
-				PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ind][0]);
-				lon[ii]   = (float)(aux_lon);
-				lat[jj]   = (float)(aux_lat);
-			}
-		}
-
-		// Convert V3v to depth positive down
-		for (int kk = 0; kk < dims[2]; ++kk) {
-			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
-			depth[kk] = (float)(-xyz[ind][2]);
-		}
-
-		return writeNetCDF(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
-	}
-	int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<double> &f) {
-
-		std::vector<double> lon(dims[0]), lat(dims[1]), depth(dims[2]);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int jj = 0; jj < dims[1]; ++jj) {
-			for (int ii = 0; ii < dims[0]; ++ii) {
-				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
-				// Compute the spatial coordinates
-				PROJ::ProjInvMercator(lon[ii], lat[jj], &xyz[ind][0]);
-			}
-		}
-
-		// Convert V3v to depth positive down
-		for (int kk = 0; kk < dims[2]; ++kk) {
-			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
-			depth[kk] = -xyz[ind][2];
-		}
-
+	int writeNetCDF(const char *fname, const char *varname, int dims[], double *lon, double *lat, 
+		double *depth, field::Field<double> &f) {
 		// Write NetCDF
 		int retval;
 		if (f.get_m() == 1) {
@@ -540,29 +475,8 @@ namespace NetCDF
 
 		return retval;
 	}
-	int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<float> &f) {
-
-		std::vector<float> lon(dims[0]), lat(dims[1]), depth(dims[2]);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int jj = 0; jj < dims[1]; ++jj) {
-			for (int ii = 0; ii < dims[0]; ++ii) {
-				int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
-				// Compute the spatial coordinates
-				double aux_lon, aux_lat;
-				PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ind][0]);
-				lon[ii]   = (float)(aux_lon);
-				lat[jj]   = (float)(aux_lat);
-			}
-		}
-
-		// Convert V3v to depth positive down
-		for (int kk = 0; kk < dims[2]; ++kk) {
-			int ind = PNTIND(0,0,kk,dims[0],dims[1]);
-			depth[kk] = (float)(-xyz[ind][2]);
-		}
-
+	int writeNetCDF(const char *fname, const char *varname, int dims[], float *lon, float *lat, 
+		float *depth, field::Field<float> &f) {
 		// Write NetCDF
 		int retval;
 		if (f.get_m() == 1) {
@@ -734,52 +648,8 @@ namespace NetCDF
 
 		return NETCDF_OK;
 	}
-	int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, v3::V3v &xyz, double **data) {
-		
-		std::vector<double> lon(dims), lat(dims), depth(dims);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int ii = 0; ii < dims; ++ii) {
-			// Compute the spatial coordinates
-			PROJ::ProjInvMercator(lon[ii], lat[ii], &xyz[ii][0]);
-			// Convert V3v to depth positive down
-			depth[ii] = -xyz[ii][2];
-		}
-
-		return writeNetCDFProfile(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
-	}
-	int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, v3::V3v &xyz, float **data) {
-		
-		std::vector<float> lon(dims), lat(dims), depth(dims);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int ii = 0; ii < dims; ++ii) {
-			// Compute the spatial coordinates
-			double aux_lon, aux_lat;
-			PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ii][0]);
-			lon[ii]   = (float)(aux_lon);
-			lat[ii]   = (float)(aux_lat);
-			// Convert V3v to depth positive down
-			depth[ii] = (float)(-xyz[ii][2]);
-		}
-
-		return writeNetCDFProfile(fname,varname,nvars,dims,&lon[0],&lat[0],&depth[0],data);	
-	}
-	int writeNetCDFProfile(const char *fname, const char *varname, int dims, v3::V3v &xyz, field::Field<double> &f) {
-
-		std::vector<double> lon(dims), lat(dims), depth(dims);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int ii = 0; ii < dims; ++ii) {
-			// Compute the spatial coordinates
-			PROJ::ProjInvMercator(lon[ii], lat[ii], &xyz[ii][0]);
-			// Convert V3v to depth positive down
-			depth[ii] = -xyz[ii][2];
-		}
-
+	int writeNetCDFProfile(const char *fname, const char *varname, int dims, double *lon, double *lat, 
+		double *depth, field::Field<double> &f) {
 		// Write NetCDF
 		int retval;
 		if (f.get_m() == 1) {
@@ -806,22 +676,8 @@ namespace NetCDF
 		}
 		return retval;
 	}
-	int writeNetCDFProfile(const char *fname, const char *varname, int dims, v3::V3v &xyz, field::Field<float> &f) {
-
-		std::vector<float> lon(dims), lat(dims), depth(dims);
-
-		// Convert V3v to lon, lat using the conversion to degrees and
-		// converting depth to positive
-		for (int ii = 0; ii < dims; ++ii) {
-			// Compute the spatial coordinates
-			double aux_lon, aux_lat;
-			PROJ::ProjInvMercator(aux_lon, aux_lat, &xyz[ii][0]);
-			lon[ii]   = (float)(aux_lon);
-			lat[ii]   = (float)(aux_lat);
-			// Convert V3v to depth positive down
-			depth[ii] = (float)(-xyz[ii][2]);
-		}
-
+	int writeNetCDFProfile(const char *fname, const char *varname, int dims, float *lon, float *lat, 
+		float *depth, field::Field<float> &f) {
 		// Write NetCDF
 		int retval;
 		if (f.get_m() == 1) {
