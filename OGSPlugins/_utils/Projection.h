@@ -17,6 +17,7 @@
 #ifndef PROJECTIONS_H
 #define PROJECTIONS_H
 
+#include <string>
 #include <map>
 
 #include "proj/src/proj_api.hpp"
@@ -44,7 +45,40 @@ namespace PROJ
 				return errcode;
 			}
 
+			inline int transform_point(const char *from, const std::string &to, double xy[], double out[]) { 
+				double x = xy[0], y = xy[1];
+				int errcode = transform_point(from,to,x,y);
+				out[0] = x; out[1] = y;
+				return errcode;
+			}
+
+			inline int transform_point(const std::string &from, const char *to, double xy[], double out[]) { 
+				double x = xy[0], y = xy[1];
+				int errcode = transform_point(from,to,x,y);
+				out[0] = x; out[1] = y;
+				return errcode;
+			}
+
+			inline int transform_point(const std::string &from, const std::string &to, double xy[], double out[]) { 
+				double x = xy[0], y = xy[1];
+				int errcode = transform_point(from,to,x,y);
+				out[0] = x; out[1] = y;
+				return errcode;
+			}
+
 			inline int transform_point(const char *from, const char *to, double &x, double &y) { 
+				return proj_transform_point(projs[std::string(from)],projs[std::string(to)],&x,&y);
+			}
+
+			inline int transform_point(const char *from, const std::string &to, double &x, double &y) { 
+				return proj_transform_point(projs[std::string(from)],projs[to],&x,&y);
+			}
+
+			inline int transform_point(const std::string &from, const char *to, double &x, double &y) { 
+				return proj_transform_point(projs[from],projs[std::string(to)],&x,&y);
+			}
+
+			inline int transform_point(const std::string &from, const std::string &to, double &x, double &y) { 
 				return proj_transform_point(projs[from],projs[to],&x,&y);
 			}
 
@@ -64,7 +98,7 @@ namespace PROJ
 			projPJ source, target;
 
 			// map containing all the default projections from the Suite
-			std::map<const char*,const char*> projs = {
+			std::map<std::string,const char*> projs = {
 				{"degrees"     ,"+ellps=WGS84 +a=57.29577951308232 +proj=eqc +lon_0=0.0 +no_defs"},                                          // Plate Carree
 				{"mercator"    ,"+ellps=WGS84 +proj=merc +lon_0=0.0 +x_0=989634.3811336625 +y_0=-3512473.95569 +units=m +no_defs"},          // Mercator centered on MED
 				{"cylindrical" ,"+datum=WGS84 +ellps=WGS84 +proj=eqc +lat_ts=0 +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +units=m +no_defs +no_defs"}, // Cylindrical using EPSG:4087
