@@ -129,6 +129,12 @@ int vtkOGSTimeStatistics::RequestInformation(vtkInformation* vtkNotUsed(request)
 		this->TimeValues->SetValue(ii,buff);
 	}
 
+	// Obtain the timestep index
+	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_st) { this->ii_start = ii; }
+		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_ed) { this->ii_end = ii; }
+	}
+
 	// The output data of this filter has no time associated with it. It is the
 	// result of computations that happen over all time.
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
@@ -153,6 +159,7 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 
 	// Copy the mesh, not the variables
 	output->CopyStructure(input);
+	output->GetFieldData()->PassData(input->GetFieldData());
 
 	/* INITIALIZATION PHASE
 
@@ -398,10 +405,6 @@ int vtkOGSTimeStatistics::RequestData(vtkInformation *request,
 			output->GetCellData()->AddArray(vtkArray);
 			vtkArray->Delete();
 		}
-		// Make sure the metadata array is passed to the output
-		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-			input->GetFieldData()->GetAbstractArray("Metadata"));
-		output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
 	this->UpdateProgress(1.);
@@ -454,22 +457,12 @@ void RecoverMasterFileName(std::string &fname, vtkRectilinearGrid *input) {
 
 //----------------------------------------------------------------------------
 void vtkOGSTimeStatistics::SetStartTime(const char *tstep) {
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == std::string(tstep)) {
-			this->ii_start = ii; break;
-		}
-	}
+	this->tstep_st = std::string(tstep);
 	this->Modified();
 }
 
 void vtkOGSTimeStatistics::SetEndTime(const char *tstep) {
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == std::string(tstep)) {
-			this->ii_end = ii; break;
-		}
-	}
+	this->tstep_ed = std::string(tstep);
 	this->Modified();
 }
 

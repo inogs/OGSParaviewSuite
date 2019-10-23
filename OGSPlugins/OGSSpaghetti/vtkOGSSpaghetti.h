@@ -21,6 +21,7 @@
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
 #include <vector>
+#include <string>
 
 #include "../_utils/V3.h"
 #include "../_utils/field.h"
@@ -133,6 +134,8 @@ private:
   bool isReqInfo;
 
   double epsi, dfact;
+
+  std::string tstep_st, tstep_ed;
 
   std::vector<double> zcoords;
   v3::V3v xyz;               // Stores cell/point coordinates

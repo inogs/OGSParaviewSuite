@@ -63,6 +63,7 @@ vtkStandardNewMacro(vtkOGSNetCDFWriter);
 #include "../_utils/vtkOperations.hpp"
 #include "../_utils/OGS.hpp"
 #include "../_utils/netcdfio.hpp"
+#include "../_utils/Projection.h"
 
 //----------------------------------------------------------------------------
 void FindCell(v3::V3 p, v3::V3v &xyz, int &pos_min, double &dist_min, double epsi) {
@@ -195,6 +196,77 @@ int InterpolateData(vtkDataSet *input, vtkDataSet *output, double dfact, bool is
 }
 
 //----------------------------------------------------------------------------
+void projectXYZ(v3::V3v &xyz, std::string &from, int dims[], double lon[], double lat[], double depth[]) {
+	PROJ::Projection p;
+	// Convert V3v to lon, lat using the conversion to degrees and
+	// converting depth to positive
+	for (int jj = 0; jj < dims[1]; ++jj) {
+		for (int ii = 0; ii < dims[0]; ++ii) {
+			int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
+			// Project (from should already be in lowercase)
+			lon[ii]   = xyz[ind][0];
+			lat[jj]   = xyz[ind][1];
+			p.transform_point(from,"degrees",lon[ii],lat[jj]);
+		}
+	}
+		// Convert V3v to depth positive down
+	for (int kk = 0; kk < dims[2]; ++kk) {
+		int ind = PNTIND(0,0,kk,dims[0],dims[1]);
+		depth[kk] = (float)(-xyz[ind][2]);
+	}
+}
+
+void projectXYZ(v3::V3v &xyz, std::string &from, int dims[], float lon[], float lat[], float depth[]) {
+	PROJ::Projection p;
+	// Convert V3v to lon, lat using the conversion to degrees and
+	// converting depth to positive
+	for (int jj = 0; jj < dims[1]; ++jj) {
+		for (int ii = 0; ii < dims[0]; ++ii) {
+			int ind = PNTIND(ii,jj,0,dims[0],dims[1]);
+			// Project (from should already be in lowercase)
+			double aux_lon = xyz[ind][0], aux_lat = xyz[ind][1];
+			p.transform_point(from,"degrees",aux_lon,aux_lat);
+			lon[ii] = (float)(aux_lon);
+			lat[jj] = (float)(aux_lat);
+		}
+	}
+		// Convert V3v to depth positive down
+	for (int kk = 0; kk < dims[2]; ++kk) {
+		int ind = PNTIND(0,0,kk,dims[0],dims[1]);
+		depth[kk] = (float)(-xyz[ind][2]);
+	}
+}
+
+void projectXYZprofile(v3::V3v &xyz, std::string &from, int dims, double lon[], double lat[], double depth[]) {
+	PROJ::Projection p;
+	// Convert V3v to lon, lat using the conversion to degrees and
+	// converting depth to positive
+	for (int ii = 0; ii < dims; ++ii) {
+		// Project (from should already be in lowercase)
+		lon[ii]   = xyz[ii][0];
+		lat[ii]   = xyz[ii][1];
+		p.transform_point(from,"degrees",lon[ii],lat[ii]);
+		// Convert V3v to depth positive down
+		depth[ii] = -xyz[ii][2];
+	}
+}
+
+void projectXYZprofile(v3::V3v &xyz, std::string &from, int dims, float lon[], float lat[], float depth[]) {
+	PROJ::Projection p;
+	// Convert V3v to lon, lat using the conversion to degrees and
+	// converting depth to positive
+	for (int ii = 0; ii < dims; ++ii) {
+		// Project (from should already be in lowercase)
+		double aux_lon = xyz[ii][0], aux_lat = xyz[ii][1];
+		p.transform_point(from,"degrees",aux_lon,aux_lat);
+		lon[ii] = (float)(aux_lon);
+		lat[ii] = (float)(aux_lat);
+		// Convert V3v to depth positive down
+		depth[ii] = -xyz[ii][2];
+	}
+}
+
+//----------------------------------------------------------------------------
 vtkOGSNetCDFWriter::vtkOGSNetCDFWriter() : FileName(nullptr), OGSFile(nullptr), varname(nullptr), dfact(1000.), singlevar(0), SaveAll(0) {}
 
 //----------------------------------------------------------------------------
@@ -306,7 +378,7 @@ void vtkOGSNetCDFWriter::WriteData() {
 	this->dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : this->dfact;
 	std::string aux = (vtkmetadata != NULL) ? vtkmetadata->GetValue(4) : "";
 	if (aux != std::string("")) { this->OGSFile = new char[aux.length()+1]; std::strcpy(this->OGSFile,aux.c_str()); }
-	this->projId = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(7) ) : 0;
+	this->projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
 		
 	if (vtkmetadata == NULL) 
 		vtkWarningMacro("Field array Metadata not found! Using user input value.");
@@ -376,14 +448,23 @@ void vtkOGSNetCDFWriter::writeNetCDFRectilinearGrid1Var(vtkRectilinearGrid *inpu
 		data = array.convert<float>();
 	}
 
-	// Write NetCDF file
 	int retval;
+	std::vector<float> lon, lat, depth;
+	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
+
 	if (iscelld) {
-		int dims[] = {nx-1,ny-1,nz-1};
-		retval = NetCDF::writeNetCDF(this->FileName,this->varname,dims,xyz,data);
+		int dims[] = {nx-1,ny-1,nz-1}; 
+		lon.resize(dims[0]); lat.resize(dims[1]); depth.resize(dims[2]);
+		// Project
+		projectXYZ(xyz,this->projName,dims,&lon[0],&lat[0],&depth[0]);
+		// Write NetCDF file
+		retval = NetCDF::writeNetCDF(this->FileName,this->varname,dims,&lon[0],&lat[0],&depth[0],data);
 	} else {
 		int dims[] = {nx,ny,nz};
-		retval = NetCDF::writeNetCDF(this->FileName,this->varname,dims,xyz,data);
+		lon.resize(dims[0]); lat.resize(dims[1]); depth.resize(dims[2]);
+		// Project
+		projectXYZ(xyz,this->projName,dims,&lon[0],&lat[0],&depth[0]);
+		retval = NetCDF::writeNetCDF(this->FileName,this->varname,dims,&lon[0],&lat[0],&depth[0],data);
 	}
 	if ( retval != NETCDF_OK ) vtkWarningMacro("Unexpected error writing NetCDF file!");
 }
@@ -468,14 +549,22 @@ void vtkOGSNetCDFWriter::writeNetCDFRectilinearGridnVar(vtkRectilinearGrid *inpu
 		vid += aux.get_m() - 1;
 	}
 
-	// Write NetCDF file
 	int retval;
+	std::vector<float> lon, lat, depth;
+	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
+
 	if (iscelld) {
 		int dims[] = {nx-1,ny-1,nz-1};
-		retval = NetCDF::writeNetCDF(this->FileName,varnames.data(),nvars,dims,xyz,data.data());
+		lon.resize(dims[0]); lat.resize(dims[1]); depth.resize(dims[2]);
+		// Project
+		projectXYZ(xyz,this->projName,dims,&lon[0],&lat[0],&depth[0]);
+		retval = NetCDF::writeNetCDF(this->FileName,varnames.data(),nvars,dims,&lon[0],&lat[0],&depth[0],data.data());
 	} else {
 		int dims[] = {nx,ny,nz};
-		retval = NetCDF::writeNetCDF(this->FileName,varnames.data(),nvars,dims,xyz,data.data());
+		lon.resize(dims[0]); lat.resize(dims[1]); depth.resize(dims[2]);
+		// Project
+		projectXYZ(xyz,this->projName,dims,&lon[0],&lat[0],&depth[0]);
+		retval = NetCDF::writeNetCDF(this->FileName,varnames.data(),nvars,dims,&lon[0],&lat[0],&depth[0],data.data());
 	}
 	if ( retval != NETCDF_OK ) vtkWarningMacro("Unexpected error writing NetCDF file!");
 }
@@ -491,8 +580,14 @@ void vtkOGSNetCDFWriter::writeNetCDFUnstructuredGrid1Var(vtkUnstructuredGrid *in
 		return;
 	}
 
+	// Obtain the projection index
+	int projId;
+	for (int ii = 0; ii < ogsdata.n_projs(); ++ii) {
+		if (ogsdata.projection(ii) == this->projName) { projId = ii; break; }
+	}
+
 	// Now read the mesh file
-	if (ogsdata.readMesh(this->projId) < 0) {
+	if (ogsdata.readMesh(projId) < 0) {
 		vtkWarningMacro("Problems reading the mesh file! Aborting.");
 		return;
 	}
@@ -559,8 +654,14 @@ void vtkOGSNetCDFWriter::writeNetCDFUnstructuredGridnVar(vtkUnstructuredGrid *in
 		return;
 	}
 
+	// Obtain the projection index
+	int projId = -1;
+	for (int ii = 0; ii < ogsdata.n_projs(); ++ii) {
+		if (ogsdata.projection(ii) == this->projName) { projId = ii; break; }
+	}
+
 	// Now read the mesh file
-	if (ogsdata.readMesh(this->projId) < 0) {
+	if (ogsdata.readMesh(projId) < 0) {
 		vtkWarningMacro("Problems reading the mesh file! Aborting.");
 		return;
 	}
@@ -654,7 +755,9 @@ void vtkOGSNetCDFWriter::writeNetCDFPolyData1Var(vtkPolyData *input, vtkAbstract
 	}
 
 	// Write NetCDF file
-	if ( NetCDF::writeNetCDFProfile(this->FileName,this->varname,xyz.len(),xyz,data) != NETCDF_OK ) 
+	std::vector<float> lon(xyz.len()), lat(xyz.len()), depth(xyz.len());
+	projectXYZprofile(xyz,this->projName,xyz.len(),&lon[0],&lat[0],&depth[0]); // Project
+	if ( NetCDF::writeNetCDFProfile(this->FileName,this->varname,xyz.len(),&lon[0],&lat[0],&depth[0],data) != NETCDF_OK ) 
 		vtkWarningMacro("Unexpected error writing NetCDF file!");
 }
 
@@ -738,7 +841,9 @@ void vtkOGSNetCDFWriter::writeNetCDFPolyDatanVar(vtkPolyData *input, bool iscell
 	}
 
 	// Write NetCDF file
-	if ( NetCDF::writeNetCDFProfile(this->FileName,varnames.data(),nvars,xyz.len(),xyz,data.data()) != NETCDF_OK ) 
+	std::vector<float> lon(xyz.len()), lat(xyz.len()), depth(xyz.len());
+	projectXYZprofile(xyz,this->projName,xyz.len(),&lon[0],&lat[0],&depth[0]); // Project
+	if ( NetCDF::writeNetCDFProfile(this->FileName,varnames.data(),nvars,xyz.len(),&lon[0],&lat[0],&depth[0],data.data()) != NETCDF_OK ) 
 		vtkWarningMacro("Unexpected error writing NetCDF file!");
 }
 

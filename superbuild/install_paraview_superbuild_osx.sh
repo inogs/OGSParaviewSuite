@@ -57,7 +57,7 @@ cp $SUITEDIR/superbuild/versions/versions_superbuild_py27.cmake superbuild/versi
 cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
 
 # Build
-cd ../ && mkdir paraview-build && cd paraview-build
+cd ../ && mkdir -p paraview-build && cd paraview-build
 cmake ../paraview-superbuild/ \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
    -DBUILD_TESTING=OFF \
@@ -87,8 +87,8 @@ cmake ../paraview-superbuild/ \
    -DENABLE_netcdf=OFF \
    -DENABLE_vrpn=ON \
    -DENABLE_vortexfinder2=OFF \
-   -Dparaview_PLUGINS_EXTERNAL="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils;OGSWriter" \
-   -Dparaview_PLUGINS_AUTOLOAD="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils;OGSWriter" \
+   -Dparaview_PLUGINS_EXTERNAL="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils;OGSWriter;OGSCompareVariables" \
+   -Dparaview_PLUGINS_AUTOLOAD="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSGradient;OGSHovmoeller;OGSLambda2Criterion;OGSOkuboWeiss;OGSOmegaCriterion;OGSPlotViews;OGSQCriterion;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStats;OGSSpatialStatsFromFile;OGSTimeStatistics;OGSVariableAggregator;OGSUtils;OGSWriter;OGSCompareVariables" \
    -Dparaview_PLUGIN_OGSAnnotateDateTime_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSAnnotateDateTime \
    -Dparaview_PLUGIN_OGSDepthProfile_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDepthProfile \
    -Dparaview_PLUGIN_OGSDerivatives_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDerivatives \
@@ -108,6 +108,7 @@ cmake ../paraview-superbuild/ \
    -Dparaview_PLUGIN_OGSVariableAggregator_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVariableAggregator \
    -Dparaview_PLUGIN_OGSUtils_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSUtils \
    -Dparaview_PLUGIN_OGSWriter_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSWriter \
+   -Dparaview_PLUGIN_OGSCompareVariables_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSCompareVariables \
    -DCMAKE_C_COMPILER=gcc \
    -DCMAKE_CXX_COMPILER=g++ \
    -DCMAKE_Fortran_COMPILER=gfortran
@@ -130,29 +131,35 @@ curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}
 curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
 tar xzf extra_src.tar.gz
 
+export PATH=$PATH:$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin
+export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries
+export PYTHONPATH=$PYTHONPATH:$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python
+
 # FIX: matplotlib depends on backports and kiwisolver
 # backports is already compiled during installation
 cp -r $PWD/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-# Unpack kiwisolver wheel
-unzip extra_src/kiwisolver-1.1.0_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-# Unpack cftime wheel
-unzip extra_src/cftime-1.0.3.4_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-# Unpack netCDF4 wheel
-unzip extra_src/netCDF4-1.4.2_osx.whl -d $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+
+# Install kiwisolver and netCDF4
+./install/bin/pip install kiwisolver netcdf4
+cp -r install/lib/python2.7/site-packages/kiwisolver $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp -r install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+cp -r install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
+
+
 # Compile and install geos
 tar xf extra_src/geos-3.7.0.tar.bz2 && cd geos-3.7.0
-./configure --prefix=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/ --libdir=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries
+./configure --prefix=$PWD/install
+export GEOS_DIR=$PWD/install
 make -j $NPROCS install
+ln -s $PWD/install/lib $PWD/install/lib64
 cd ../
 # Compile and install basemap
 tar xfz extra_src/basemap-1.1.0.tar.gz && cd basemap-1.1.0
-export GEOS_DIR=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/
-ln -s $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/lib
-ln -s $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/lib64
 python2.7 setup.py build
 cp build/lib.macosx-10.14-intel-2.7/_geoslib.so $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
-cp -r build/lib.macosx-10.14-intel-2.7/mpl_toolkits/basemap $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/mpl_toolkits
+cp -r build/lib.macosx-10.14-intel-2.7/mpl_toolkits/basemap $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/mpl_toolkits/
 cd ../
+
 # Compile and install proj
 tar xzf extra_src/proj-6.1.0.tar.gz && cd proj-6.1.0
 ./configure --prefix=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/ --libdir=$INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries
@@ -164,9 +171,8 @@ tar xzf extra_src/pyproj-1.9.6.tar.gz && cd pyproj-1.9.6
 python2.7 setup.py build
 cp -r build/lib.macosx-10.14-intel-2.7/pyproj $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
 cd ../
-# Remove dist-info folders
-rm -rf $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/*.dist-info
-# Also copy ffmpeg
+
+# Copy ffmpeg
 cp install/bin/ffmpeg $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/bin/
 cd ..
 printf "Install done successfully!\n"

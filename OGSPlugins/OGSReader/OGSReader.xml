@@ -24,7 +24,6 @@
      </StringVectorProperty>
 
      <!-- Projection -->
-
      <StringVectorProperty name="ProjInfo"
                            command="GetProjections"
                            information_only="1">
@@ -41,6 +40,9 @@
                 <Property name="ProjInfo" function="ArrayList" />
             </RequiredProperties>
         </StringListDomain>
+        <Hints>
+          <NoDefault />
+        </Hints>
         <Documentation>
           Set the projection to use.
         </Documentation>
@@ -48,11 +50,11 @@
 
      <!-- MeshMask e1t and e2t -->
      <IntVectorProperty name="MeshMask"
-                         label="Include meshmask weights"
-                         command="SetRMeshMask"
-                         number_of_elements="1"
-                         default_values="1"
-                         panel_visibility="advanced">
+                        label="Include meshmask weights"
+                        command="SetRMeshMask"
+                        number_of_elements="1"
+                        default_values="1"
+                        panel_visibility="advanced">
         <BooleanDomain name="bool"/>
         <Documentation>
           If this property is set to 0, the scaling factors will not be read.
@@ -61,19 +63,19 @@
 
      <!-- Mask array info -->
      <StringVectorProperty name="MaskInfo"
-                            information_only="1">
+                           information_only="1">
         <ArraySelectionInformationHelper attribute_name="Mask" />
      </StringVectorProperty>
 
      <StringVectorProperty name="MaskStatus"
-                            command="SetMaskArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="MaskInfo"
-                            label="Masks"
-                            panel_visibility="advanced">
+                           command="SetMaskArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="MaskInfo"
+                           label="Masks"
+                           panel_visibility="advanced">
         <ArraySelectionDomain name="array_list">
           <RequiredProperties>
             <Property name="MaskInfo" function="ArrayList" />
@@ -86,18 +88,18 @@
 
      <!-- Ave Freq array info-->
      <StringVectorProperty name="AveFreqInfo"
-                            information_only="1">
+                           information_only="1">
         <ArraySelectionInformationHelper attribute_name="AveFreq" />
      </StringVectorProperty>
 
      <StringVectorProperty name="AveFreqStatus"
-                            command="SetAveFreqArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="AveFreqInfo"
-                            label="Biogeochemical variables (AVE FREQ)">
+                           command="SetAveFreqArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="AveFreqInfo"
+                           label="Biogeochemical variables (AVE FREQ)">
         <ArraySelectionDomain name="array_list">
           <RequiredProperties>
             <Property name="AveFreqInfo" function="ArrayList" />
@@ -115,13 +117,13 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="AvePhysStatus"
-                            command="SetAvePhysArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="AvePhysInfo"
-                            label="Physical variables (AVE PHYS)">
+                           command="SetAvePhysArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="AvePhysInfo"
+                           label="Physical variables (AVE PHYS)">
         <ArraySelectionDomain name="array_list">
           <RequiredProperties>
             <Property name="AvePhysInfo" function="ArrayList" />
@@ -139,14 +141,14 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="ForcingStatus"
-                            command="SetForcingArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="ForcingInfo"
-                            label="Forcing variables (FORCINGS)"
-                            panel_visibility="advanced">
+                           command="SetForcingArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="ForcingInfo"
+                           label="Forcing variables (FORCINGS)"
+                           panel_visibility="advanced">
         <ArraySelectionDomain name="array_list">
           <RequiredProperties>
             <Property name="ForcingInfo" function="ArrayList" />
@@ -159,18 +161,18 @@
 
     <!-- Generals array info-->
      <StringVectorProperty name="GeneralInfo"
-                            information_only="1">
+                          information_only="1">
         <ArraySelectionInformationHelper attribute_name="General" />
      </StringVectorProperty>
 
      <StringVectorProperty name="GeneralStatus"
-                            command="SetGeneralArrayStatus"
-                            number_of_elements="2"
-                            repeat_command="1"
-                            number_of_elements_per_command="2"
-                            element_types="2 0"
-                            information_property="GeneralInfo"
-                            label="General variables (GENERALS)">
+                           command="SetGeneralArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="GeneralInfo"
+                           label="General variables (GENERALS)">
         <ArraySelectionDomain name="array_list">
           <RequiredProperties>
             <Property name="GeneralInfo" function="ArrayList" />
@@ -183,11 +185,11 @@
 
      <!-- Selection of depth scale factor -->
      <DoubleVectorProperty name="DepthScale"
-                        label="Scale factor for depth:"
-                        command="SetDepthScale"
-                        number_of_elements="1"
-                        default_values="1000."
-                        panel_visibility="advanced">
+                           label="Scale factor for depth:"
+                           command="SetDepthScale"
+                           number_of_elements="1"
+                           default_values="1000."
+                           panel_visibility="advanced">
         <Documentation>
           Selection of the scale factor for depth.
         </Documentation>
@@ -195,8 +197,8 @@
 
      <!-- Time step information -->
      <DoubleVectorProperty name="TimestepValues"
-                            repeatable="1"
-                            information_only="1">
+                           repeatable="1"
+                           information_only="1">
         <TimeStepsInformationHelper/>
         <Documentation>
           Available time step values.

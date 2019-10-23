@@ -238,6 +238,19 @@
         scalar array from which to perform thresholding.</Documentation>
       </StringVectorProperty>
 
+      <!-- Basins field -->
+      <IntVectorProperty name="basins_field"
+                         label="Output basins field"
+                         command="Setbasins_field"
+                         number_of_elements="1"
+                         default_values="0"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Output a field to visualize the basins.
+        </Documentation>
+      </IntVectorProperty>
+
       <!-- Threshold between (just 0.5 and 1) -->
       <DoubleVectorProperty command="ThresholdBetween"
                             default_values="0.5 1"

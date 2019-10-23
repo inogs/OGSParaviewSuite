@@ -70,9 +70,17 @@
                          default_values="0"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-         <Entry text="Mercator"    value="0"  />
-         <Entry text="Cylindrical" value="1"  />
-       </EnumerationDomain>
+          <Entry text="Mercator"     value="0"  />
+          <Entry text="Cylindrical"  value="1"  />
+          <Entry text="Google"       value="2"  />
+          <Entry text="Mollweide"    value="3"  />
+          <Entry text="Orthographic" value="4"  />
+          <Entry text="Robinson"     value="5"  />
+          <Entry text="Satellite"    value="6"  />
+          <Entry text="Eckert IV"    value="7"  />
+          <Entry text="Equal Earth"  value="8"  />
+          <Entry text="EPSG 3857"    value="9"  />
+        </EnumerationDomain>
       </IntVectorProperty>
 
       <!-- Selection of depth scale factor -->
@@ -172,9 +180,17 @@
                          default_values="0"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-         <Entry text="Mercator"    value="0"  />
-         <Entry text="Cylindrical" value="1"  />
-       </EnumerationDomain>
+          <Entry text="Mercator"     value="0"  />
+          <Entry text="Cylindrical"  value="1"  />
+          <Entry text="Google"       value="2"  />
+          <Entry text="Mollweide"    value="3"  />
+          <Entry text="Orthographic" value="4"  />
+          <Entry text="Robinson"     value="5"  />
+          <Entry text="Satellite"    value="6"  />
+          <Entry text="Eckert IV"    value="7"  />
+          <Entry text="Equal Earth"  value="8"  />
+          <Entry text="EPSG 3857"    value="9"  />
+        </EnumerationDomain>
       </IntVectorProperty>
 
       <!-- Selection of depth scale factor -->

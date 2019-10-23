@@ -82,9 +82,10 @@ vtkOGSSelectBasin::vtkOGSSelectBasin() {
 	this->BasinsDataArraySelection = vtkDataArraySelection::New();
 	addSubBasins(this->BasinsDataArraySelection);
 
-	this->mask_field = NULL;
-	this->nProcs     = 0;
-	this->procId     = 0;
+	this->mask_field   = NULL;
+	this->nProcs       = 0;
+	this->procId       = 0;
+	this->basins_field = 0;
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;
@@ -148,32 +149,37 @@ int vtkOGSSelectBasin::RequestData(vtkInformation *vtkNotUsed(request),
 	field::Field<FLDMASK> mask = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkmask);
 
 	// Generate a new field (initialized at zero) that will be used as cutting mask
-	field::Field<FLDMASK> cutmask(mask.get_n(),1);
+	field::Field<FLDMASK> cutmask(mask.get_n(),1), bfield(mask.get_n(),1);
 
 	this->UpdateProgress(0.2);
 
 	// Loop and update cutting mask (Mesh loop, can be parallelized)
-	#pragma omp parallel shared(mask,cutmask)
+	#pragma omp parallel shared(mask,cutmask,bfield)
 	{
 	for (int ii = 0 + OMP_THREAD_NUM; ii < mask.get_n(); ii += OMP_NUM_THREADS) {
 		cutmask[ii][0] = 0;
 		// Loop on the basins array selection
 		for (int bid=0; bid < this->GetNumberOfBasinsArrays(); ++bid)
-			if (this->GetBasinsArrayStatus(this->GetBasinsArrayName(bid)) && mask[ii][bid]) { cutmask[ii][0] = 1; continue; }
+			if (this->GetBasinsArrayStatus(this->GetBasinsArrayName(bid)) && mask[ii][bid]) { 
+				cutmask[ii][0] = 1; bfield[ii][0] = (FLDMASK)(bid); continue; 
+			}
 	}
 	}
 
 	// Convert field to vtkArray and add it to input
-	VTKMASK *vtkcutmask;
+	VTKMASK *vtkcutmask, *vtkbfield;
 	vtkcutmask = VTK::createVTKfromField<VTKMASK,FLDMASK>("CutMask",cutmask);
+	if (this->basins_field) vtkbfield  = VTK::createVTKfromField<VTKMASK,FLDMASK>("basins field",bfield);
 
 	if (iscelld) {
 		input->GetCellData()->AddArray(vtkcutmask);
+		if (this->basins_field) input->GetCellData()->AddArray(vtkbfield);
 		// Force to use the CutMask to produce the Threshold
 		this->Superclass::SetInputArrayToProcess(0,0,0,
 			vtkDataObject::FIELD_ASSOCIATION_CELLS,"CutMask");
 	} else {
 		input->GetPointData()->AddArray(vtkcutmask);
+		if (this->basins_field) input->GetPointData()->AddArray(vtkbfield);		
 		// Force to use the CutMask to produce the Threshold
 		this->Superclass::SetInputArrayToProcess(0,0,0,
 			vtkDataObject::FIELD_ASSOCIATION_POINTS,"CutMask");
@@ -197,7 +203,7 @@ int vtkOGSSelectBasin::RequestData(vtkInformation *vtkNotUsed(request),
 		output->GetCellData()->RemoveArray(this->mask_field);
 	} else {
 		output->GetPointData()->RemoveArray("CutMask");
-		output->GetPointData()->RemoveArray(this->mask_field);		
+		output->GetPointData()->RemoveArray(this->mask_field);
 	}
 	vtkcutmask->Delete();
 

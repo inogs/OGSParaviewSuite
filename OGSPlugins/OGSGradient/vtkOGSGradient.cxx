@@ -448,6 +448,7 @@ int vtkOGSGradient::RequestData(vtkInformation *vtkNotUsed(request),
   output->CopyStructure(input);
   output->GetPointData()->PassData(input->GetPointData());
   output->GetCellData()->PassData(input->GetCellData());
+  output->GetFieldData()->PassData(input->GetFieldData());
 
   if(output->IsA("vtkImageData") || output->IsA("vtkStructuredGrid") ||
           output->IsA("vtkRectilinearGrid") )

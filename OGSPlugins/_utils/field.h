@@ -97,7 +97,7 @@ namespace field
 					using _category = std::random_access_iterator_tag;
 
 					inline iterator() : f(nullptr), i(0) {}
-					inline iterator(Field<T>* f, int i) : f(f), i(i) {}
+					inline iterator(Field<T>* ff, int ii) : f(ff), i(ii) {}
 
 					inline       pointer   operator*()            { return (*f)[i]; }
 					inline const pointer   operator*() const      { return (*f)[i]; }

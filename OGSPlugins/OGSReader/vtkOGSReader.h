@@ -22,6 +22,8 @@
 
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
+#include <string>
+
 #include "../_utils/OGS.hpp"
 
 class vtkDataSet;
@@ -159,6 +161,8 @@ private:
 
 	int abort, procId, nProcs, projId;
 	vtkRectilinearGrid* Mesh;
+
+	std::string projName;
 
 	ogs::OGS ogsdata;
 

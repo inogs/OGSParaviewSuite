@@ -123,15 +123,12 @@ int vtkOGSDepthProfile::RequestData(vtkInformation *vtkNotUsed(request),
 	output->CopyStructure(input);
 	output->GetPointData()->SetCopyAttribute(vtkDataSetAttributes::SCALARS,
 		2,vtkDataSetAttributes::INTERPOLATE);
+	output->GetFieldData()->PassData(source->GetFieldData());
 
 	// If there is data to interpolate, begin the interpolation
 	if (source) {
 		this->Initialize(input, source, output);
 		this->Interpolate(input, source, output);
-		// Make sure the metadata array is passed to the output
-		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-			source->GetFieldData()->GetAbstractArray("Metadata"));
-		output->GetFieldData()->AddArray(vtkmetadata);
 	}
 
 	return 1;

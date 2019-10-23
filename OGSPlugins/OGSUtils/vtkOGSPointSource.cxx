@@ -22,7 +22,7 @@
 #include "vtkPolyData.h"
 #include "vtkRandomSequence.h"
 
-#include "../_utils/Projections.hpp"
+#include "../_utils/Projection.h"
 
 #include <cfloat>
 #include <cmath>
@@ -136,29 +136,78 @@ double vtkOGSPointSource::Random() {
 // ----------------------------------------------------------------------
 void vtkOGSPointSource::SetLonLat(double lon, double lat) {
 	// Conversion of lon, lat to a projected point
-	double xy[2];
+	PROJ::Projection p;
 	switch(this->Projection) {
 		case 0:
-			PROJ::ProjMercator(lon,lat,xy);
+			p.transform_point("degrees","mercator",lon,lat);
 			break;
 		case 1:
-			PROJ::ProjCylindrical(lon,lat,xy);
+			p.transform_point("degrees","cylindrical",lon,lat);
 			break;
+		case 2:
+			p.transform_point("degrees","google",lon,lat);
+			break;
+		case 3:
+			p.transform_point("degrees","mollweide",lon,lat);
+			break;
+		case 4:
+			p.transform_point("degrees","orthographic",lon,lat);
+			break;
+		case 5:
+			p.transform_point("degrees","robinson",lon,lat);
+			break;
+		case 6:
+			p.transform_point("degrees","satellite",lon,lat);
+			break;
+		case 7:
+			p.transform_point("degrees","eckert iv",lon,lat);
+			break;
+		case 8:
+			p.transform_point("degrees","equal earth",lon,lat);
+			break;
+		case 9:
+			p.transform_point("degrees","epsg 3857",lon,lat);
+			break; 
 	}
 	// Set center
-	this->Center[0] = xy[0];
-	this->Center[1] = xy[1];
+	this->Center[0] = lon;
+	this->Center[1] = lat;
 	this->Modified();
 }
 void vtkOGSPointSource::GetLonLat(double &lon, double &lat) {
 	// Conversion to lon, lat
-	double xy[2] = {this->Center[0],this->Center[2]};
+	PROJ::Projection p;
+	lon = this->Center[0]; lat = this->Center[2];
 	switch(this->Projection) {
 		case 0:
-			PROJ::ProjInvMercator(lon,lat,xy);
+			p.transform_point("mercator","degrees",lon,lat);
 			break;
 		case 1:
-			PROJ::ProjInvCylindrical(lon,lat,xy);
+			p.transform_point("cylindrical","degrees",lon,lat);
+			break;
+		case 2:
+			p.transform_point("google","degrees",lon,lat);
+			break;
+		case 3:
+			p.transform_point("mollweide","degrees",lon,lat);
+			break;
+		case 4:
+			p.transform_point("orthographic","degrees",lon,lat);
+			break;
+		case 5:
+			p.transform_point("robinson","degrees",lon,lat);
+			break;
+		case 6:
+			p.transform_point("satellite","degrees",lon,lat);
+			break;
+		case 7:
+			p.transform_point("eckert iv","degrees",lon,lat);
+			break;
+		case 8:
+			p.transform_point("equal earth","degrees",lon,lat);
+			break;
+		case 9:
+			p.transform_point("epsg 3857","degrees",lon,lat);
 			break;
 	}
 }

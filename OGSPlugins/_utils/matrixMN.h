@@ -44,6 +44,8 @@
   #include "mkl.h"
 #endif
 
+#define BLK_LIM 5000
+
 namespace matMN
 {
 	template<class T>
@@ -69,8 +71,10 @@ namespace matMN
 			// Functions
 			inline int  get_m()                                      { return m; }
 			inline int  get_n()                                      { return n; }
-			inline void size(const int i)                            { m = i; n = i; sz = i*i; alloc = true; mat = new T[sz]; }
-			inline void size(const int i, const int j)               { m = i; n = j; sz = i*j; alloc = true; mat = new T[sz]; }
+			inline int  get_bsz()                                    { return bsz; }
+			inline void set_bsz(const int i)                         { bsz = i; }
+			inline void size(const int i)                            { m = i; n = i; sz = i*i; bsz = -1.; alloc = true; mat = new T[sz]; }
+			inline void size(const int i, const int j)               { m = i; n = j; sz = i*j; bsz = -1.; alloc = true; mat = new T[sz]; }
 			inline void fill(const T val)                            { if (alloc) std::fill(mat,mat+sz,val); }
 			inline void fill(const T val[])                          { if (alloc) std::memcpy(mat, val, sz*sizeof(T)); }
 			inline void clear()                                      { n = 0; m = 0; sz = 0; if (alloc) { delete [] mat; } alloc = false; }
@@ -85,7 +89,7 @@ namespace matMN
 			inline T            tra();   // Trace
 			inline T*           diag();  // Diagonal
 			inline void         iden();  // Identity
-//			inline matrixMN<T>  inv();   // Inverse (to do)
+//			inline matrixMN<T>  inv();   // Inverse     (to do)
 //			inline T            det();   // Determinant (to do)
 
 			// Operators
@@ -112,8 +116,12 @@ namespace matMN
 			
 		private:
 			bool alloc = false;
-			int m, n, sz;
+			size_t sz;
+			int m, n, bsz;
 			T *mat; // Matrix value stored as an array of MxN
+
+			inline matrixMN<T>  t_n();
+			inline matrixMN<T>  t_f();
 	};
 
 	// Operators
@@ -168,23 +176,46 @@ namespace matMN
 		}
 	}
 	template<class T>
-	inline T matrixMN<T>::norm2() {
-		// Frobenius norm of a matrix squared.
+	inline T matrixMN<T>::norm2() { // Frobenius norm of a matrix squared.
 		T norm2 = 0.;
 		for (int i=0; i<this->m; ++i) {
-			for (int j=0; j<this->n; j++)
+			for (int j=0; j<this->n; ++j)
 				norm2 += this->ij(i,j)*this->ij(i,j);
 		}
 		return norm2;
 	}
 	template<class T>
-	inline matrixMN<T> matrixMN<T>::t() {
-		matrixMN<T> out(this->m,this->n);
+	inline matrixMN<T> matrixMN<T>::t_n() { // Naive transpose
+		matrixMN<T> out(this->m,this->n); T swp;
 		for (int i=0; i<this->m; ++i) {
-			for (int j=0; j<this->n; j++)
+			for (int j=0; j<i+1; ++j) {
+				swp = this->ij(i,j);
 				out.ij(i,j,this->ij(j,i));
+				out.ij(j,i, swp);
+			}
 		}
 		return out;
+	}
+	template<class T>
+	inline matrixMN<T> matrixMN<T>::t_f() { // Fast transpose (M = N)
+		matrixMN<T> out(this->m);
+		// Loop by blocks
+		for (int ib=0; ib<this->m/this->bsz; ++ib) {
+			for(int jb=0; jb<this->n/this->bsz; ++jb) {
+				// Loop matrix
+				for(int i=ib*this->bsz; i<(ib+1)*this->bsz; ++i) {
+					for(int j=jb*this->bsz; j<(jb+1)*this->bsz; ++j) {
+						out.ij(j,i, this->ij(i,j)); 
+					}
+				}// Loop matrix
+			}
+		}
+
+		return out;
+	}	
+	template<class T>
+	inline matrixMN<T> matrixMN<T>::t() {
+		return (this->m == this->n && this-> bsz > 0 && this->m > BLK_LIM) ? this->t_f() : this->t_n();
 	}
 	template<class T>
 	inline T *matrixMN<T>::diag() {

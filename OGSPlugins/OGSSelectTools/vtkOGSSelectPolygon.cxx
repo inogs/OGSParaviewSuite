@@ -27,7 +27,7 @@
 #include "vtkObjectFactory.h"
 
 #include <cstdint>
-#include <string>
+#include <algorithm>
 #include <vector>
 
 #ifdef __linux__
@@ -60,7 +60,7 @@ vtkStandardNewMacro(vtkOGSSelectPolygon);
 #include "../_utils/field.h"
 #include "../_utils/vtkFields.hpp"
 #include "../_utils/geometry.h"
-#include "../_utils/Projections.hpp"
+#include "../_utils/Projection.h"
 
 //----------------------------------------------------------------------------
 void strsplit(const std::string& str, std::vector<std::string> &cont, char delim) {
@@ -79,7 +79,6 @@ vtkOGSSelectPolygon::vtkOGSSelectPolygon() {
 
 	this->strPoints  = NULL;
 	this->nProcs     = 0;
-	this->procId     = 0;
 	this->Invert     = 0;
 	this->dfact      = 1000.;
 
@@ -121,14 +120,16 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 	// Obtain information on the projection (Metadata array)
 	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
 		input->GetFieldData()->GetAbstractArray("Metadata"));
-	this->dfact  = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : this->dfact;
-	this->projId = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(7) ) : 0;
+	this->dfact    = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : this->dfact;
+	this->projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
+	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
 
 	// Parse the points inputted by the user, project to meters and define the polygon
 	std::vector<std::string> aux;
 	strsplit(std::string(this->strPoints),aux,'\n'); // Split by endline
 
-	std::vector<Geom::Point<double>> points;	
+	std::vector<Geom::Point<double>> points;
+	PROJ::Projection p;	
 
 	// Loop the user inputed points
 	for (std::string str : aux) {
@@ -143,16 +144,9 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 		// Convert to double
 		double lon = std::stod(aux2[1]), lat = std::stod(aux2[0]);
 		// Project
-		double xy[2];
-		switch (this->projId) {
-			case 0:
-				PROJ::ProjMercator(lon,lat,xy);
-				break;
-			case 1:
-				PROJ::ProjCylindrical(lon,lat,xy);
-		}
+		p.transform_point("degrees",this->projName,lon,lat);
 		// Store point
-		points.push_back( Geom::Point<double>(xy[0],xy[1],0.) );
+		points.push_back( Geom::Point<double>(lon,lat,0.) );
 	}
 
 	// Define the polygon and compute the bounding box

@@ -26,8 +26,11 @@
 #include <omp.h>
 #endif
 
-#include "netcdfio.hpp"
 #include "OGS.hpp"
+
+#ifndef OGS_NO_NETCDF
+#include "netcdfio.hpp"
+#endif
 
 #define CLLIND(ii,jj,kk,nx,ny) ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
 #define PNTIND(ii,jj,kk,nx,ny) ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
@@ -237,6 +240,7 @@ int OGS::writeMesh(const int i) {
 }
 
 void OGS::readMeshmask(const int i) {
+#ifndef OGS_NO_NETCDF
 	// Read the fields as double arrays
 	int ncells2D = 1*(this->_nlon-1)*(this->_nlat-1);
 	
@@ -286,6 +290,7 @@ void OGS::readMeshmask(const int i) {
 			}
 		}
 	}
+#endif
 }
 
 std::string OGS::var_WritePath(int i, int j, const char *str, const char *token) {

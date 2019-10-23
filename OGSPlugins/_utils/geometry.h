@@ -82,7 +82,7 @@ namespace Geom
 			inline Point<T>  operator-(const Vector<T> &vv) const { return Point<T>(p[0]-vv[0],p[1]-vv[1],p[2]-vv[2]); }		
 			inline Vector<T> operator-(const Point<T> &pp) const  { return Vector<T>(p[0]-pp[0],p[1]-pp[1],p[2]-pp[2]); }
 			inline bool      operator==(const Point<T> &v) const  { return ( (p[0] == v[0]) && (p[1] == v[1]) && (p[2] == v[2]) ); }
-			inline bool      operator!=(const Point<T> &v) const  { return ( !(*this) == v ); }
+			inline bool      operator!=(const Point<T> &v) const  { return ( (!(*this)) == (v) ); }
 
 		private:
 			T p[3];

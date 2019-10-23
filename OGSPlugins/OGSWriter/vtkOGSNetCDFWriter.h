@@ -75,7 +75,7 @@ protected:
 
   char *FileName, *OGSFile, *varname;
   double dfact;
-  int singlevar, timeseries, SaveAll,projId;
+  int singlevar, timeseries, SaveAll;
 
   std::string path, fnamenoext, ext;
 
@@ -91,6 +91,7 @@ private:
   void writeNetCDFPolyDatanVar(vtkPolyData *, bool);
 
   int ii_start, ii_end, ii_cur;
+  std::string projName;
 };
 
 #endif

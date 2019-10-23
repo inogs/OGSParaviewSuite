@@ -44,18 +44,14 @@ namespace NetCDF
   int writeNetCDF(const char *fname, const char *varname, int dims[], float *lon, float *lat, float *depth, float *data);
   int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], double *lon, double *lat, double *depth, double **data);
   int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], float *lon, float *lat, float *depth, float **data);
-  int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], v3::V3v &xyz, double **data);
-  int writeNetCDF(const char *fname, std::string *varname, int nvars, int dims[], v3::V3v &xyz, float **data);
-  int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<double> &f);
-  int writeNetCDF(const char *fname, const char *varname, int dims[], v3::V3v &xyz, field::Field<float> &f);
+  int writeNetCDF(const char *fname, const char *varname, int dims[], double *lon, double *lat, double *depth, field::Field<double> &f);
+  int writeNetCDF(const char *fname, const char *varname, int dims[], float *lon, float *lat, float *depth, field::Field<float> &f);
   int writeNetCDFProfile(const char *fname, const char *varname, int dims, double *lon, double *lat, double *depth, double *data);
   int writeNetCDFProfile(const char *fname, const char *varname, int dims, float *lon, float *lat, float *depth, float *data);
   int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, double *lon, double *lat, double *depth, double **data);
   int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, float *lon, float *lat, float *depth, float **data);
-  int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, v3::V3v &xyz, double **data);
-  int writeNetCDFProfile(const char *fname, std::string *varname, int nvars, int dims, v3::V3v &xyz, float **data);
-  int writeNetCDFProfile(const char *fname, const char *varname, int dims, v3::V3v &xyz, field::Field<double> &f);
-  int writeNetCDFProfile(const char *fname, const char *varname, int dims, v3::V3v &xyz, field::Field<float> &f);
+  int writeNetCDFProfile(const char *fname, const char *varname, int dims, double *lon, double *lat, double *depth, field::Field<double> &f);
+  int writeNetCDFProfile(const char *fname, const char *varname, int dims, float *lon, float *lat, float *depth, field::Field<float> &f);
 }
 
 #endif

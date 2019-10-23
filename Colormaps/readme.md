@@ -3,7 +3,7 @@
 These are a collection of colormaps that can be easily installed into ParaView. The current available maps are:
 
 * _hcl_purple2blue_: A purple to blue colormap that attempts to take into account people with color perception deficiencies.
-* _OkuboWeiss_: A three color map that goes from 0 to 2 to be applied to the Okubo-Weiss (or Q-criterion) mask to differenciate the strain dominated and the vorticity dominated fields from the background field (green). Opacity is set so that the background field can become transparent.
+* _OkuboWeiss_: A three color map that goes from 0 to 2 to be applied to the Okubo-Weiss (or Q-criterion) mask to distinguish the strain dominated and the vorticity dominated fields from the background field (green). Opacity is set so that the background field can become transparent.
 
 Guide to install colormaps:
 

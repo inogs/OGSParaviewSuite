@@ -39,6 +39,12 @@ public:
   vtkSetStringMacro(mask_field);
 
   // Description:
+  // If false, do not include the meshmask. True by default.
+  vtkGetMacro(basins_field, int);
+  vtkSetMacro(basins_field, int);
+  vtkBooleanMacro(basins_field, int);
+
+  // Description:
   // The following methods allow selective seleccion of the basins.
   int GetNumberOfBasinsArrays();
   const char * GetBasinsArrayName(int index);
@@ -73,7 +79,7 @@ private:
   vtkOGSSelectBasin(const vtkOGSSelectBasin&) = delete;
   void operator=(const vtkOGSSelectBasin&) = delete;
 
-  int procId, nProcs;
+  int procId, nProcs, basins_field;
   char *mask_field;
 };
 

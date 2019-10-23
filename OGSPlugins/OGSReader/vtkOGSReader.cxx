@@ -30,7 +30,6 @@
 
 #include "vtkObjectFactory.h"
 
-#include <string>
 #include <cstdint>
 #include <ctime>
 #include <algorithm>
@@ -161,6 +160,11 @@ int vtkOGSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 		See OGS.hpp/OGS.cpp for further details.
 
 	*/
+	// Obtain the projection index
+	for (int ii = 0; ii < this->ogsdata.n_projs(); ++ii) {
+		if (this->ogsdata.projection(ii) == this->projName) { this->projId = ii; break; }
+	}
+
 	if (this->ogsdata.readMesh(this->projId) < 0) {
 		vtkErrorMacro("Problems reading the mesh!\nAborting.");
 		return 0; this->abort = 1;		
@@ -573,7 +577,7 @@ int vtkOGSReader::RequestData(vtkInformation* vtkNotUsed(request),
 	vtkmetadata->SetValue(6,aux_str.c_str());
 
 	// Set the projection id
-	vtkmetadata->SetValue(7,std::to_string(this->projId));
+	vtkmetadata->SetValue(7,this->projName.c_str());
 
 	// Add array to mesh
 	this->Mesh->GetFieldData()->AddArray(vtkmetadata);
@@ -828,11 +832,6 @@ vtkStringArray *vtkOGSReader::GetProjections() {
 }
 
 void vtkOGSReader::SetProjection(const char *proj) {
-	// Obtain the projection index
-	for (int ii = 0; ii < this->Projections->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->Projections->GetValue(ii)) == std::string(proj)) {
-			this->projId = ii; break;
-		}
-	}
+	this->projName = std::string(proj);
 	this->Modified();
 }
