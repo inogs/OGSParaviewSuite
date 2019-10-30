@@ -169,11 +169,11 @@ namespace v3
 			// Iterator
 			class iterator {
 				public:
-					using value_type        = V3;
-					using difference_type   = std::ptrdiff_t;
-					using pointer           = V3*;
-					using reference         = V3&;
-					using _category         = std::random_access_iterator_tag;
+					typedef V3                      value_type;
+					typedef std::ptrdiff_t          difference_type;
+					typedef V3*                     pointer;
+					typedef V3&                     reference;
+					typedef std::input_iterator_tag iterator_category;
 
 					inline iterator() : v(nullptr), i(0) {}
 					inline iterator(V3v* vv, int ii) : v(vv), i(ii) {}
