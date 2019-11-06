@@ -57,9 +57,14 @@ def RequestData():
 		'''
 		from paraview import python_view
 		
-		import vtk, numpy as np
+		import vtk, numpy as np, matplotlib.pyplot as plt
 		from vtk.util import numpy_support as npvtk
 		from datetime import datetime as dt
+
+		# Set plot style
+		if sstyle == 0: plt.style.use('seaborn-white')
+		if sstyle == 1: plt.style.use('dark_background')
+		if sstyle == 2: plt.style.use('ggplot')
 
 		# Create matplotlib figure
 		figure = python_view.matplotlib_figure(width, height)
@@ -89,7 +94,7 @@ def RequestData():
 			style='italic' if sy_ital else None)
 		if sy_customrange: ax.set_ylim((sy_min,sy_max))
 
-		if sshow_grid: ax.grid()
+		ax.grid(b=True if sshow_grid else False)
 
 		# Generate variable lists
 		objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []

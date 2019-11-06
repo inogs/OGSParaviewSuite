@@ -58,9 +58,14 @@ def RequestData():
 		from paraview import python_view
 		from matplotlib import cm as cm
 		
-		import vtk, numpy as np
+		import vtk, numpy as np, matplotlib.pyplot as plt
 		from vtk.util import numpy_support as npvtk
 		from datetime import datetime as dt
+
+		# Set plot style
+		if hstyle == 0: plt.style.use('seaborn-white')
+		if hstyle == 1: plt.style.use('dark_background')
+		if hstyle == 2: plt.style.use('ggplot')
 
 		# Create matplotlib figure
 		figure = python_view.matplotlib_figure(width, height)
