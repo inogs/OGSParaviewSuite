@@ -37,6 +37,9 @@ def RequestData():
 		# Spaghetti plot
 		if view_type == "vtkOGSSpaghettiPlot":
 			return render_spaghettiplot(view, width, height)
+		# MapPlot plot
+		if view_type == "vtkOGSMapPlot":
+			return render_mapplot(view, width, height)
 		return None
 	def smooth(a,WSZ):
 		'''
