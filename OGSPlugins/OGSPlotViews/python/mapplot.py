@@ -158,17 +158,46 @@ def RequestData():
 
 		xyz_new = projection.transform_points(pv_projection,xyz[:,0], xyz[:,1])
 
-		# Create triangulation for plotting
+		# Set minimum and maximum
 		z_min = np.nanmin(data); z_max = np.nanmax(data)
-		tri  = matplotlib.tri.Triangulation(xyz_new[:,0], xyz_new[:,1], triangles=triang)
-		cplot  = ax.tricontourf(tri,data,cmap=cmap,levels=np.linspace(z_min,z_max,256),transform=projection)
+		cbar_min = mcbar_min if mcbar_min >= -1e20 else z_min
+		cbar_max = mcbar_max if mcbar_max <= 1e20  else z_max
+
+		# Set extend
+		extend = 'neither'
+		if (cbar_min > z_min): extend = 'min'
+		if (cbar_max < z_max): extend = 'max'
+		if (cbar_min > z_min and cbar_max < z_max): extend = 'both'
+
+		# Create triangulation
+		tri = matplotlib.tri.Triangulation(xyz_new[:,0], xyz_new[:,1], triangles=triang)
+
+		# Plot 
+		if not mcbar_log:
+			cplot = ax.tricontourf(tri,data,
+						cmap=cmap,
+						levels=np.linspace(max(cbar_min,z_min),min(cbar_max,z_max),256),
+						norm=matplotlib.colors.Normalize(cbar_min,cbar_max),
+						extend=extend,
+						transform=projection
+					)
+		else:
+			cplot = ax.tricontourf(tri,data,
+						cmap=cmap,
+						levels=np.linspace(max(cbar_min,z_min),min(cbar_max,z_max),256),
+						norm=matplotlib.colors.LogNorm(cbar_min,cbar_max),
+						transform=projection
+					)
 
 		# Colorbar
 		if mdraw_colorbar:
-			cbar = figure.colorbar(cplot, orientation='horizontal')
+			cbar = figure.colorbar(cplot,orientation='horizontal')
 			cbar.set_label(label=mcbar_label,size=mcbar_font,weight='bold' if mcbar_bold else None,style='italic' if mcbar_ital else None)
 			cbar.ax.tick_params(labelsize=mcbar_font)
-			cbar.set_ticks(np.linspace(z_min,z_max,10))
+			if not mcbar_log:
+				cbar.locator = matplotlib.ticker.LinearLocator(numticks=10)#FixedLocator(np.linspace(cbar_min,cbar_max,10))
+			else:
+				cbar.locator = matplotlib.ticker.LogLocator()
 			cbar.update_ticks()
 
 		# Save figure
