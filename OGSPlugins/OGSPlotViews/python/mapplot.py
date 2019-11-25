@@ -198,6 +198,7 @@ def RequestData():
 				cbar.locator = matplotlib.ticker.LinearLocator(numticks=10)#FixedLocator(np.linspace(cbar_min,cbar_max,10))
 			else:
 				cbar.locator = matplotlib.ticker.LogLocator()
+			cbar.formatter = matplotlib.ticker.FormatStrFormatter('%.2f')
 			cbar.update_ticks()
 
 		# Save figure
