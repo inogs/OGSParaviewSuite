@@ -47,7 +47,7 @@ def RequestData():
 		'''
 		from paraview import python_view
 
-		import cartopy.crs as ccrs
+		import cartopy.crs as ccrs, cartopy.feature as cfeature
 		import vtk, numpy as np, matplotlib, matplotlib.pyplot as plt
 
 		from vtk.util import numpy_support as npvtk
@@ -66,8 +66,22 @@ def RequestData():
 		ax     = figure.add_axes([0.08, 0.13, 0.78, 0.78,],projection=projection)
 
 		# Draw coastline
-		if mshow_coastline: 
-			ax.coastlines(resolution='50m', color='black', linewidth=1.)
+		if mshow_coastline:
+			ax.add_feature(
+					cfeature.NaturalEarthFeature('physical', 'coastline', '50m', 
+						edgecolor=(0,0,0,1), facecolor='none', linewidth=1.)
+				)
+		if mshow_borders:
+			ax.add_feature(
+					cfeature.NaturalEarthFeature('cultural', 'admin_0_boundary_lines_land', '50m', 
+						edgecolor=(0,0,0,.6), facecolor='none', linewidth=.95)
+				)
+		if mshow_rivers:
+			ax.add_feature(
+					cfeature.NaturalEarthFeature('physical', 'rivers_lake_centerlines', '50m', 
+						edgecolor=(0.0,0.0,0.545,.75), facecolor='none', linewidth=.75)
+				)
+
 		if mshow_image and mimg_file == '':
 			ax.stock_img()
 		if mshow_image and not mimg_file == '':
@@ -100,12 +114,14 @@ def RequestData():
 		ylim = [my_min, my_max]; ax.set_ylim(ylim)
 		
 		gl = ax.gridlines(crs=projection,draw_labels=True,linewidth=0)
-		gl.xlocator     = matplotlib.ticker.FixedLocator(np.arange(xlim[0],xlim[1],max_div))
-		gl.ylocator     = matplotlib.ticker.FixedLocator(np.arange(ylim[0],ylim[1],max_div))
-		gl.xformatter   = LONGITUDE_FORMATTER
-		gl.yformatter   = LATITUDE_FORMATTER
-		gl.xlabel_style = {'size': mx_font, 'weight': 'bold' if mx_bold else None, 'style': 'italic' if mx_ital else None}
-		gl.ylabel_style = {'size': my_font, 'weight': 'bold' if my_bold else None, 'style': 'italic' if my_ital else None}
+		gl.xlabels_top   = False
+		gl.ylabels_right = False
+		gl.xlocator      = matplotlib.ticker.FixedLocator(np.arange(xlim[0],xlim[1],max_div))
+		gl.ylocator      = matplotlib.ticker.FixedLocator(np.arange(ylim[0],ylim[1],max_div))
+		gl.xformatter    = LONGITUDE_FORMATTER
+		gl.yformatter    = LATITUDE_FORMATTER
+		gl.xlabel_style  = {'size': mx_font, 'weight': 'bold' if mx_bold else None, 'style': 'italic' if mx_ital else None}
+		gl.ylabel_style  = {'size': my_font, 'weight': 'bold' if my_bold else None, 'style': 'italic' if my_ital else None}
 
 		# Filter data type
 		if not view.GetNumberOfVisibleDataObjects() > 0: return python_view.figure_to_image(figure)
