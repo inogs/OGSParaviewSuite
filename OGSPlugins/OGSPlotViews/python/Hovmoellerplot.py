@@ -84,7 +84,8 @@ def RequestData():
 		ax.set_title(hplot_title,
 			fontsize=hplot_title_font,
 			fontweight='bold'    if hplot_title_bold else None,
-			style='italic'  if hplot_title_ital else None)
+			style='italic'  if hplot_title_ital else None,
+			loc=title_loc)
 		# X Axes properties
 		ax.set_xlabel(hx_label,
 			fontsize=hx_font,

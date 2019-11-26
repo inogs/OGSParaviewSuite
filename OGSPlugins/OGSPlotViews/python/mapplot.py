@@ -88,7 +88,7 @@ def RequestData():
 		if mshow_image and not mimg_file == '':
 			# Detect if we are dealing with a URL or a path
 			if 'https://' in img or 'http://' in img:
-				ax.imshow(plt.imread(io.BytesIO(requests.get(url).content)), origin='upper', 
+				ax.imshow(plt.imread(io.BytesIO(requests.get(img).content)), origin='upper', 
 					transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 			else:
 				ax.imshow(plt.imread(img), origin='upper', 
@@ -103,7 +103,8 @@ def RequestData():
 		ax.set_title(mplot_title,
 			fontsize=mplot_title_font,
 			fontweight='bold'    if mplot_title_bold else None,
-			style='italic'  if mplot_title_ital else None)
+			style='italic'  if mplot_title_ital else None,
+			loc=title_loc)
 
 		# X Axes properties
 		ax.set_xlabel(mx_label,

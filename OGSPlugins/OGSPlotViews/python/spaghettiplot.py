@@ -83,7 +83,8 @@ def RequestData():
 		ax.set_title(splot_title,
 			fontsize=splot_title_font,
 			fontweight='bold'    if splot_title_bold else None,
-			style='italic'  if splot_title_ital else None)			
+			style='italic'  if splot_title_ital else None,
+			loc=title_loc)			
 		# X Axes properties
 		ax.set_xlabel(sx_label,
 			fontsize=sx_font,
