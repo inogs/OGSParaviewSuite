@@ -2158,7 +2158,7 @@
 
                <DoubleVectorProperty name="mx_min"
                                      initial_string="mx_min"
-                                     label="Minimum Range Y"
+                                     label="Minimum Range X"
                                      command="SetParameter"
                                      default_values="-6."
                                      number_of_elements="1">
