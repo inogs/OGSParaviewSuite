@@ -47,6 +47,7 @@ def RequestData():
 		'''
 		from paraview import python_view
 
+		import io, requests
 		import cartopy.crs as ccrs, cartopy.feature as cfeature
 		import vtk, numpy as np, matplotlib, matplotlib.pyplot as plt
 
@@ -85,7 +86,13 @@ def RequestData():
 		if mshow_image and mimg_file == '':
 			ax.stock_img()
 		if mshow_image and not mimg_file == '':
-			ax.imshow(plt.imread(mimg_file), origin='upper', transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+			# Detect if we are dealing with a URL or a path
+			if 'https://' in img or 'http://' in img:
+				ax.imshow(plt.imread(io.BytesIO(requests.get(url).content)), origin='upper', 
+					transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+			else:
+				ax.imshow(plt.imread(img), origin='upper', 
+					transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
 		# Title properties
 		title_loc = 'center'
