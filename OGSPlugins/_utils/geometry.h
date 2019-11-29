@@ -335,7 +335,6 @@ namespace Geom
 
 		// Loop through all edges of the Polygon
 		for (int ii=0; ii<this->n; ++ii) {
-			p[ii].print(); printf("\n");
 			if ( ((this->p[ii][1] <= P[1]) && (this->p[ii+1][1] >  P[1]))         // an upward crossing
 			  || ((this->p[ii][1] >  P[1]) && (this->p[ii+1][1] <= P[1])) ) {     // a downward crossing
 
