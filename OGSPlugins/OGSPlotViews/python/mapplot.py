@@ -150,6 +150,13 @@ def RequestData():
 		xyz      = npvtk.vtk_to_numpy(obj.GetPoints().GetData())
 		data     = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(mvarname))
 
+		# Deal with vectorial arrays
+		if len(data.shape) == 2:
+			if not msel_comp in [0,1,2]:
+				data = np.linalg.norm(data,axis=1)
+			else:
+				data = data[:,msel_comp]
+
 		# Obtain the triangulation from VTK
 		triang = [[int(obj.GetCell(icell).GetPointId(p)) for p in range(obj.GetCell(icell).GetNumberOfPoints())] 
 			for icell in range(obj.GetNumberOfCells())]
@@ -184,8 +191,8 @@ def RequestData():
 
 		# Set minimum and maximum
 		z_min = np.nanmin(data); z_max = np.nanmax(data)
-		cbar_min = mcbar_min if mcbar_min >= -1e20 else z_min
-		cbar_max = mcbar_max if mcbar_max <= 1e20  else z_max
+		cbar_min = mcbar_min if mcbar_min >= -1e10 else z_min
+		cbar_max = mcbar_max if mcbar_max <= 1e10  else z_max
 
 		# Set extend
 		extend = 'neither'
