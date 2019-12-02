@@ -118,7 +118,7 @@ namespace
   }
 
   template<class data_type>
-  void ComputeOmegaCriterionFromGradient(data_type* gradients, data_type* omegaCriterion, data_type* aux, data_type epsi)
+  void ComputeOmegaCriterionFromGradient(data_type* gradients, data_type* omegaCriterion, data_type* aux, data_type& epsi)
   {
     // Compute A and B matrices
     matMN::matrixMN<data_type> grad(3,gradients);
