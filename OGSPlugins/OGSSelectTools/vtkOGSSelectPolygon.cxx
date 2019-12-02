@@ -148,6 +148,7 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 		// Store point
 		points.push_back( Geom::Point<double>(lon,lat,0.) );
 	}
+	points.push_back( points[0] ); // We need to close the polygon for a correct definition
 
 	// Define the polygon and compute the bounding box
 	Geom::Polygon<double> poly((int)(points.size()),points.data());
