@@ -14,7 +14,7 @@ if __name__ == '__main__':
 	argpar.add_argument('--lon',type=float,help='Longitude in degrees', required=True, dest='lon')
 	argpar.add_argument('--lat',type=float,help='Latitude in degrees',  required=True, dest='lat')
 	argpar.add_argument('-p','--proj',type=str,help='Projection type (default: Mercator)',dest='proj')
-	argpar.add_argument('--with-kwags',action='store_true',help='Force launch with predefined kwargs',dest='withkwargs')
+	argpar.add_argument('--with-kwargs',action='store_true',help='Force launch with predefined kwargs',dest='withkwargs')
 
 	# parse input arguments
 	args=argpar.parse_args()
