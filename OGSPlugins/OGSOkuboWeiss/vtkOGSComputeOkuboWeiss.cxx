@@ -324,9 +324,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(vtkInformation *vtkNotUsed(request),
 	this->UpdateProgress(0.8);
 
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Okubo-Weiss",OW);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("OkuboWeiss",OW);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
-	vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("Okubo-Weiss mask",OWm);
+	vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("OkuboWeiss_mask",OWm);
 	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
 	// Copy the input grid

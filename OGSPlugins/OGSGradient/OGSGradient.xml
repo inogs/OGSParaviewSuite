@@ -109,7 +109,7 @@
         the Q-criterion of a 3 component array.</Documentation>
       </IntVectorProperty>
       <StringVectorProperty command="SetQCriterionArrayName"
-                            default_values="Q-criterion"
+                            default_values="Qcriterion"
                             name="QCriterionArrayName"
                             number_of_elements="1"
                             panel_visibility="advanced">
@@ -126,7 +126,7 @@
         the Lambda2-criterion of a 3 component array.</Documentation>
       </IntVectorProperty>
       <StringVectorProperty command="SetLambda2CriterionArrayName"
-                            default_values="L2-criterion"
+                            default_values="L2_criterion"
                             name="Lambda2CriterionArrayName"
                             number_of_elements="1"
                             panel_visibility="advanced">
@@ -143,7 +143,7 @@
         the Omega-criterion of a 3 component array.</Documentation>
       </IntVectorProperty>
       <StringVectorProperty command="SetOmegaCriterionArrayName"
-                            default_values="Omega-criterion"
+                            default_values="Omega_criterion"
                             name="OmegaCriterionArrayName"
                             number_of_elements="1"
                             panel_visibility="advanced">

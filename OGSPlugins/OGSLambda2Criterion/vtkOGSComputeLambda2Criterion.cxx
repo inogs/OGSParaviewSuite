@@ -258,7 +258,7 @@ int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(reques
 	this->UpdateProgress(0.9);
 		
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Lambda2-criterion",Lambda2);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Lambda2_criterion",Lambda2);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
 
 	// Copy the input grid

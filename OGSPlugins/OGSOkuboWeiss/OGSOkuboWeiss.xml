@@ -118,7 +118,7 @@
                            label="Okubo-Weiss mask: "
                            command="Setmask_field"
                            animateable="1"
-                           default_values="Okubo-Weiss mask"
+                           default_values="OkuboWeiss_mask"
                            number_of_elements="1"
                            panel_visibility="advanced">
          <ArrayListDomain name="array_list"

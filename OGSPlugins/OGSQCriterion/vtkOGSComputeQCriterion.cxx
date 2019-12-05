@@ -315,9 +315,9 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 	this->UpdateProgress(0.9);
 		
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Q-criterion",Q);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Qcriterion",Q);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
-	vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("Q-criterion mask",Qm);
+	vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("Qcriterion_mask",Qm);
 	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
 	// Copy the input grid

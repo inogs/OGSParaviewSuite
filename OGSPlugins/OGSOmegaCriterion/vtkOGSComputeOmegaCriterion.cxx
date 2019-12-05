@@ -309,7 +309,7 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 	this->UpdateProgress(0.9);
 		
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Omega-criterion",Omega);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Omega_criterion",Omega);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
 
 	// Copy the input grid
