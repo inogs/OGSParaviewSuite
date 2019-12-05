@@ -45,6 +45,12 @@ public:
   vtkGetMacro(grad_type, int);
 
   // Description:
+  // If true, use the modified Omega algorithm. False by default.
+  vtkGetMacro(use_modified_Omega, int);
+  vtkSetMacro(use_modified_Omega, int);
+  vtkBooleanMacro(use_modified_Omega, int);
+
+  // Description:
   // Get the name of the velocity field
   vtkSetStringMacro(field);
 
@@ -73,7 +79,7 @@ private:
   void operator=(const vtkOGSComputeOmegaCriterion&) = delete;
 
   char *field;
-  int grad_type, procId, nProcs;
+  int grad_type, use_modified_Omega, procId, nProcs;
   double epsi;
 
   bool isReqInfo;

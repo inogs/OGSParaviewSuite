@@ -257,25 +257,51 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 
 	this->UpdateProgress(0.5);
 
-	// Set the value of Omega
-	#pragma omp parallel for collapse(3)
-	for (int kk = 0; kk < nz-1; kk++) {
-		for(int jj = 0; jj < ny-1; jj++){
-			for (int ii = 0; ii < nx-1; ii++) {
-				// Compute current point
-				int ind = CLLIND(ii,jj,kk,nx,ny);
+	if (this->use_modified_Omega) {
+		// Set the value of Omega
+		#pragma omp parallel for collapse(3)
+		for (int kk = 0; kk < nz-1; kk++) {
+			for(int jj = 0; jj < ny-1; jj++){
+				for (int ii = 0; ii < nx-1; ii++) {
+					// Compute current point
+					int ind = CLLIND(ii,jj,kk,nx,ny);
 
-				// Use the mask to determine whether we are in the sea or not
-				// to improve the averaging
-				if (!mask.isempty()) {
-					bool skip_ind = true;
-					for (int ii = 0; ii < mask.get_m(); ++ii) {
-						if (mask[ind][ii] > 0) {skip_ind = false; break;}
+					// Use the mask to determine whether we are in the sea or not
+					// to improve the averaging
+					if (!mask.isempty()) {
+						bool skip_ind = true;
+						for (int ii = 0; ii < mask.get_m(); ++ii) {
+							if (mask[ind][ii] > 0) {skip_ind = false; break;}
+						}
+						if (skip_ind) continue;
 					}
-					if (skip_ind) continue;
+					// Modified Omega = (b + eps)/(a+b+2eps)
+					Omega[ind][0] += eps;
+					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + 2.*eps);
 				}
+			}
+		}
+	} else {
+		// Set the value of Omega
+		#pragma omp parallel for collapse(3)
+		for (int kk = 0; kk < nz-1; kk++) {
+			for(int jj = 0; jj < ny-1; jj++){
+				for (int ii = 0; ii < nx-1; ii++) {
+					// Compute current point
+					int ind = CLLIND(ii,jj,kk,nx,ny);
 
-				Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + eps);
+					// Use the mask to determine whether we are in the sea or not
+					// to improve the averaging
+					if (!mask.isempty()) {
+						bool skip_ind = true;
+						for (int ii = 0; ii < mask.get_m(); ++ii) {
+							if (mask[ind][ii] > 0) {skip_ind = false; break;}
+						}
+						if (skip_ind) continue;
+					}
+
+					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + eps);
+				}
 			}
 		}
 	}

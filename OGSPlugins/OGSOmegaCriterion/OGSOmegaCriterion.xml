@@ -57,6 +57,19 @@
         </Documentation>
       </DoubleVectorProperty>
 
+      <!-- Use modified Omega -->
+      <IntVectorProperty name="use_modified_omega"
+                         label="Use modified Omega "
+                         command="Setuse_modified_Omega"
+                         default_values="0"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>
+         Use the modified Omega instead of the regular.
+       </Documentation>
+       <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
       <!-- Gradient computation method -->
       <IntVectorProperty name="grad_type"
                          label="Gradient method: "
