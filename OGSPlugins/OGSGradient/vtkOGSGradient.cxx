@@ -1344,17 +1344,17 @@ namespace {
         ComputeDivergenceFromGradient(&cellGradients[0], divergence+cellid);
       }
     }
+    }
 
     if(OCriterion)
     {
       epsi *= eps0;
 
-      #pragma omp parallel firstprivate(epsi)
+      #pragma omp parallel firstprivate(numcells)
       {
       for (vtkIdType cellid = OMP_THREAD_NUM; cellid < numcells; cellid+=OMP_NUM_THREADS)
         OCriterion[cellid] /= (aux[cellid] + OCriterion[cellid] + epsi);
       }
-    }
     }
   }
 
