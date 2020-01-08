@@ -191,8 +191,8 @@ def RequestData():
 
 		# Set minimum and maximum
 		z_min = np.nanmin(data); z_max = np.nanmax(data)
-		cbar_min = mcbar_min if mcbar_min >= -1e10 else z_min
-		cbar_max = mcbar_max if mcbar_max <= 1e10  else z_max
+		cbar_min = mcbar_min if mcbar_min >= -1e30 else z_min
+		cbar_max = mcbar_max if mcbar_max <= 1e30  else z_max
 
 		# Set extend
 		extend = 'neither'
@@ -229,7 +229,7 @@ def RequestData():
 				cbar.locator = matplotlib.ticker.LinearLocator(numticks=10)#FixedLocator(np.linspace(cbar_min,cbar_max,10))
 			else:
 				cbar.locator = matplotlib.ticker.LogLocator()
-			cbar.formatter = matplotlib.ticker.FormatStrFormatter('%.2f')
+			cbar.formatter = matplotlib.ticker.FormatStrFormatter(mcbar_format)
 			cbar.update_ticks()
 
 		# Save figure
