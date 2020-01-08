@@ -53,7 +53,6 @@ vtkStandardNewMacro(vtkOGSComputeOmegaCriterion);
 #define VTKMASK  vtkTypeUInt8Array
 
 // V3.h and field.h defined in vtkOGSDerivatives.h
-#include "../_utils/matrixMN.h"
 #include "../_utils/fieldOperations.hpp"
 #include "../_utils/vtkFields.hpp"
 #include "../_utils/vtkOperations.hpp"
@@ -214,38 +213,38 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 				}
 
 				// Compute the gradient
-				matMN::matrixMN<FLDARRAY> deri(3,0.);
+				FLDARRAY deri[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 				switch (this->grad_type) {
 					case 0: // Second order, face centered gradient
 							// This gradient is unsafe as it relies on the mesh projection
-						field::gradXYZ2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri.data());
+						field::gradXYZ2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri);
 						break;
 					case 1: // Fourth order, face centered gradient
 							// This gradient is unsafe as it relies on the mesh projection
-						field::gradXYZ4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri.data());
+						field::gradXYZ4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri);
 						break;
 					case 2:	// OGSTM-BFM approach according to the NEMO handbook
 							// This gradient is safe as it relies on the code implementation
-						field::gradOGS1_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
+						field::gradOGS1_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
 						break;
 					case 3:	// 2nd order OGSTM-BFM approach
 							// This gradient is experimental
-						field::gradOGS2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
+						field::gradOGS2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
 						break;
 					case 4:	// 4th order OGSTM-BFM approach
 							// This gradient is experimental
-						field::gradOGS4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
+						field::gradOGS4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
 						break;
 				}
-
-				// Compute A and B matrices
-				matMN::matrixMN<FLDARRAY> A = 0.5*(deri + deri.t());
-				matMN::matrixMN<FLDARRAY> B = 0.5*(deri - deri.t());
-
-				// Compute a and b and store them in aux and Omega
-				aux[ind][0]   = A.norm2(); // a (Frobenius norm squared)
-				Omega[ind][0] = B.norm2(); // b (Frobenius norm squared)
+				// Directly compute a and b
+				aux[ind][0]   = 0.5*(deri[1] + deri[3])*(deri[1] + deri[3]) + 
+								0.5*(deri[2] + deri[6])*(deri[2] + deri[6]) +
+								0.5*(deri[5] + deri[7])*(deri[5] + deri[7]) +
+								deri[0]*deri[0] + deri[4]*deri[4] + deri[8]*deri[8]; // a (Frobenius norm squared)
+				Omega[ind][0] = 0.5*(deri[1] - deri[3])*(deri[1] - deri[3]) + 
+								0.5*(deri[2] - deri[6])*(deri[2] - deri[6]) +
+								0.5*(deri[5] - deri[7])*(deri[5] - deri[7]); // b (Frobenius norm squared)
 
 				// Store the maximum of (b - a)
 				FLDARRAY ba_aux = Omega[ind][0] - aux[ind][0];
