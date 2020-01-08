@@ -120,14 +120,14 @@ namespace
   template<class data_type>
   void ComputeOmegaCriterionFromGradient(data_type* gradients, data_type* omegaCriterion, data_type* aux, data_type& epsi)
   {
-    // Compute A and B matrices
-    matMN::matrixMN<data_type> grad(3,gradients);
-    matMN::matrixMN<data_type> A = 0.5*(grad + grad.t());
-    matMN::matrixMN<data_type> B = 0.5*(grad - grad.t());
-
-    // Compute a and b and store them in aux and Omega
-    aux[0]            = A.norm2(); // a (Frobenius norm squared)
-    omegaCriterion[0] = B.norm2(); // b (Frobenius norm squared)
+    // Directly compute a and b
+    aux[ind][0] = 0.5*(gradients[1] + gradients[3])*(gradients[1] + gradients[3]) + 
+                  0.5*(gradients[2] + gradients[6])*(gradients[2] + gradients[6]) +
+                  0.5*(gradients[5] + gradients[7])*(gradients[5] + gradients[7]) +
+                  gradients[0]*gradients[0] + gradients[4]*gradients[4] + gradients[8]*gradients[8]; // a (Frobenius norm squared)
+    Omega[ind][0] = 0.5*(gradients[1] - gradients[3])*(gradients[1] - gradients[3]) + 
+                    0.5*(gradients[2] - gradients[6])*(gradients[2] - gradients[6]) +
+                    0.5*(gradients[5] - gradients[7])*(gradients[5] - gradients[7]); // b (Frobenius norm squared)
 
     // Store the maximum of (b - a)
     data_type ba_aux = omegaCriterion[0] - aux[0];
