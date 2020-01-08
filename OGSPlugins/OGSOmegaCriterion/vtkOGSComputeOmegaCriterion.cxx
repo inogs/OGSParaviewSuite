@@ -311,6 +311,9 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Omega_criterion",Omega);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
 
+	// Make "Omega_criterion" as the active scalar
+	output->GetCellData()->SetActiveScalars("Omega_criterion");
+
 	// Copy the input grid
 	this->UpdateProgress(1.);
 	return 1;

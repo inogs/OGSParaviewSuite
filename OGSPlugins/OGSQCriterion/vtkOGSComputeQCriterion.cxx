@@ -320,6 +320,9 @@ int vtkOGSComputeQCriterion::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("Qcriterion_mask",Qm);
 	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
+	// Make "Qcriterion" as the active scalar
+	output->GetCellData()->SetActiveScalars("Qcriterion");
+
 	// Copy the input grid
 	this->UpdateProgress(1.);
 	return 1;

@@ -261,6 +261,9 @@ int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(reques
 	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Lambda2_criterion",Lambda2);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
 
+	// Make "Lambda2_criterion" as the active scalar
+	output->GetCellData()->SetActiveScalars("Lambda2_criterion");
+
 	// Copy the input grid
 	this->UpdateProgress(1.);
 	return 1;

@@ -329,6 +329,9 @@ int vtkOGSComputeOkuboWeiss::RequestData(vtkInformation *vtkNotUsed(request),
 	vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("OkuboWeiss_mask",OWm);
 	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
+	// Make "OkuboWeiss" as the active scalar
+	output->GetCellData()->SetActiveScalars("OkuboWeiss");
+
 	// Copy the input grid
 	this->UpdateProgress(1.);
 	return 1;

@@ -232,10 +232,13 @@ int vtkOGSCompareVariables::RequestData(vtkInformation *vtkNotUsed(request),
 	// Add array to output
 	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->arrname,comp);
 	// Add the new variable to the input
-	if (celldata)
+	if (celldata) {
 		output->GetCellData()->AddArray(vtkArray);
-	else
+		output->GetCellData()->SetActiveScalars(this->arrname);
+	} else {
 		output->GetPointData()->AddArray(vtkArray);
+		output->GetPointData()->SetActiveScalars(this->arrname);
+	}
 
 	// Update progress and leave
 	this->UpdateProgress(1.);

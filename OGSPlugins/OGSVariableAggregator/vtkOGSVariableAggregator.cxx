@@ -216,10 +216,13 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 		// Convert to vtkArray
 		vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->GetVarArrayName(varId),arrayNew);
 		// Add the new variable to the input
-		if (celldata)
+		if (celldata) {
 			output->GetCellData()->AddArray(vtkArray);
-		else
+			output->GetCellData()->SetActiveScalars(this->GetVarArrayName(varId));
+		} else {
 			output->GetPointData()->AddArray(vtkArray);
+			output->GetPointData()->SetActiveScalars(this->GetVarArrayName(varId));
+		}
 		// Update progress
 		this->UpdateProgress(1./(double)(this->GetNumberOfVarArrays())*varId);
 		// Delete
