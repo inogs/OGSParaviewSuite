@@ -126,6 +126,17 @@ chmod +x %s/OGSlonlat2m.py
 			   os.path.join(install_dir,"..","bin")) 
 		     )
 
+def installLaunchers(pvpath,bin_dir):
+	'''
+	Installs the OGSMesh python class into ParaView
+	'''
+	# Create a folder in the installation directory
+	install_dir = os.path.join(pvpath,"bin")
+	# Copy launchers
+	os.system("cp %s/*-launch %s" % (bin_dir,install_dir))
+	# Copy EGL launchers
+	os.system("cp %s/*-egl %s" % (bin_dir,install_dir))
+
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
@@ -180,6 +191,7 @@ You can go grab a coffee meanwhile.
 	# Compilation and installation of python tools
 	# --------------------------------------------
 	installOGSMesh(args.pvpath,"_utils")
+	installLaunchers(args.pvpath,"../bin")
 	sys.stdout.write("  done!\n\n")
 
 
