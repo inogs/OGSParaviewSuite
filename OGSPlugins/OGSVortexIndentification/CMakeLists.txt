@@ -30,8 +30,8 @@ if(NOT APPLE)
   set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
 
-ADD_PARAVIEW_PLUGIN(OGSOkuboWeiss "1.0"
-  SERVER_MANAGER_XML OGSOkuboWeiss.xml
+ADD_PARAVIEW_PLUGIN(OGSVortexIndentification "1.0"
+  SERVER_MANAGER_XML OGSVortexIndentification.xml
   SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx
   REQUIRED_ON_SERVER
   )
