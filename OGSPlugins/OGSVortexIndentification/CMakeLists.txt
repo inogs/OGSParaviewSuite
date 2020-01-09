@@ -32,6 +32,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSVortexIndentification "1.0"
   SERVER_MANAGER_XML OGSVortexIndentification.xml
-  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx vtkOGSComputeQCriterion.cxx vtkOGSComputeLambda2Criterion.cxx
+  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx vtkOGSComputeQCriterion.cxx vtkOGSComputeLambda2Criterion.cxx vtkOGSComputeOmegaCriterion.cxx
   REQUIRED_ON_SERVER
   )
