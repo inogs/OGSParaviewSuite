@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Launcher for ParaView Python using EGL offscreen
+# protocol. This script might need to be adapted
+# according to the machine.
+#
+# Usage:
+# 	pvpython-egl <PYTHON_SCRIPT>
+#
+# Arnau Miro, OGS (2020)
+
+# Source bashrc
+source /etc/bash.bashrc
+source $HOME/.bashrc
+
+# Version to launch
+VERS=5.6.0-gcc
+
+# Load modules
+module purge
+module load gcc/8.2.0 openmpi/3.1.2 python/2.7.15 cuda/10.1
+module load qt ospray/1.7.3 vrpn nvidia-index/2.2
+module load paraview/$VERS
+
+# Launch ParaView
+pvbatch --egl-device-index=0 --force-offscreen-rendering $@
+#--disable-xdisplay-test
