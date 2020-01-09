@@ -1,6 +1,6 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="filters">
-
+   <!-- OKUBO-WEISS -->
    <SourceProxy name="OGSComputeOkuboWeiss" 
                 class="vtkOGSComputeOkuboWeiss" 
                 label="OGS Compute Okubo-Weiss">
@@ -232,6 +232,7 @@
       </Hints>
       <!-- End Threshold -->
     </SourceProxy>
+   <!-- END OKUBO-WEISS -->
 
  </ProxyGroup>
 </ServerManagerConfiguration>

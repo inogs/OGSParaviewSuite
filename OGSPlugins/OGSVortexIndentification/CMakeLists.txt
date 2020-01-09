@@ -32,6 +32,6 @@ endif()
 
 ADD_PARAVIEW_PLUGIN(OGSOkuboWeiss "1.0"
   SERVER_MANAGER_XML OGSOkuboWeiss.xml
-  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx vtkOGSSelectOkuboWeiss.cxx
+  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx
   REQUIRED_ON_SERVER
   )

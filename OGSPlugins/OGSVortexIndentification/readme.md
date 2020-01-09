@@ -1,22 +1,27 @@
+# OGS Vortex Indentification
+
+This plugin provides a series of tools to identify vortices. A list of each one of them is provided below:
+* Okubo-Weiss parameter.
+
 ## OGS Okubo-Weiss
 
 The **OGS Compute Okubo-Weiss** and the **OGS Select Okubo-Weiss** are two filters that deal with the computation of the Okubo-Weiss parameter and eddy identification. The filter uses the same approach as the **OGS Derivatives** for the computation of the gradient.
 
 The Okubo-Weiss parameter (Okubo, 1970; Weiss, 1991) is computed as:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq1.png" alt="" width="160"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSVortexIndentification/doc/OWeq1.png" alt="" width="160"/>
 
 where:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq2.png" alt="" width="250"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSVortexIndentification/doc/OWeq2.png" alt="" width="250"/>
 
 An eddy is then localized as a vorticity dominated area (or eddy core) surrounded by a strain dominated region (circulation cell) as defined by (Isern-Fontanet. 2004). Then:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/OW.png" alt="" width="500"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSVortexIndentification/doc/OW.png" alt="" width="500"/>
 
 with:
 
-<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSOkuboWeiss/doc/eq3.png" alt="" width="120"/>
+<img src="https://github.com/inogs/OGSParaviewSuite/blob/master/OGSPlugins/OGSVortexIndentification/doc/OWeq3.png" alt="" width="120"/>
 
 and 0.2 being a scaling factor.
 
