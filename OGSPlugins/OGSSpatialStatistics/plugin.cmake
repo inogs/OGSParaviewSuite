@@ -1,4 +1,4 @@
- pv_plugin(OGSSpatialStats
+ pv_plugin(OGSSpatialStatistics
  
    # Provide brief description for the plugin used as documentation for
    # the PARAVIEW_BUILD_PLUGIN_<PluginName> cmake option provided to the user.

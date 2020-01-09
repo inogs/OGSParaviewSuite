@@ -30,8 +30,8 @@ if(NOT APPLE)
   set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
 
-ADD_PARAVIEW_PLUGIN(OGSSpatialStats "1.0"
-  SERVER_MANAGER_XML OGSSpatialStats.xml
-  SERVER_MANAGER_SOURCES ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSSpatialStats.cxx
+ADD_PARAVIEW_PLUGIN(OGSSpatialStatistics "1.0"
+  SERVER_MANAGER_XML OGSSpatialStatistics.xml
+  SERVER_MANAGER_SOURCES ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp ../_utils/netcdfio.cpp vtkOGSSpatialStatsFromFile.cxx vtkOGSSpatialStats.cxx
   REQUIRED_ON_SERVER
   )
