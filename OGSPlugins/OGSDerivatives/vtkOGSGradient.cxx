@@ -121,13 +121,13 @@ namespace
   void ComputeOmegaCriterionFromGradient(data_type* gradients, data_type* omegaCriterion, data_type* aux, data_type& epsi)
   {
     // Directly compute a and b
-    aux[ind][0] = 0.5*(gradients[1] + gradients[3])*(gradients[1] + gradients[3]) + 
-                  0.5*(gradients[2] + gradients[6])*(gradients[2] + gradients[6]) +
-                  0.5*(gradients[5] + gradients[7])*(gradients[5] + gradients[7]) +
-                  gradients[0]*gradients[0] + gradients[4]*gradients[4] + gradients[8]*gradients[8]; // a (Frobenius norm squared)
-    Omega[ind][0] = 0.5*(gradients[1] - gradients[3])*(gradients[1] - gradients[3]) + 
-                    0.5*(gradients[2] - gradients[6])*(gradients[2] - gradients[6]) +
-                    0.5*(gradients[5] - gradients[7])*(gradients[5] - gradients[7]); // b (Frobenius norm squared)
+    aux[0] = 0.5*(gradients[1] + gradients[3])*(gradients[1] + gradients[3]) + 
+             0.5*(gradients[2] + gradients[6])*(gradients[2] + gradients[6]) +
+             0.5*(gradients[5] + gradients[7])*(gradients[5] + gradients[7]) +
+             gradients[0]*gradients[0] + gradients[4]*gradients[4] + gradients[8]*gradients[8]; // a (Frobenius norm squared)
+    omegaCriterion[0] = 0.5*(gradients[1] - gradients[3])*(gradients[1] - gradients[3]) + 
+                        0.5*(gradients[2] - gradients[6])*(gradients[2] - gradients[6]) +
+                        0.5*(gradients[5] - gradients[7])*(gradients[5] - gradients[7]); // b (Frobenius norm squared)
 
     // Store the maximum of (b - a)
     data_type ba_aux = omegaCriterion[0] - aux[0];
