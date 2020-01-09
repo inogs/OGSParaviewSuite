@@ -2,7 +2,7 @@
  
    # Provide brief description for the plugin used as documentation for
    # the PARAVIEW_BUILD_PLUGIN_<PluginName> cmake option provided to the user.
-   DESCRIPTION "Lets the user select basins from the basins mask"
+   DESCRIPTION "Lets the user perform a series of selections according to the masks"
  
    # If you want the plugin to be auto-loaded when ParaView starts, specify this option.
    # Users can manually mark any plugin to be auto-loaded using the Plugin Manager dialog.
