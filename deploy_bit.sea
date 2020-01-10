@@ -77,7 +77,7 @@ This scripts will be accessible with pvpython
 	# Copy folders inside ParaView installation
 	os.system(\
 		"""
-cp -r bit.sea/commons bit.sea/basins %s
+cp -r bit.sea/commons bit.sea/basins bit.sea/MapPlotter %s
 		""" % os.path.join(args.pvpath,"lib","python*","site-packages")
 		)
 

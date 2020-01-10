@@ -1,0 +1,499 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <!-- OKUBO-WEISS -->
+   <SourceProxy name="OGSComputeOkuboWeiss" 
+                class="vtkOGSComputeOkuboWeiss" 
+                label="OGS Compute Okubo-Weiss">
+     <Documentation
+        long_help="This filter lets the user compute the Okubo-Weiss criterion on the surface."
+        short_help="Compute the Okubo-Weiss criterion on the surface.">
+        This filter requires a rectilinear grid and computes the Okubo-Weiss criterion using
+        the surface velocity, which is copied down at the successive layers. A second and a fourth
+        order algorithms can be used to compute the derivatives.
+     </Documentation>
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkRectilinearGrid"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <!-- BEGIN EXPOSED PROPERTIES -->
+
+      <!-- Okubo-Weiss coefficent value -->
+      <DoubleVectorProperty name="coef"
+                            label="Okubo-Weiss filter coefficient: "
+                            command="Setcoef"
+                            animateable="1"
+                            default_values="0.2"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" min="0.0" max="2.0" />
+        <Documentation>
+          Okubo-Weiss filter coefficient as W0 = coef*std_dev(W)
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <!-- Velocity field -->
+      <StringVectorProperty name="field"
+                            label="Variable: "
+                            command="Setfield"
+                            animateable="1"
+                            default_values="Velocity"
+                            number_of_elements="1">
+        <ArrayListDomain name="array_list"
+                         attribute_type="Scalars"
+                         input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the velocity variable.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Gradient computation method -->
+      <IntVectorProperty name="grad_type"
+                         label="Gradient method: "
+                         command="Setgrad_type"
+                         animateable="1"
+                         default_values="2"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="FC 2nd Order"/> <!-- Face Centered 2nd Order -->
+          <Entry value="1" text="FC 4th Order"/> <!-- Face Centered 4th Order -->
+          <Entry value="2" text="OGSTM-BFM"/>    <!-- OGSTM-BFM approach -->
+          <Entry value="3" text="OGSTM-BFM2"/>   <!-- OGSTM-BFM approach -->
+          <Entry value="4" text="OGSTM-BFM4"/>   <!-- OGSTM-BFM approach -->
+        </EnumerationDomain>
+        <Documentation>
+          Selection of the gradient computation method.
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
+      </Hints>
+   </SourceProxy>
+
+   <SourceProxy class="vtkOGSSelectOkuboWeiss"
+                 name="OGSSelectOkuboWeiss"
+                 label="OGS Select Okubo-Weiss">
+    <Documentation
+        long_help="This filter lets the user select the Okubo-Weiss regions from the Okubo-Weiss mask."
+        short_help="Lets the user select the Okubo-Weiss regions from the Okubo-Weiss mask.">
+        Re-implementation of the vtkThreshold to use the Okubo-Weiss mask and
+        select the Okubo-Weiss regions once the Okubo-Weiss criterion has been
+        computed.
+    </Documentation>
+
+    <InputProperty command="SetInputConnection"
+                   name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+                          number_of_components="1">
+        </InputArrayDomain>
+        <Documentation>This property specifies the input to the Threshold
+        filter.</Documentation>
+      </InputProperty>
+
+     <!-- Name of basins mask array -->
+     <StringVectorProperty name="mask_field"
+                           label="Okubo-Weiss mask: "
+                           command="Setmask_field"
+                           animateable="1"
+                           default_values="OkuboWeiss_mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+                          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the Okubo-Weiss mask field
+         </Documentation>
+     </StringVectorProperty>
+
+     <!-- Basins array info-->
+     <StringVectorProperty name="OWInfo"
+                            information_only="1">
+        <ArraySelectionInformationHelper attribute_name="OW" />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="OWStatus"
+                           command="SetOWArrayStatus"
+                           number_of_elements="2"
+                           repeat_command="1"
+                           number_of_elements_per_command="2"
+                           element_types="2 0"
+                           information_property="OWInfo"
+                           label="Mediterranean Sea">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="OWInfo" function="ArrayList" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property contains a list of the Okubo-Weiss regions of the Mediterranean Sea.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- OLD THRESHOLD PARAMETERS HAVE NOW BEEN SHADOWED -->
+     
+     <!-- Array to process -->
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Scalars"
+                            name="SelectInputScalars"
+                            number_of_elements="5"
+                            panel_visibility="never">
+        <ArrayListDomain attribute_type="Scalars"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>The value of this property contains the name of the
+        scalar array from which to perform thresholding.</Documentation>
+      </StringVectorProperty>
+
+      <!-- Threshold between (just 0.5 and 1) -->
+      <DoubleVectorProperty command="ThresholdBetween"
+                            default_values="0.5 1"
+                            label="Threshold Range"
+                            name="ThresholdBetween"
+                            number_of_elements="2"
+                            panel_visibility="never">
+        <Documentation>The values of this property specify the upper and lower
+        bounds of the thresholding operation (defaulted to 0.5 and 1).</Documentation>
+      </DoubleVectorProperty>
+
+      <!-- All scalars -->
+      <IntVectorProperty command="SetAllScalars"
+                         default_values="1"
+                         name="AllScalars"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>If the value of this property is 1, then a cell is only
+        included in the output if the value of the selected array for all its
+        points is within the threshold. This is only relevant when thresholding
+        by a point-centered array.</Documentation>
+      </IntVectorProperty>
+
+      <!-- Use Continuous Cell Range -->
+      <IntVectorProperty command="SetUseContinuousCellRange"
+                         default_values="0"
+                         name="UseContinuousCellRange"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If off, the vertex scalars are treated as a discrete set. If on, they
+          are treated as a continuous interval over the minimum and maximum. One
+          important "on" use case: When setting lower and upper threshold
+          equal to some value and turning AllScalars off, the results are
+          cells containing the isosurface for that value.  WARNING: Whether on
+          or off, for higher order input, the filter will not give accurate
+          results.
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
+      </Hints>
+      <!-- End Threshold -->
+    </SourceProxy>
+   <!-- END OKUBO-WEISS -->
+
+   <!-- Q-CRITERION -->
+   <SourceProxy name="OGSComputeQCriterion" 
+                class="vtkOGSComputeQCriterion" 
+                label="OGS Compute Q-Criterion">
+     <Documentation
+        long_help="This filter lets the user compute the Q-criterion."
+        short_help="Compute the Q-criterion.">
+        This filter requires a rectilinear grid and computes the Q-criterion. 
+        A second and a fourth order algorithms can be used to compute the derivatives.
+     </Documentation>
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkRectilinearGrid"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <!-- BEGIN EXPOSED PROPERTIES -->
+
+      <!-- Q coefficent value -->
+      <DoubleVectorProperty name="coef"
+                            label="Filter coefficient: "
+                            command="Setcoef"
+                            animateable="1"
+                            default_values="0.2"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" min="0.0" max="2.0" />
+        <Documentation>
+          Filter coefficient as Q0 = coef*std_dev(Q)
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <!-- Velocity field -->
+      <StringVectorProperty name="field"
+                            label="Variable: "
+                            command="Setfield"
+                            animateable="1"
+                            default_values="Velocity"
+                            number_of_elements="1">
+        <ArrayListDomain 
+          name="array_list"
+          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the velocity variable.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Gradient computation method -->
+      <IntVectorProperty name="grad_type"
+                         label="Gradient method: "
+                         command="Setgrad_type"
+                         animateable="1"
+                         default_values="2"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="FC 2nd Order"/> <!-- Face Centered 2nd Order -->
+          <Entry value="1" text="FC 4th Order"/> <!-- Face Centered 4th Order -->
+          <Entry value="2" text="OGSTM-BFM"/>    <!-- OGSTM-BFM approach -->
+          <Entry value="3" text="OGSTM-BFM2"/>   <!-- OGSTM-BFM approach -->
+          <Entry value="4" text="OGSTM-BFM4"/>   <!-- OGSTM-BFM approach -->
+        </EnumerationDomain>
+        <Documentation>
+          Selection of the gradient computation method.
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
+      </Hints>
+   </SourceProxy>
+   <!-- END Q-CRITERION -->
+
+   <!-- LAMBDA2 CRITERION -->
+   <SourceProxy name="OGSComputeLambda2Criterion" 
+                class="vtkOGSComputeLambda2Criterion" 
+                label="OGS Compute Lambda2 Criterion">
+     <Documentation
+        long_help="This filter lets the user compute the Lambda2 criterion."
+        short_help="Compute the Lambda2 criterion.">
+        This filter requires a rectilinear grid and computes the Lambda2 criterion. 
+        A second and a fourth order algorithms can be used to compute the derivatives.
+     </Documentation>
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkRectilinearGrid"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <!-- BEGIN EXPOSED PROPERTIES -->
+      <!-- Velocity field -->
+      <StringVectorProperty name="field"
+                            label="Variable: "
+                            command="Setfield"
+                            animateable="1"
+                            default_values="Velocity"
+                            number_of_elements="1">
+        <ArrayListDomain 
+          name="array_list"
+          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the velocity variable.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Gradient computation method -->
+      <IntVectorProperty name="grad_type"
+                         label="Gradient method: "
+                         command="Setgrad_type"
+                         animateable="1"
+                         default_values="2"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="FC 2nd Order"/> <!-- Face Centered 2nd Order -->
+          <Entry value="1" text="FC 4th Order"/> <!-- Face Centered 4th Order -->
+          <Entry value="2" text="OGSTM-BFM"/>    <!-- OGSTM-BFM approach -->
+          <Entry value="3" text="OGSTM-BFM2"/>   <!-- OGSTM-BFM approach -->
+          <Entry value="4" text="OGSTM-BFM4"/>   <!-- OGSTM-BFM approach -->
+        </EnumerationDomain>
+        <Documentation>
+          Selection of the gradient computation method.
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
+      </Hints>
+   </SourceProxy>
+   <!-- END LAMBDA2 CRITERION -->
+
+   <!-- OMEGA CRITERION -->
+   <SourceProxy name="OGSComputeOmegaCriterion" 
+                class="vtkOGSComputeOmegaCriterion" 
+                label="OGS Compute Omega Criterion">
+     <Documentation
+        long_help="This filter lets the user compute the Omega criterion."
+        short_help="Compute the Omega criterion.">
+        This filter requires a rectilinear grid and computes the Omega criterion. 
+        A second and a fourth order algorithms can be used to compute the derivatives.
+     </Documentation>
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkRectilinearGrid"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <!-- BEGIN EXPOSED PROPERTIES -->
+
+      <!-- Velocity field -->
+      <StringVectorProperty name="field"
+                            label="Variable: "
+                            command="Setfield"
+                            animateable="1"
+                            default_values="Velocity"
+                            number_of_elements="1">
+        <ArrayListDomain 
+          name="array_list"
+          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          Name of the velocity variable.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- Epsilon -->
+      <DoubleVectorProperty name="epsi"
+                            label="Epsilon: "
+                            command="Setepsi"
+                            animateable="1"
+                            default_values="0.001"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Small positive number used to avoid division per zero
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <!-- Use modified Omega -->
+      <IntVectorProperty name="use_modified_omega"
+                         label="Use modified Omega "
+                         command="Setuse_modified_Omega"
+                         default_values="0"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>
+         Use the modified Omega instead of the regular.
+       </Documentation>
+       <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <!-- Gradient computation method -->
+      <IntVectorProperty name="grad_type"
+                         label="Gradient method: "
+                         command="Setgrad_type"
+                         animateable="1"
+                         default_values="2"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="FC 2nd Order"/> <!-- Face Centered 2nd Order -->
+          <Entry value="1" text="FC 4th Order"/> <!-- Face Centered 4th Order -->
+          <Entry value="2" text="OGSTM-BFM"/>    <!-- OGSTM-BFM approach -->
+          <Entry value="3" text="OGSTM-BFM2"/>   <!-- OGSTM-BFM approach -->
+          <Entry value="4" text="OGSTM-BFM4"/>   <!-- OGSTM-BFM approach -->
+        </EnumerationDomain>
+        <Documentation>
+          Selection of the gradient computation method.
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
+      </Hints>
+   </SourceProxy>
+   <!-- END OMEGA CRITERION -->
+
+ </ProxyGroup>
+</ServerManagerConfiguration>
+

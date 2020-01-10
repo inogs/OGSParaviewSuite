@@ -37,6 +37,9 @@ def RequestData():
 		# Spaghetti plot
 		if view_type == "vtkOGSSpaghettiPlot":
 			return render_spaghettiplot(view, width, height)
+		# MapPlot plot
+		if view_type == "vtkOGSMapPlot":
+			return render_mapplot(view, width, height)
 		return None
 	def smooth(a,WSZ):
 		'''
@@ -57,9 +60,14 @@ def RequestData():
 		'''
 		from paraview import python_view
 		
-		import vtk, numpy as np
+		import vtk, numpy as np, matplotlib.pyplot as plt
 		from vtk.util import numpy_support as npvtk
 		from datetime import datetime as dt
+
+		# Set plot style
+		if sstyle == 0: plt.style.use('seaborn-white')
+		if sstyle == 1: plt.style.use('dark_background')
+		if sstyle == 2: plt.style.use('ggplot')
 
 		# Create matplotlib figure
 		figure = python_view.matplotlib_figure(width, height)
@@ -75,7 +83,8 @@ def RequestData():
 		ax.set_title(splot_title,
 			fontsize=splot_title_font,
 			fontweight='bold'    if splot_title_bold else None,
-			style='italic'  if splot_title_ital else None)			
+			style='italic'  if splot_title_ital else None,
+			loc=title_loc)			
 		# X Axes properties
 		ax.set_xlabel(sx_label,
 			fontsize=sx_font,
@@ -89,7 +98,7 @@ def RequestData():
 			style='italic' if sy_ital else None)
 		if sy_customrange: ax.set_ylim((sy_min,sy_max))
 
-		if sshow_grid: ax.grid()
+		ax.grid(b=True if sshow_grid else False)
 
 		# Generate variable lists
 		objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []

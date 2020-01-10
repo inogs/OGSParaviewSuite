@@ -188,6 +188,19 @@
                </PropertyGroup>
 
                <!-- Axes Properties -->
+               <IntVectorProperty name="pstyle"
+                                  label="Style"
+                                  initial_string="pstyle"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                  <Entry text="White"   value="0" />
+                  <Entry text="Dark"    value="1" />
+                  <Entry text="Stylish" value="2" />
+                </EnumerationDomain>
+               </IntVectorProperty>
+
                <IntVectorProperty name="pshow_grid"
                                   label="Show Grid"
                                   initial_string="pshow_grid"
@@ -265,6 +278,7 @@
                </IntVectorProperty>
 
                <PropertyGroup label="Axes">
+                 <Property name="pstyle"/>
                  <Property name="pshow_grid"/>
                  <Property name="pminorticks"/>
                  <Property name="plinewidth"/>
@@ -572,7 +586,7 @@
 
                <StringVectorProperty command="SetScript"
                                      name="Script"
-                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_verticalplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs vertical plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if pplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if pplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(pplot_title,&#xA;&#x9;&#x9;fontsize=pplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if pplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if pplot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(px_label,&#xA;&#x9;&#x9;fontsize=px_font,&#xA;&#x9;&#x9;fontweight='bold' if px_bold else None,&#xA;&#x9;&#x9;style='italic' if px_ital else None)&#xA;&#x9;if px_logscale: ax.set_xscale('log')&#xA;&#x9;if px_customrange: ax.set_xlim((px_min,px_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(py_label,&#xA;&#x9;&#x9;fontsize=py_font,&#xA;&#x9;&#x9;fontweight='bold' if py_bold else None,&#xA;&#x9;&#x9;style='italic' if py_ital else None)&#xA;&#x9;if py_logscale: ax.set_yscale('log')&#xA;&#x9;if py_customrange: ax.set_ylim((py_min,py_max))&#xA;&#xA;&#x9;if pminorticks: ax.minorticks_on()&#xA;&#x9;if pshow_grid: ax.grid()&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[1] for s in variables.split('\n')] if not variables == '' else []&#xA;&#x9;varlist = [s.split(';')[0] for s in variables.split('\n')] if not variables == '' else []&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;for objId in range(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;# Recover the depth&#xA;&#x9;&#x9;metadata = obj.GetFieldData().GetAbstractArray('Metadata')&#xA;&#x9;&#x9;dfact    = float(metadata.GetValue(2)) if metadata else 1.&#xA;&#x9;&#x9;z        = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/dfact&#xA;&#x9;&#x9;# For each variable, decide if the plot is needed&#xA;&#x9;&#x9;for varId in range(obj.GetPointData().GetNumberOfArrays()):         &#xA;&#x9;&#x9;&#x9;varname = obj.GetPointData().GetArray(varId).GetName()&#xA;&#x9;&#x9;&#x9;# Filter some variables (Do not plot them)&#xA;&#x9;&#x9;&#x9;if varname == 'basins mask':       continue&#xA;&#x9;&#x9;&#x9;if varname == 'coast mask':        continue&#xA;&#x9;&#x9;&#x9;if varname == 'land mask':         continue&#xA;&#x9;&#x9;&#x9;if varname == 'e1':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e2':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e3':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'vtkValidPointMask': continue&#xA;&#x9;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;&#x9;do_plot = False if len(varlist) &gt; 0 else True&#xA;&#x9;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;&#x9;for ii in range(0,len(varlist)):&#xA;&#x9;&#x9;&#x9;&#x9;if &quot;%s %d&quot; % (varname,objId+1) == &quot;%s %s&quot; % (varlist[ii],objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;args = variables.split('\n')[ii].split(';')[2]&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;3):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in variables.split('\n')[ii].split(';')[3].split(','))&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;&#x9;var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros inside &#xA;&#x9;&#x9;&#x9;&#x9;if pfilterzeros: var[var == 0.] = None&#xA;&#x9;&#x9;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;&#x9;&#x9;if psmoothdata: var = smooth(var,psmoothorder)&#xA;&#x9;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,label=varname,linewidth=plinewidth)&#xA;&#x9;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,label=varname,linewidth=plinewidth)&#xA;&#x9;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs['linewidth'] = plinewidth&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,**kwargs)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=px_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=py_font)&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if pshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=plegend_font)&#xA;&#x9;&#x9;if plegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if plegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;ax.legend(loc=plegend_location,prop=legend_prop)&#xA;&#xA;&#x9;if psavefigure and pfilename:&#xA;&#x9;&#x9;figure.savefig(pfilename,dpi=poutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;# MapPlot plot&#xA;&#x9;if view_type == &quot;vtkOGSMapPlot&quot;:&#xA;&#x9;&#x9;return render_mapplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_verticalplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs vertical plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import vtk, numpy as np, matplotlib.pyplot as plt&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#xA;&#x9;# Set plot style&#xA;&#x9;if pstyle == 0: plt.style.use('seaborn-white')&#xA;&#x9;if pstyle == 1: plt.style.use('dark_background')&#xA;&#x9;if pstyle == 2: plt.style.use('ggplot')&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if pplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if pplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(pplot_title,&#xA;&#x9;&#x9;fontsize=pplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if pplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if pplot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(px_label,&#xA;&#x9;&#x9;fontsize=px_font,&#xA;&#x9;&#x9;fontweight='bold' if px_bold else None,&#xA;&#x9;&#x9;style='italic' if px_ital else None)&#xA;&#x9;if px_logscale: ax.set_xscale('log')&#xA;&#x9;if px_customrange: ax.set_xlim((px_min,px_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(py_label,&#xA;&#x9;&#x9;fontsize=py_font,&#xA;&#x9;&#x9;fontweight='bold' if py_bold else None,&#xA;&#x9;&#x9;style='italic' if py_ital else None)&#xA;&#x9;if py_logscale: ax.set_yscale('log')&#xA;&#x9;if py_customrange: ax.set_ylim((py_min,py_max))&#xA;&#xA;&#x9;ax.grid(b=True if pshow_grid else False,which='both' if pminorticks else 'major')&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[1] for s in variables.split('\n')] if not variables == '' else []&#xA;&#x9;varlist = [s.split(';')[0] for s in variables.split('\n')] if not variables == '' else []&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;for objId in range(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;# Recover the depth&#xA;&#x9;&#x9;metadata = obj.GetFieldData().GetAbstractArray('Metadata')&#xA;&#x9;&#x9;dfact    = float(metadata.GetValue(2)) if metadata else 1.&#xA;&#x9;&#x9;z        = npvtk.vtk_to_numpy(obj.GetPoints().GetData())[:,2]/dfact&#xA;&#x9;&#x9;# For each variable, decide if the plot is needed&#xA;&#x9;&#x9;for varId in range(obj.GetPointData().GetNumberOfArrays()):         &#xA;&#x9;&#x9;&#x9;varname = obj.GetPointData().GetArray(varId).GetName()&#xA;&#x9;&#x9;&#x9;# Filter some variables (Do not plot them)&#xA;&#x9;&#x9;&#x9;if varname == 'basins mask':       continue&#xA;&#x9;&#x9;&#x9;if varname == 'coast mask':        continue&#xA;&#x9;&#x9;&#x9;if varname == 'land mask':         continue&#xA;&#x9;&#x9;&#x9;if varname == 'e1':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e2':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'e3':                continue&#xA;&#x9;&#x9;&#x9;if varname == 'vtkValidPointMask': continue&#xA;&#x9;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;&#x9;do_plot = False if len(varlist) &gt; 0 else True&#xA;&#x9;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;&#x9;for ii in range(0,len(varlist)):&#xA;&#x9;&#x9;&#x9;&#x9;if &quot;%s %d&quot; % (varname,objId+1) == &quot;%s %s&quot; % (varlist[ii],objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;args = variables.split('\n')[ii].split(';')[2]&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;if (len(variables.split('\n')[ii].split(';'))&gt;3):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in variables.split('\n')[ii].split(';')[3].split(','))&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;&#x9;var = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(varname))&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros inside &#xA;&#x9;&#x9;&#x9;&#x9;if pfilterzeros: var[var == 0.] = None&#xA;&#x9;&#x9;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;&#x9;&#x9;if psmoothdata: var = smooth(var,psmoothorder)&#xA;&#x9;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,label=varname,linewidth=plinewidth)&#xA;&#x9;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,label=varname,linewidth=plinewidth)&#xA;&#x9;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs['linewidth'] = plinewidth&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;ax.plot(var,-z,args,**kwargs)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=px_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=py_font)&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if pshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=plegend_font)&#xA;&#x9;&#x9;if plegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if plegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;ax.legend(loc=plegend_location,prop=legend_prop)&#xA;&#xA;&#x9;if psavefigure and pfilename:&#xA;&#x9;&#x9;figure.savefig(pfilename,dpi=poutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
                                      number_of_elements="1"
                                      panel_visibility="never">
                  <Hints>
@@ -721,6 +735,19 @@
                  </Hints>
                </StringVectorProperty>
 
+               <IntVectorProperty name="sstyle"
+                                  label="Style"
+                                  initial_string="sstyle"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                  <Entry text="White"   value="0" />
+                  <Entry text="Dark"    value="1" />
+                  <Entry text="Stylish" value="2" />
+                </EnumerationDomain>
+               </IntVectorProperty>
+
                <IntVectorProperty name="sshow_grid"
                                   label="Show Grid"
                                   initial_string="sshow_grid"
@@ -775,6 +802,7 @@
 
                <PropertyGroup label="Plot">
                  <Property name="Variables"/>
+                 <Property name="sstyle"/>
                  <Property name="sshow_grid"/>
                  <Property name="slinewidth"/>
                  <Property name="ssmoothdata"/>
@@ -1181,7 +1209,7 @@
 
                <StringVectorProperty command="SetScript"
                                      name="Script"
-                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_spaghettiplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs spaghetti plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if splot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if splot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(splot_title,&#xA;&#x9;&#x9;fontsize=splot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if splot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if splot_title_ital else None)&#x9;&#x9;&#x9;&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(sx_label,&#xA;&#x9;&#x9;fontsize=sx_font,&#xA;&#x9;&#x9;fontweight='bold' if sx_bold else None,&#xA;&#x9;&#x9;style='italic' if sx_ital else None)&#xA;&#x9;if sx_customrange: ax.set_xlim((sx_min,sx_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(sy_label,&#xA;&#x9;&#x9;fontsize=sy_font,&#xA;&#x9;&#x9;fontweight='bold' if sy_bold else None,&#xA;&#x9;&#x9;style='italic' if sy_ital else None)&#xA;&#x9;if sy_customrange: ax.set_ylim((sy_min,sy_max))&#xA;&#xA;&#x9;if sshow_grid: ax.grid()&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []&#xA;&#xA;&#x9;xIdsg   = np.array([])&#xA;&#x9;xNamesg = np.array([])&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#x9;for objId in range(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;# Get object that must be a vtkTable&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;if not obj: continue&#xA;&#x9;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): continue&#xA;&#x9;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;&#x9;# Now parse the columns and build the array data&#xA;&#x9;&#x9;var    = []&#xA;&#x9;&#x9;xIds   = []&#xA;&#x9;&#x9;xNames = []&#xA;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;do_plot = False if len(objlist) &gt; 0 else True&#xA;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;for ii in range(0,len(objlist)):&#xA;&#x9;&#x9;&#x9;if &quot;%d&quot; % (objId+1) == &quot;%s&quot; % (objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;1):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;args = labels.split('\n')[ii].split(';')[1]&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in labels.split('\n')[ii].split(';')[2].split(','))&#xA;&#x9;&#x9;# Build the array data&#xA;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;&#x9;&#x9;xNames.append( date.strftime(sx_tick_form) )&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;&#x9;&#x9;val = npvtk.vtk_to_numpy(column)[0]&#xA;&#x9;&#x9;&#x9;&#x9;val = None if val == 0. else val&#xA;&#x9;&#x9;&#x9;&#x9;var.append(val)&#xA;&#x9;&#x9;&#x9;# Convert to numpy array&#xA;&#x9;&#x9;&#x9;z      = np.array(var)&#xA;&#x9;&#x9;&#x9;xIds   = np.array(xIds)&#xA;&#x9;&#x9;&#x9;xNames = np.array(xNames)&#xA;&#x9;&#x9;&#x9;# Smooth if requested&#xA;&#x9;&#x9;&#x9;if ssmoothdata: z = smooth(z,ssmoothorder)&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;kwargs['linewidth'] = slinewidth&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,**kwargs)&#xA;&#x9;&#x9;&#x9;# Update global variables&#xA;&#x9;&#x9;&#x9;xIdsg   = xIds   if xIds.shape[0]   &gt; xIdsg.shape[0]   else xIdsg&#xA;&#x9;&#x9;&#x9;xNamesg = xNames if xNames.shape[0] &gt; xNamesg.shape[0] else xNamesg&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIdsg if xIdsg.shape[0] &lt; 10 else np.linspace(xIdsg[0],xIdsg[-1],sx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNamesg[x_ticks],rotation=sx_rot)&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=sx_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=sy_font)&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if sshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=slegend_font)&#xA;&#x9;&#x9;if slegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if slegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;# Place the legend&#xA;&#x9;&#x9;if slegend_outside:&#xA;&#x9;&#x9;&#x9;figure.legend(loc=slegend_location,prop=legend_prop)&#xA;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;ax.legend(loc=slegend_location,prop=legend_prop)&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if ssavefigure and sfilename:&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(sfilename,dpi=soutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;# MapPlot plot&#xA;&#x9;if view_type == &quot;vtkOGSMapPlot&quot;:&#xA;&#x9;&#x9;return render_mapplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_spaghettiplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs spaghetti plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import vtk, numpy as np, matplotlib.pyplot as plt&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Set plot style&#xA;&#x9;if sstyle == 0: plt.style.use('seaborn-white')&#xA;&#x9;if sstyle == 1: plt.style.use('dark_background')&#xA;&#x9;if sstyle == 2: plt.style.use('ggplot')&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if splot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if splot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(splot_title,&#xA;&#x9;&#x9;fontsize=splot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if splot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if splot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#x9;&#x9;&#x9;&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(sx_label,&#xA;&#x9;&#x9;fontsize=sx_font,&#xA;&#x9;&#x9;fontweight='bold' if sx_bold else None,&#xA;&#x9;&#x9;style='italic' if sx_ital else None)&#xA;&#x9;if sx_customrange: ax.set_xlim((sx_min,sx_max))&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(sy_label,&#xA;&#x9;&#x9;fontsize=sy_font,&#xA;&#x9;&#x9;fontweight='bold' if sy_bold else None,&#xA;&#x9;&#x9;style='italic' if sy_ital else None)&#xA;&#x9;if sy_customrange: ax.set_ylim((sy_min,sy_max))&#xA;&#xA;&#x9;ax.grid(b=True if sshow_grid else False)&#xA;&#xA;&#x9;# Generate variable lists&#xA;&#x9;objlist = [s.split(';')[0] for s in labels.split('\n')] if not labels == '' else []&#xA;&#xA;&#x9;xIdsg   = np.array([])&#xA;&#x9;xNamesg = np.array([])&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#x9;for objId in range(view.GetNumberOfVisibleDataObjects()):&#xA;&#x9;&#x9;# Get object that must be a vtkTable&#xA;&#x9;&#x9;obj = view.GetVisibleDataObjectForRendering(objId)&#xA;&#x9;&#x9;if not obj: continue&#xA;&#x9;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): continue&#xA;&#x9;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;&#x9;# Now parse the columns and build the array data&#xA;&#x9;&#x9;var    = []&#xA;&#x9;&#x9;xIds   = []&#xA;&#x9;&#x9;xNames = []&#xA;&#x9;&#x9;# Decide whether to plot the variable&#xA;&#x9;&#x9;do_plot = False if len(objlist) &gt; 0 else True&#xA;&#x9;&#x9;args    = None&#xA;&#x9;&#x9;kwargs  = None&#xA;&#x9;&#x9;for ii in range(0,len(objlist)):&#xA;&#x9;&#x9;&#x9;if &quot;%d&quot; % (objId+1) == &quot;%s&quot; % (objlist[ii]): &#xA;&#x9;&#x9;&#x9;&#x9;do_plot = True&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;1):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;args = labels.split('\n')[ii].split(';')[1]&#xA;&#x9;&#x9;&#x9;&#x9;if (len(labels.split('\n')[ii].split(';'))&gt;2):&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;kwargs = dict(s.split('=') for s in labels.split('\n')[ii].split(';')[2].split(','))&#xA;&#x9;&#x9;# Build the array data&#xA;&#x9;&#x9;if do_plot:&#xA;&#x9;&#x9;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;&#x9;&#x9;xNames.append( date.strftime(sx_tick_form) )&#xA;&#x9;&#x9;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;&#x9;&#x9;val = npvtk.vtk_to_numpy(column)[0]&#xA;&#x9;&#x9;&#x9;&#x9;val = None if val == 0. else val&#xA;&#x9;&#x9;&#x9;&#x9;var.append(val)&#xA;&#x9;&#x9;&#x9;# Convert to numpy array&#xA;&#x9;&#x9;&#x9;z      = np.array(var)&#xA;&#x9;&#x9;&#x9;xIds   = np.array(xIds)&#xA;&#x9;&#x9;&#x9;xNames = np.array(xNames)&#xA;&#x9;&#x9;&#x9;# Smooth if requested&#xA;&#x9;&#x9;&#x9;if ssmoothdata: z = smooth(z,ssmoothorder)&#xA;&#x9;&#x9;&#x9;# Plot&#xA;&#x9;&#x9;&#x9;if args == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;elif kwargs == None:&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,linewidth=slinewidth)&#xA;&#x9;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;&#x9;kwargs['linewidth'] = slinewidth&#xA;&#x9;&#x9;&#x9;&#x9;ax.plot(xIds,z,args,**kwargs)&#xA;&#x9;&#x9;&#x9;# Update global variables&#xA;&#x9;&#x9;&#x9;xIdsg   = xIds   if xIds.shape[0]   &gt; xIdsg.shape[0]   else xIdsg&#xA;&#x9;&#x9;&#x9;xNamesg = xNames if xNames.shape[0] &gt; xNamesg.shape[0] else xNamesg&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIdsg if xIdsg.shape[0] &lt; 10 else np.linspace(xIdsg[0],xIdsg[-1],sx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNamesg[x_ticks],rotation=sx_rot)&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=sx_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=sy_font)&#xA;&#xA;&#x9;# Set legend&#xA;&#x9;if sshow_legend: &#xA;&#x9;&#x9;legend_prop = dict(size=slegend_font)&#xA;&#x9;&#x9;if slegend_bold: legend_prop['weight'] = 'bold'&#xA;&#x9;&#x9;if slegend_ital: legend_prop['style']  = 'italic'&#xA;&#x9;&#x9;# Place the legend&#xA;&#x9;&#x9;if slegend_outside:&#xA;&#x9;&#x9;&#x9;figure.legend(loc=slegend_location,prop=legend_prop)&#xA;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;ax.legend(loc=slegend_location,prop=legend_prop)&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if ssavefigure and sfilename:&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(sfilename,dpi=soutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
                                      number_of_elements="1"
                                      panel_visibility="never">
                  <Hints>
@@ -1342,6 +1370,19 @@
                 </EnumerationDomain>
                </IntVectorProperty>
 
+               <IntVectorProperty name="hstyle"
+                                  label="Style"
+                                  initial_string="hstyle"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                  <Entry text="White"   value="0" />
+                  <Entry text="Dark"    value="1" />
+                  <Entry text="Stylish" value="2" />
+                </EnumerationDomain>
+               </IntVectorProperty>
+
                <IntVectorProperty name="hsmoothdata"
                                   label="Smooth curves"
                                   initial_string="hsmoothdata"
@@ -1374,6 +1415,7 @@
                <PropertyGroup label="Colormap">
                  <Property name="hdraw_colorbar"/>
                  <Property name="hsel_colormap"/>
+                 <Property name="hstyle"/>
                  <Property name="hsmoothdata"/>
                  <Property name="hsmoothorder"/>
                </PropertyGroup>
@@ -1641,7 +1683,723 @@
 
                <StringVectorProperty command="SetScript"
                                      name="Script"
-                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_hovmoellerplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs Hovmoeller plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#x9;from matplotlib import cm as cm&#xA;&#xA;&#x9;import vtk, numpy as np&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if hplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if hplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(hplot_title,&#xA;&#x9;&#x9;fontsize=hplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if hplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if hplot_title_ital else None)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(hx_label,&#xA;&#x9;&#x9;fontsize=hx_font,&#xA;&#x9;&#x9;fontweight='bold' if hx_bold else None,&#xA;&#x9;&#x9;style='italic' if hx_ital else None)&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(hy_label,&#xA;&#x9;&#x9;fontsize=hy_font,&#xA;&#x9;&#x9;fontweight='bold' if hy_bold else None,&#xA;&#x9;&#x9;style='italic' if hy_ital else None)&#xA;&#x9;if hy_customrange: ax.set_ylim((hy_min,hy_max))&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;# Only get the first visible object, which should be a vtkTable&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;obj = view.GetVisibleDataObjectForRendering(0)&#xA;&#x9;if not obj: return python_view.figure_to_image(figure)&#xA;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;# Now parse the columns and build the matrix data&#xA;&#x9;col_stack = []&#xA;&#x9;xIds      = []&#xA;&#x9;xNames    = []&#xA;&#xA;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;# Deal with the depth column&#xA;&#x9;&#x9;if column.GetName() == &quot;depth&quot;:&#xA;&#x9;&#x9;&#x9;depth = -npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;&#x9;continue&#xA;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;xNames.append( date.strftime(hx_tick_form) )&#xA;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;var = npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;var[var == 0.] = None&#xA;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;if hsmoothdata: var = smooth(var,hsmoothorder)&#xA;&#x9;&#x9;col_stack.append( var )&#xA;&#xA;&#x9;z      = np.column_stack(col_stack)&#xA;&#x9;xIds   = np.array(xIds)&#xA;&#x9;xNames = np.array(xNames)&#xA;&#xA;&#x9;# Colormap selection&#xA;&#x9;cmap = cm.coolwarm&#xA;&#x9;if hsel_colormap == 0: cmap = cm.jet&#xA;&#x9;if hsel_colormap == 1: cmap = cm.rainbow&#xA;&#x9;if hsel_colormap == 2: cmap = cm.hsv&#xA;&#x9;if hsel_colormap == 3: cmap = cm.ocean&#xA;&#x9;if hsel_colormap == 4: cmap = cm.terrain&#xA;&#x9;if hsel_colormap == 5: cmap = cm.coolwarm&#xA;&#x9;if hsel_colormap == 6: cmap = cm.viridis&#xA;&#x9;if hsel_colormap == 7: cmap = cm.plasma&#xA;&#x9;if hsel_colormap == 8: cmap = cm.inferno&#xA;&#xA;&#x9;# Plot and colorbar&#xA;&#x9;z_min = np.nanmin(z)&#xA;&#x9;z_max = np.nanmax(z)&#xA;&#x9;ctf = ax.contourf(xIds,depth,z,cmap=cmap,levels=np.linspace(z_min,z_max,256))&#xA;&#x9;if hdraw_colorbar: &#xA;&#x9;&#x9;cbar = figure.colorbar(ctf)&#xA;&#x9;&#x9;cbar.set_ticks(np.linspace(z_min,z_max,10))&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIds if xIds.shape[0] &lt; 10 else np.linspace(xIds[0],xIds[-1],hx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNames[x_ticks],rotation=hx_rot)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=hx_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=hy_font)&#xA;&#x9;cbar.ax.tick_params(labelsize=hy_font)&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if hsavefigure and hfilename:&#xA;&#x9;&#x9;# Fix ugly white lines in PDF&#xA;&#x9;&#x9;for c in ctf.collections: c.set_edgecolor(&quot;face&quot;)&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(hfilename,dpi=houtdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;# MapPlot plot&#xA;&#x9;if view_type == &quot;vtkOGSMapPlot&quot;:&#xA;&#x9;&#x9;return render_mapplot(view, width, height)&#xA;&#x9;return None&#xA;def smooth(a,WSZ):&#xA;&#x9;'''&#xA;&#x9;Smoothes a 1-D numpy array.&#xA;&#xA;&#x9;WSZ: smoothing window size needs, which must be odd number,&#xA;&#x9;as in the original MATLAB implementation.&#xA;&#x9;'''&#xA;&#x9;import numpy as np&#xA;&#x9;out0  = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    &#xA;&#x9;r     = np.arange(1,WSZ-1,2)&#xA;&#x9;start = np.cumsum(a[:WSZ-1])[::2]/r&#xA;&#x9;stop  = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]&#xA;&#x9;return np.concatenate((  start , out0, stop  ))&#xA;def render_hovmoellerplot(view, width, height):&#xA;&#x9;'''&#xA;&#x9;Performs Hovmoeller plots from data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#x9;from matplotlib import cm as cm&#xA;&#xA;&#x9;import vtk, numpy as np, matplotlib.pyplot as plt&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from datetime import datetime as dt&#xA;&#xA;&#x9;# Set plot style&#xA;&#x9;if hstyle == 0: plt.style.use('seaborn-white')&#xA;&#x9;if hstyle == 1: plt.style.use('dark_background')&#xA;&#x9;if hstyle == 2: plt.style.use('ggplot')&#xA;&#xA;&#x9;# Create matplotlib figure&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#xA;&#x9;# Set up the plot view&#xA;&#x9;ax = figure.add_subplot(1,1,1)&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if hplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if hplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(hplot_title,&#xA;&#x9;&#x9;fontsize=hplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if hplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if hplot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(hx_label,&#xA;&#x9;&#x9;fontsize=hx_font,&#xA;&#x9;&#x9;fontweight='bold' if hx_bold else None,&#xA;&#x9;&#x9;style='italic' if hx_ital else None)&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(hy_label,&#xA;&#x9;&#x9;fontsize=hy_font,&#xA;&#x9;&#x9;fontweight='bold' if hy_bold else None,&#xA;&#x9;&#x9;style='italic' if hy_ital else None)&#xA;&#x9;if hy_customrange: ax.set_ylim((hy_min,hy_max))&#xA;&#xA;&#x9;# Plot data&#xA;&#x9;# Only get the first visible object, which should be a vtkTable&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;obj = view.GetVisibleDataObjectForRendering(0)&#xA;&#x9;if not obj: return python_view.figure_to_image(figure)&#xA;&#x9;if (obj.GetClassName() != &quot;vtkTable&quot;): return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;# Here we have mande sure we are dealing with a vtkTable&#xA;&#x9;# Now parse the columns and build the matrix data&#xA;&#x9;col_stack = []&#xA;&#x9;xIds      = []&#xA;&#x9;xNames    = []&#xA;&#xA;&#x9;for cId in range(obj.GetNumberOfColumns()):&#xA;&#x9;&#x9;# Recover the column&#xA;&#x9;&#x9;column = obj.GetColumn(cId)&#xA;&#x9;&#x9;# Deal with the depth column&#xA;&#x9;&#x9;if column.GetName() == &quot;depth&quot;:&#xA;&#x9;&#x9;&#x9;depth = -npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;&#x9;continue&#xA;&#x9;&#x9;# Else we have a data column&#xA;&#x9;&#x9;xIds.append( cId )&#xA;&#x9;&#x9;# Use datetime to format the date&#xA;&#x9;&#x9;date = dt.strptime(column.GetName(),&quot;%Y%m%d-%H:%M:%S&quot;)&#xA;&#x9;&#x9;xNames.append( date.strftime(hx_tick_form) )&#xA;&#x9;&#x9;# Filter zeros and stack the column&#xA;&#x9;&#x9;var = npvtk.vtk_to_numpy(column)&#xA;&#x9;&#x9;var[var == 0.] = None&#xA;&#x9;&#x9;# Algorithm to smooth data&#xA;&#x9;&#x9;if hsmoothdata: var = smooth(var,hsmoothorder)&#xA;&#x9;&#x9;col_stack.append( var )&#xA;&#xA;&#x9;z      = np.column_stack(col_stack)&#xA;&#x9;xIds   = np.array(xIds)&#xA;&#x9;xNames = np.array(xNames)&#xA;&#xA;&#x9;# Colormap selection&#xA;&#x9;cmap = cm.coolwarm&#xA;&#x9;if hsel_colormap == 0: cmap = cm.jet&#xA;&#x9;if hsel_colormap == 1: cmap = cm.rainbow&#xA;&#x9;if hsel_colormap == 2: cmap = cm.hsv&#xA;&#x9;if hsel_colormap == 3: cmap = cm.ocean&#xA;&#x9;if hsel_colormap == 4: cmap = cm.terrain&#xA;&#x9;if hsel_colormap == 5: cmap = cm.coolwarm&#xA;&#x9;if hsel_colormap == 6: cmap = cm.viridis&#xA;&#x9;if hsel_colormap == 7: cmap = cm.plasma&#xA;&#x9;if hsel_colormap == 8: cmap = cm.inferno&#xA;&#xA;&#x9;# Plot and colorbar&#xA;&#x9;z_min = np.nanmin(z)&#xA;&#x9;z_max = np.nanmax(z)&#xA;&#x9;ctf = ax.contourf(xIds,depth,z,cmap=cmap,levels=np.linspace(z_min,z_max,256))&#xA;&#x9;if hdraw_colorbar: &#xA;&#x9;&#x9;cbar = figure.colorbar(ctf)&#xA;&#x9;&#x9;cbar.set_ticks(np.linspace(z_min,z_max,10))&#xA;&#xA;&#x9;# Set x axis&#xA;&#x9;x_ticks = xIds if xIds.shape[0] &lt; 10 else np.linspace(xIds[0],xIds[-1],hx_nticks,dtype=np.int)&#xA;&#x9;ax.set_xticks(x_ticks)&#xA;&#x9;ax.set_xticklabels(xNames[x_ticks],rotation=hx_rot)&#xA;&#xA;&#x9;# Invert the Y axis&#xA;&#x9;ax.invert_yaxis()&#xA;&#xA;&#x9;# Set tick size&#xA;&#x9;ax.tick_params(axis='x', which='major', labelsize=hx_font)&#xA;&#x9;ax.tick_params(axis='y', which='major', labelsize=hy_font)&#xA;&#x9;cbar.ax.tick_params(labelsize=hy_font)&#xA;&#xA;&#x9;# Fit figure&#xA;&#x9;figure.tight_layout()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if hsavefigure and hfilename:&#xA;&#x9;&#x9;# Fix ugly white lines in PDF&#xA;&#x9;&#x9;for c in ctf.collections: c.set_edgecolor(&quot;face&quot;)&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(hfilename,dpi=houtdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
+                                     number_of_elements="1"
+                                     panel_visibility="never">
+                 <Hints>
+                   <Widget type="multi_line" syntax="python"/>
+                 </Hints>
+                 <Documentation>This property contains the text of a Python program used
+                 to generate a plot. Use the TAB key to end editing and generate the
+                 plot.</Documentation>
+               </StringVectorProperty>
+
+               <!-- OTHER EXPOSED PROPERTIES -->
+
+               <IntVectorProperty command="GetNumberOfVisibleDataObjects"
+                                  name="NumberOfVisibleDataObjects"
+                                  number_of_elements="1"
+                                  default_values="1"
+                                  information_only="1"
+                                  panel_visibility="never">
+           <SimpleIntInformationHelper/>
+               </IntVectorProperty>
+              <IntVectorProperty command="SetForceUseCache"
+                                 default_values="0"
+                                 is_internal="1"
+                                 name="ForceUseCache"
+                                 number_of_elements="1">
+                <BooleanDomain name="bool" />
+                <Documentation>Typically UseCache and CacheKey are updated by the View
+                and representations cache based on what the view tells it. However in
+                some cases we may want to force a representation to cache irrespective
+                of the view (e.g. comparative views). In which case these ivars can up
+                set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+                Instead, ForcedCacheKey is used.</Documentation>
+              </IntVectorProperty>
+              <DoubleVectorProperty command="SetForcedCacheKey"
+                                    default_values="none"
+                                    is_internal="1"
+                                    name="ForcedCacheKey"
+                                    number_of_elements="1">
+                <DoubleRangeDomain name="range" />
+                <Documentation>Typically UseCache and CacheKey are updated by the View
+                and representations cache based on what the view tells it. However in
+                some cases we may want to force a representation to cache irrespective
+                of the view (e.g. comparative views). In which case these ivars can up
+                set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+                Instead, ForcedCacheKey is used.</Documentation>
+              </DoubleVectorProperty>
+        </OGSHovmoellerPlotProxy>
+
+        <OGSMapPlotProxy name="OGSMapPlot" 
+                         class="vtkOGSMapPlot"
+                         label="OGS Map Plot"
+                         processes="client|dataserver|renderserver"
+                         base_proxygroup="internal_views"
+                         base_proxyname="ViewBase"
+                         representation_name="PythonRepresentation">
+
+               <!-- EXPOSED PROPERTIES TO MODIFY THE PLOT -->
+
+               <!-- Plot properties -->
+               <StringVectorProperty name="mvarname"
+                                     initial_string="mvarname"
+                                     label="Variable "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Variable to plot.
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="msel_comp"
+                                  initial_string="msel_comp"
+                                  label="Component "
+                                  command="SetParameter"
+                                  default_values="-1"
+                                  number_of_elements="1"
+                                  panel_visibility="advanced">
+                 <Documentation>
+                   Component to plot (in case of a vectorial field).
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="max_div"
+                                  initial_string="max_div"
+                                  label="Number of axes divisions"
+                                  command="SetParameter"
+                                  default_values="2"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Number of divisions on the X and Y axis
+                </Documentation>
+               </IntVectorProperty>
+
+               <PropertyGroup label="Plot Properties">
+                 <Property name="mvarname"/>
+                 <Property name="msel_comp"/>
+                 <Property name="max_div"/>
+               </PropertyGroup>             
+
+               <!-- Title Properties-->
+               <StringVectorProperty name="mplot_title"
+                                     initial_string="mplot_title"
+                                     label="Title "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Set the title for the plot.
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="mplot_title_font"
+                                  initial_string="mplot_title_font"
+                                  command="SetParameter"
+                                  default_values="14"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the title font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mplot_title_bold"
+                                  initial_string="mplot_title_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the title font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mplot_title_ital"
+                                  initial_string="mplot_title_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the title font to italics.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mplot_title_alig"
+                                  initial_string="mplot_title_alig"
+                                  command="SetParameter"
+                                  default_values="1"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                   <Entry text="Left"   value="0" />
+                   <Entry text="Center" value="1" />
+                   <Entry text="Right"  value="2" />
+                 </EnumerationDomain>
+               </IntVectorProperty>
+
+               <PropertyGroup label="Title">
+                 <Property name="mplot_title"/>
+               </PropertyGroup>
+               <PropertyGroup label="Title Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="mplot_title_font" function="Size"/>
+                 <Property name="mplot_title_bold" function="Bold"/>
+                 <Property name="mplot_title_ital" function="Italics"/>
+                 <Property name="mplot_title_alig" function="Justification"/>
+               </PropertyGroup>
+
+               <!-- Projection Properties -->
+               <IntVectorProperty name="mshow_coastline"
+                                  initial_string="mshow_coastline"
+                                  label="Coastline"
+                                  command="SetParameter"
+                                  default_values="1"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Activate/Deactivate the coastline
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mshow_borders"
+                                  initial_string="mshow_borders"
+                                  label="Continent borders"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Activate/Deactivate the continent borders
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mshow_rivers"
+                                  initial_string="mshow_rivers"
+                                  label="Rivers"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Activate/Deactivate the rivers
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mshow_image"
+                                  initial_string="mshow_image"
+                                  label="Color Earth"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Activate/Deactivate the color of the Earth
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <StringVectorProperty animateable="0"
+                                     command="SetParameter"
+                                     name="mimg_file"
+                                     initial_string="mimg_file"
+                                     label="File Name"
+                                     default_values="https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73726/world.topo.bathy.200406.3x5400x2700.png"
+                                     number_of_elements="1">
+                   <FileListDomain name="files" />
+                   <Documentation>
+                      Set a high quality Earth map for background
+                   </Documentation>
+                   <Hints>
+                      <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                        <Property name="mshow_image" function="boolean" />
+                      </PropertyWidgetDecorator>
+                      <FileChooser extensions="jpg" file_description="JPG Image file"/>  
+                      <FileChooser extensions="png" file_description="PNG Image file"/>
+                   </Hints>
+               </StringVectorProperty>
+
+               <!--<IntVectorProperty name="muse_projection"
+                                  label="Projection"
+                                  initial_string="muse_projection"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1"
+                                  panel_visibility="advanced">
+                 <EnumerationDomain name="enum">
+                  <Entry text="PlateCarre"       value="0"/>
+                  <Entry text="EquidistantConic" value="1"/>
+                </EnumerationDomain>
+               </IntVectorProperty>-->
+
+               <PropertyGroup label="Projection Properties">
+                 <Property name="mshow_coastline"/>
+                 <Property name="mshow_borders"/>
+                 <Property name="mshow_rivers"/>
+                 <Property name="mshow_image"/>
+                 <Property name="mimg_file"/>
+                 <!--<Property name="muse_projection"/>-->
+               </PropertyGroup>  
+
+               <!-- Colormap Properties -->
+               <IntVectorProperty name="mdraw_colorbar"
+                                  initial_string="mdraw_colorbar"
+                                  label="Colorbar"
+                                  command="SetParameter"
+                                  default_values="1"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Activate/Deactivate the colorbar
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="msel_colormap"
+                                  label="Colormap"
+                                  initial_string="msel_colormap"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1"
+                                  panel_visibility="advanced">
+                 <EnumerationDomain name="enum">
+                  <Entry text="Jet"      value="0"/>
+                  <Entry text="Rainbow"  value="1"/>
+                  <Entry text="HSV"      value="2"/>
+                  <Entry text="Ocean"    value="3"/>
+                  <Entry text="Terrain"  value="4"/>
+                  <Entry text="CoolWarm" value="5"/>
+                  <Entry text="Viridis"  value="6"/>
+                  <Entry text="Plasma"   value="7"/>
+                  <Entry text="Inferno"  value="8"/>
+                </EnumerationDomain>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mstyle"
+                                  label="Style"
+                                  initial_string="mstyle"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <EnumerationDomain name="enum">
+                  <Entry text="White"   value="0" />
+                  <Entry text="Dark"    value="1" />
+                  <Entry text="Stylish" value="2" />
+                </EnumerationDomain>
+               </IntVectorProperty>
+
+               <PropertyGroup label="Colormap">
+                 <Property name="mdraw_colorbar"/>
+                 <Property name="msel_colormap"/>
+                 <Property name="mstyle"/>
+               </PropertyGroup>
+
+               <!-- Colorbar Properties-->
+               <StringVectorProperty name="mcbar_label"
+                                     initial_string="mcbar_label"
+                                     label="Title "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Set the label for the colorbar.
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="mcbar_font"
+                                  initial_string="mcbar_font"
+                                  command="SetParameter"
+                                  default_values="14"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the colorbar font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mcbar_bold"
+                                  initial_string="mcbar_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the colorbar font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mcbar_ital"
+                                  initial_string="mcbar_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the colorbar font to italics.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mcbar_log"
+                                  initial_string="mcbar_log"
+                                  label="Colorbar Log scale "
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Logarithmic scale on the colorbar.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mcbar_customrange"
+                                  initial_string="mcbar_customrange"
+                                  label="Colorbar Custom Range "
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set a custom range for the Colorbar.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <DoubleVectorProperty name="mcbar_min"
+                                     initial_string="mcbar_min"
+                                     label="Colorbar Minimum Range"
+                                     command="SetParameter"
+                                     default_values="-1e40"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the minimum range for the colorbar.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="mcbar_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <DoubleVectorProperty name="mcbar_max"
+                                     initial_string="mcbar_max"
+                                     label="Colorbar Maximum Range"
+                                     command="SetParameter"
+                                     default_values="1e40"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the maximum range for the colorbar.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="mcbar_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <StringVectorProperty name="mcbar_format"
+                                     initial_string="mcbar_format"
+                                     label="Colobar tick format "
+                                     command="SetParameter"
+                                     default_values="%.2f"
+                                     number_of_elements="1"
+                                     panel_visibility="advanced">
+                 <Documentation>
+                   Set the format for the colorbar.
+                 </Documentation>
+               </StringVectorProperty>
+
+               <PropertyGroup label="Colorbar">
+                 <Property name="mcbar_label"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="Colorbar Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="mcbar_font" function="Size"/>
+                 <Property name="mcbar_bold" function="Bold"/>
+                 <Property name="mcbar_ital" function="Italics"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="Colormap Range">
+                 <Property name="mcbar_customrange"/>
+                 <Property name="mcbar_log"/>
+                 <Property name="mcbar_min"/>
+                 <Property name="mcbar_max"/>
+                 <Property name="mcbar_format"/>
+               </PropertyGroup>
+
+               <!-- X Axis Properties -->
+               <StringVectorProperty name="mx_label"
+                                     initial_string="mx_label"
+                                     label="X Label "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Set the X axis label for the plot
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="mx_font"
+                                  initial_string="mx_font"
+                                  command="SetParameter"
+                                  default_values="12"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mx_bold"
+                                  initial_string="mx_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mx_ital"
+                                  initial_string="mx_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the X axis font to italics.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="mx_customrange"
+                                  initial_string="mx_customrange"
+                                  label="Custom Range X"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set a custom range for the Y axis.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <DoubleVectorProperty name="mx_min"
+                                     initial_string="mx_min"
+                                     label="Minimum Range X"
+                                     command="SetParameter"
+                                     default_values="-6."
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range minimum for the X axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="mx_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <DoubleVectorProperty name="mx_max"
+                                     initial_string="mx_max"
+                                     label="Maximum Range X"
+                                     command="SetParameter"
+                                     default_values="37"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range maximum for the X axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="mx_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <PropertyGroup label="X Axis">
+                 <Property name="mx_label"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="X Axis Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="mx_font" function="Size"/>
+                 <Property name="mx_bold" function="Bold"/>
+                 <Property name="mx_ital" function="Italics"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="X Axis Range">
+                 <Property name="mx_customrange"/>
+                 <Property name="mx_min"/>
+                 <Property name="mx_max"/>
+               </PropertyGroup>
+
+               <!-- Y axis label -->
+               <StringVectorProperty name="my_label"
+                                     initial_string="my_label"
+                                     label="Y Label "
+                                     command="SetParameter"
+                                     default_values=""
+                                     number_of_elements="1">
+                 <Documentation>
+                   Set the Y axis label for the plot
+                 </Documentation>
+               </StringVectorProperty>
+
+               <IntVectorProperty name="my_font"
+                                  initial_string="my_font"
+                                  command="SetParameter"
+                                  default_values="12"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the Y axis font size.
+                 </Documentation>
+               </IntVectorProperty>
+
+               <IntVectorProperty name="my_bold"
+                                  initial_string="my_bold"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the Y axis font to bold.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="my_ital"
+                                  initial_string="my_ital"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set the Y axis font to italics.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <IntVectorProperty name="my_customrange"
+                                  initial_string="my_customrange"
+                                  label="Custom Range Y"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Set a custom range for the Y axis.
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <DoubleVectorProperty name="my_min"
+                                     initial_string="my_min"
+                                     label="Minimum Range Y"
+                                     command="SetParameter"
+                                     default_values="30."
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range minimum for the Y axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="my_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <DoubleVectorProperty name="my_max"
+                                     initial_string="my_max"
+                                     label="Maximum Range Y"
+                                     command="SetParameter"
+                                     default_values="46."
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the axis range maximum for the Y axis.
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="my_customrange" function="boolean" />
+                   </PropertyWidgetDecorator>
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <PropertyGroup label="Y Axis">
+                 <Property name="my_label"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="Y Axis Properties"
+                              panel_widget="FontEditor"
+                              panel_visibility="advanced">
+                 <Property name="my_font" function="Size"/>
+                 <Property name="my_bold" function="Bold"/>
+                 <Property name="my_ital" function="Italics"/>
+               </PropertyGroup>
+
+               <PropertyGroup label="Y Axis Range">
+                 <Property name="my_customrange"/>
+                 <Property name="my_min"/>
+                 <Property name="my_max"/>
+               </PropertyGroup>
+
+               <!-- Save figure properties -->
+               <IntVectorProperty name="msavefigure"
+                                  initial_string="msavefigure"
+                                  label="Save Figure"
+                                  command="SetParameter"
+                                  default_values="0"
+                                  number_of_elements="1">
+                 <Documentation>
+                  Indicate whether or not to save the plot
+                </Documentation>
+                <BooleanDomain name="bool" />
+               </IntVectorProperty>
+
+               <StringVectorProperty animateable="0"
+                                     command="SetParameter"
+                                     name="mfilename"
+                                     initial_string="mfilename"
+                                     label="File Name"
+                                     default_values=""
+                                     number_of_elements="1">
+                   <FileListDomain name="files" />
+                   <Documentation>
+                      This property sets the name of the output file to save
+                   </Documentation>
+                   <Hints>
+                      <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                        <Property name="msavefigure" function="boolean" />
+                      </PropertyWidgetDecorator>
+                      <FileChooser extensions="png" file_description="High quality PNG"/>
+                      <FileChooser extensions="pdf" file_description="Vectorized PDF"/>
+                      <FileChooser extensions="eps" file_description="Vectorized EPS"/>
+                      <AcceptAnyFile/>    
+                   </Hints>
+               </StringVectorProperty>
+
+               <DoubleVectorProperty name="moutdpi"
+                                     initial_string="moutdpi"
+                                     label="Output DPI "
+                                     command="SetParameter"
+                                     default_values="300"
+                                     number_of_elements="1">
+                 <Documentation>
+                  Set the dpi (depth per inch) of the output figure
+                 </Documentation>
+                 <Hints>
+                   <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                     <Property name="msavefigure" function="boolean" />
+                   </PropertyWidgetDecorator>        
+                 </Hints>
+               </DoubleVectorProperty>
+
+               <PropertyGroup label="Save Figure">
+                 <Property name="msavefigure"/>
+                 <Property name="mfilename"/>
+                 <Property name="moutdpi"/>
+               </PropertyGroup>
+
+               <!-- PLOT PYTHON CODE -->
+
+               <StringVectorProperty command="SetScript"
+                                     name="Script"
+                                     default_values="def setup_data(view):&#xA;&#x9;'''&#xA;&#x9;This function sets up the data to be plotted.&#xA;&#x9;'''&#xA;&#x9;view.EnableAllAttributeArrays()&#xA;def render(view,width,height):&#xA;&#x9;'''&#xA;&#x9;This function decides the type of plot according &#xA;&#x9;to the view type.&#xA;&#xA;&#x9;Needs to be updated every time a plot view is created.&#xA;&#x9;'''&#xA;&#x9;view_type = view.GetClassName()&#xA;&#x9;# Vertical plot&#xA;&#x9;if view_type == &quot;vtkOGSVerticalProfilePlot&quot;:&#xA;&#x9;&#x9;return render_verticalplot(view, width, height)&#xA;&#x9;# Hovmoeller plot&#xA;&#x9;if view_type == &quot;vtkOGSHovmoellerPlot&quot;:&#xA;&#x9;&#x9;return render_hovmoellerplot(view, width, height)&#xA;&#x9;# Spaghetti plot&#xA;&#x9;if view_type == &quot;vtkOGSSpaghettiPlot&quot;:&#xA;&#x9;&#x9;return render_spaghettiplot(view, width, height)&#xA;&#x9;# MapPlot plot&#xA;&#x9;if view_type == &quot;vtkOGSMapPlot&quot;:&#xA;&#x9;&#x9;return render_mapplot(view, width, height)&#xA;&#x9;return None&#xA;def render_mapplot(view,width,height):&#xA;&#x9;'''&#xA;&#x9;Performs map plots from slice data.&#xA;&#x9;'''&#xA;&#x9;from paraview import python_view&#xA;&#xA;&#x9;import io, requests&#xA;&#x9;import cartopy.crs as ccrs, cartopy.feature as cfeature&#xA;&#x9;import vtk, numpy as np, matplotlib, matplotlib.pyplot as plt&#xA;&#xA;&#x9;from vtk.util import numpy_support as npvtk&#xA;&#x9;from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER&#xA;&#xA;&#x9;# Select projection&#xA;&#x9;projection = ccrs.PlateCarree() # muse_projection&#xA;&#xA;&#x9;# Set plot style&#xA;&#x9;if mstyle == 0: plt.style.use('seaborn-white')&#xA;&#x9;if mstyle == 1: plt.style.use('dark_background')&#xA;&#x9;if mstyle == 2: plt.style.use('ggplot')&#xA;&#xA;&#x9;# Create figure and axes&#xA;&#x9;figure = python_view.matplotlib_figure(width, height)&#xA;&#x9;ax     = figure.add_axes([0.08, 0.13, 0.78, 0.78,],projection=projection)&#xA;&#xA;&#x9;# Draw coastline&#xA;&#x9;if mshow_coastline:&#xA;&#x9;&#x9;ax.add_feature(&#xA;&#x9;&#x9;&#x9;&#x9;cfeature.NaturalEarthFeature('physical', 'coastline', '50m', &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;edgecolor=(0,0,0,1), facecolor='none', linewidth=1.)&#xA;&#x9;&#x9;&#x9;)&#xA;&#x9;if mshow_borders:&#xA;&#x9;&#x9;ax.add_feature(&#xA;&#x9;&#x9;&#x9;&#x9;cfeature.NaturalEarthFeature('cultural', 'admin_0_boundary_lines_land', '50m', &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;edgecolor=(0,0,0,.6), facecolor='none', linewidth=.95)&#xA;&#x9;&#x9;&#x9;)&#xA;&#x9;if mshow_rivers:&#xA;&#x9;&#x9;ax.add_feature(&#xA;&#x9;&#x9;&#x9;&#x9;cfeature.NaturalEarthFeature('physical', 'rivers_lake_centerlines', '50m', &#xA;&#x9;&#x9;&#x9;&#x9;&#x9;edgecolor=(0.0,0.0,0.545,.75), facecolor='none', linewidth=.75)&#xA;&#x9;&#x9;&#x9;)&#xA;&#xA;&#x9;if mshow_image and mimg_file == '':&#xA;&#x9;&#x9;ax.stock_img()&#xA;&#x9;if mshow_image and not mimg_file == '':&#xA;&#x9;&#x9;# Detect if we are dealing with a URL or a path&#xA;&#x9;&#x9;if 'https://' in img or 'http://' in img:&#xA;&#x9;&#x9;&#x9;ax.imshow(plt.imread(io.BytesIO(requests.get(img).content)), origin='upper', &#xA;&#x9;&#x9;&#x9;&#x9;transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])&#xA;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;ax.imshow(plt.imread(img), origin='upper', &#xA;&#x9;&#x9;&#x9;&#x9;transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])&#xA;&#xA;&#x9;# Title properties&#xA;&#x9;title_loc = 'center'&#xA;&#x9;if mplot_title_alig == 0:&#xA;&#x9;&#x9;title_loc = 'left'&#xA;&#x9;if mplot_title_alig == 2:&#xA;&#x9;&#x9;title_loc = 'right'&#xA;&#x9;ax.set_title(mplot_title,&#xA;&#x9;&#x9;fontsize=mplot_title_font,&#xA;&#x9;&#x9;fontweight='bold'    if mplot_title_bold else None,&#xA;&#x9;&#x9;style='italic'  if mplot_title_ital else None,&#xA;&#x9;&#x9;loc=title_loc)&#xA;&#xA;&#x9;# X Axes properties&#xA;&#x9;ax.set_xlabel(mx_label,&#xA;&#x9;&#x9;fontsize=mx_font,&#xA;&#x9;&#x9;fontweight='bold' if mx_bold else None,&#xA;&#x9;&#x9;style='italic' if mx_ital else None)&#xA;&#x9;# Y Axes properties&#xA;&#x9;ax.set_ylabel(my_label,&#xA;&#x9;&#x9;fontsize=my_font,&#xA;&#x9;&#x9;fontweight='bold' if my_bold else None,&#xA;&#x9;&#x9;style='italic' if my_ital else None)&#xA;&#xA;&#x9;# Set axis limits&#xA;&#x9;xlim = [mx_min, mx_max]; ax.set_xlim(xlim)&#xA;&#x9;ylim = [my_min, my_max]; ax.set_ylim(ylim)&#xA;&#xA;&#x9;gl = ax.gridlines(crs=projection,draw_labels=True,linewidth=0)&#xA;&#x9;gl.xlabels_top   = False&#xA;&#x9;gl.ylabels_right = False&#xA;&#x9;gl.xlocator      = matplotlib.ticker.FixedLocator(np.arange(xlim[0],xlim[1],max_div))&#xA;&#x9;gl.ylocator      = matplotlib.ticker.FixedLocator(np.arange(ylim[0],ylim[1],max_div))&#xA;&#x9;gl.xformatter    = LONGITUDE_FORMATTER&#xA;&#x9;gl.yformatter    = LATITUDE_FORMATTER&#xA;&#x9;gl.xlabel_style  = {'size': mx_font, 'weight': 'bold' if mx_bold else None, 'style': 'italic' if mx_ital else None}&#xA;&#x9;gl.ylabel_style  = {'size': my_font, 'weight': 'bold' if my_bold else None, 'style': 'italic' if my_ital else None}&#xA;&#xA;&#x9;# Filter data type&#xA;&#x9;if not view.GetNumberOfVisibleDataObjects() &gt; 0: return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;obj = view.GetVisibleDataObjectForRendering(0)&#xA;&#x9;if not obj: return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;if (obj.GetClassName() != &quot;vtkPolyData&quot;): return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;# Only work with point data&#xA;&#x9;if (obj.GetPointData().GetNumberOfArrays() == 0): return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;# Check loaded variable&#xA;&#x9;if not obj.GetPointData().GetArray(mvarname): return python_view.figure_to_image(figure)&#xA;&#xA;&#x9;# Load data arrays&#xA;&#x9;metadata = obj.GetFieldData().GetAbstractArray('Metadata')&#xA;&#x9;xyz      = npvtk.vtk_to_numpy(obj.GetPoints().GetData())&#xA;&#x9;data     = npvtk.vtk_to_numpy(obj.GetPointData().GetArray(mvarname))&#xA;&#xA;&#x9;# Deal with vectorial arrays&#xA;&#x9;if len(data.shape) == 2:&#xA;&#x9;&#x9;if not msel_comp in [0,1,2]:&#xA;&#x9;&#x9;&#x9;data = np.linalg.norm(data,axis=1)&#xA;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;data = data[:,msel_comp]&#xA;&#xA;&#x9;# Obtain the triangulation from VTK&#xA;&#x9;triang = [[int(obj.GetCell(icell).GetPointId(p)) for p in range(obj.GetCell(icell).GetNumberOfPoints())] &#xA;&#x9;&#x9;for icell in range(obj.GetNumberOfCells())]&#xA;&#xA;&#x9;# Colormap&#xA;&#x9;cmap = plt.get_cmap('coolwarm',256)&#xA;&#x9;if msel_colormap == 0: cmap = plt.get_cmap('jet',256)&#xA;&#x9;if msel_colormap == 1: cmap = plt.get_cmap('rainbow',256)&#xA;&#x9;if msel_colormap == 2: cmap = plt.get_cmap('hsv',256)&#xA;&#x9;if msel_colormap == 3: cmap = plt.get_cmap('ocean',256)&#xA;&#x9;if msel_colormap == 4: cmap = plt.get_cmap('terrain',256)&#xA;&#x9;if msel_colormap == 5: cmap = plt.get_cmap('coolwarm',256)&#xA;&#x9;if msel_colormap == 6: cmap = plt.get_cmap('viridis',256)&#xA;&#x9;if msel_colormap == 7: cmap = plt.get_cmap('plasma',256)&#xA;&#x9;if msel_colormap == 8: cmap = plt.get_cmap('inferno',256)&#xA;&#xA;&#x9;# XYZ must be projected to the projection used&#xA;&#x9;pv_projection = ccrs.PlateCarree(); &#xA;&#x9;proj_name = metadata.GetValue(7)&#xA;&#x9;if proj_name == 'Mercator':     pv_projection = ccrs.Mercator(false_easting=989634.3811336625, false_northing=-3512473.95569)&#xA;&#x9;if proj_name == 'Cylindrical':  pv_projection = ccrs.epsg(4087)&#xA;&#x9;if proj_name == 'Google':       pv_projection = ccrs.GOOGLE_MERCATOR&#xA;&#x9;if proj_name == 'Mollweide':    pv_projection = ccrs.Mollweide()&#xA;&#x9;if proj_name == 'Orthographic': pv_projection = ccrs.Orthographic()&#xA;&#x9;if proj_name == 'Robinson':     pv_projection = ccrs.Robinson()&#xA;&#x9;if proj_name == 'Satellite':    pv_projection = ccrs.NearsidePerspective(central_longitude=17.5,central_latitude=36.4,satellite_height=6779000)&#xA;&#x9;if proj_name == 'Eckert IV':    pv_projection = ccrs.EckertIV()&#xA;&#x9;if proj_name == 'Equal Earth':  pv_projection = ccrs.EqualEarth()&#xA;&#x9;if proj_name == 'EPSG 3857':    pv_projection = epsg(3857)&#xA;&#xA;&#x9;xyz_new = projection.transform_points(pv_projection,xyz[:,0], xyz[:,1])&#xA;&#xA;&#x9;# Set minimum and maximum&#xA;&#x9;z_min = np.nanmin(data); z_max = np.nanmax(data)&#xA;&#x9;cbar_min = mcbar_min if mcbar_min &gt;= -1e30 else z_min&#xA;&#x9;cbar_max = mcbar_max if mcbar_max &lt;= 1e30  else z_max&#xA;&#xA;&#x9;# Set extend&#xA;&#x9;extend = 'neither'&#xA;&#x9;if (cbar_min &gt; z_min): extend = 'min'&#xA;&#x9;if (cbar_max &lt; z_max): extend = 'max'&#xA;&#x9;if (cbar_min &gt; z_min and cbar_max &lt; z_max): extend = 'both'&#xA;&#xA;&#x9;# Create triangulation&#xA;&#x9;tri = matplotlib.tri.Triangulation(xyz_new[:,0], xyz_new[:,1], triangles=triang)&#xA;&#xA;&#x9;# Plot &#xA;&#x9;if not mcbar_log:&#xA;&#x9;&#x9;cplot = ax.tricontourf(tri,data,&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;cmap=cmap,&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;levels=np.linspace(max(cbar_min,z_min),min(cbar_max,z_max),256),&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;norm=matplotlib.colors.Normalize(cbar_min,cbar_max),&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;extend=extend,&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;transform=projection&#xA;&#x9;&#x9;&#x9;&#x9;)&#xA;&#x9;else:&#xA;&#x9;&#x9;cplot = ax.tricontourf(tri,data,&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;cmap=cmap,&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;levels=np.linspace(max(cbar_min,z_min),min(cbar_max,z_max),256),&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;norm=matplotlib.colors.LogNorm(cbar_min,cbar_max),&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;transform=projection&#xA;&#x9;&#x9;&#x9;&#x9;)&#xA;&#xA;&#x9;# Colorbar&#xA;&#x9;if mdraw_colorbar:&#xA;&#x9;&#x9;cbar = figure.colorbar(cplot,orientation='horizontal')&#xA;&#x9;&#x9;cbar.set_label(label=mcbar_label,size=mcbar_font,weight='bold' if mcbar_bold else None,style='italic' if mcbar_ital else None)&#xA;&#x9;&#x9;cbar.ax.tick_params(labelsize=mcbar_font)&#xA;&#x9;&#x9;if not mcbar_log:&#xA;&#x9;&#x9;&#x9;cbar.locator = matplotlib.ticker.LinearLocator(numticks=10)#FixedLocator(np.linspace(cbar_min,cbar_max,10))&#xA;&#x9;&#x9;else:&#xA;&#x9;&#x9;&#x9;cbar.locator = matplotlib.ticker.LogLocator()&#xA;&#x9;&#x9;cbar.formatter = matplotlib.ticker.FormatStrFormatter(mcbar_format)&#xA;&#x9;&#x9;cbar.update_ticks()&#xA;&#xA;&#x9;# Save figure&#xA;&#x9;if msavefigure and mfilename:&#xA;&#x9;&#x9;# Fix ugly white lines in PDF&#xA;&#x9;&#x9;for c in cplot.collections: c.set_edgecolor(&quot;face&quot;)&#xA;&#x9;&#x9;# Save figure&#xA;&#x9;&#x9;figure.savefig(mfilename,dpi=moutdpi,bbox_inches='tight')&#xA;&#xA;&#x9;return python_view.figure_to_image(figure)&#xA;"
                                      number_of_elements="1"
                                      panel_visibility="never">
                  <Hints>
@@ -1689,7 +2447,7 @@
                 Instead, ForcedCacheKey is used.</Documentation>
               </DoubleVectorProperty>
 
-        </OGSHovmoellerPlotProxy>
+        </OGSMapPlotProxy>
     </ProxyGroup>
     <!-- here is your other stuff -->
 </ServerManagerConfiguration>

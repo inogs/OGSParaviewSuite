@@ -90,11 +90,11 @@ namespace field
 			// Iterator
 			class iterator {
 				public:
-					using value_type        = T;
-					using difference_type   = std::ptrdiff_t;
-					using pointer           = T*;
-					using reference         = T&;
-					using _category = std::random_access_iterator_tag;
+					typedef T                       value_type;
+					typedef std::ptrdiff_t          difference_type;
+					typedef T*                      pointer;
+					typedef T&                      reference;
+					typedef std::input_iterator_tag iterator_category;
 
 					inline iterator() : f(nullptr), i(0) {}
 					inline iterator(Field<T>* ff, int ii) : f(ff), i(ii) {}

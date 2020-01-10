@@ -60,9 +60,13 @@ class OGSmesh(object):
 		self._OGSlib   = ct.cdll.LoadLibrary(lib)
 
 	@property
+	def maskfile(self):
+		return os.path.join(self._maskpath,self._maskname)
+
+	@property
 	def mask(self):
 		if self._mask == None:
-			_, _, _, _, self._mask = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
+			_, _, _, _, self._mask = self.readMeshMask(self.maskfile)
 		return self._mask
 	@mask.setter
 	def mask(self,maskfile):
@@ -127,6 +131,21 @@ class OGSmesh(object):
 
 		# Return
 		return dims, Lon, Lat, nav_lev, mask1
+
+	@staticmethod
+	def computeLonLatDepth(mask):
+		'''
+		'''
+		# Longitudinal coordinates, add one in the right
+		Lon = np.insert(mask.xlevels,0,mask.xlevels[0,:] - (mask.xlevels[0,:] - mask.xlevels[1,:])/2.,axis=0)
+		Lon = np.insert(Lon,0,Lon[:,0] - (Lon[:,0] - Lon[:,1])/2.,axis=1)
+		# Latitudinal coordinates, add one in the right
+		Lat = np.insert(mask.ylevels,0,mask.ylevels[0,:] + (mask.ylevels[0,:] - mask.ylevels[1,:])/2.,axis=0)
+		Lat = np.insert(Lat,0,Lat[:,0] - (Lat[:,0] - Lat[:,1])/2.,axis=1)
+		# Depth coordinates, add the one in the left
+		nav_lev = np.append(mask.zlevels,mask.zlevels[-1] + (mask.zlevels[-1] - mask.zlevels[-2])/2.)
+		# Return
+		return Lon,Lat,nav_lev
 
 	@staticmethod
 	def generateBasinsMask(mask):
@@ -334,7 +353,7 @@ class OGSmesh(object):
 			as the meshmask.nc file (Default: mesh.ogsmsh).
 		'''
 		# Read the mesh mask
-		dims, Lon, Lat, nav_lev, self._mask = self.readMeshMask(os.path.join(self._maskpath,self._maskname))
+		dims, Lon, Lat, nav_lev, self._mask = self.readMeshMask(self.maskfile)
 
 		# Project latitude and longitude according to map specifics
 		Lon2Meters, Lat2Meters = self.applyProjection(proj,Lon,Lat,**projkwargs)
