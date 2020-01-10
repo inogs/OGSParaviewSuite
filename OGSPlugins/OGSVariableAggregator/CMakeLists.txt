@@ -30,6 +30,9 @@ if(NOT APPLE)
   set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
 
+# Fix for ParaView-5.6.3 and OSPRAY
+find_package(ospray REQUIRED)
+
 ADD_PARAVIEW_PLUGIN(OGSVariableAggregator "1.0"
   SERVER_MANAGER_XML OGSVariableAggregator.xml
   SERVER_MANAGER_SOURCES pugixml.cpp vtkOGSVariableAggregator.cxx

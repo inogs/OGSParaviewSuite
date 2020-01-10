@@ -35,6 +35,8 @@ endif()
 
 set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -lz")
 set ( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -lz")
+# Fix for ParaView-5.6.3 and OSPRAY
+find_package(ospray REQUIRED)
 
 ADD_PARAVIEW_PLUGIN(OGSWriter "1.0"
   SERVER_MANAGER_XML OGSWriter.xml
