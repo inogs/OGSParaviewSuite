@@ -33,6 +33,9 @@ if(NOT APPLE)
   set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
 
+# Fix for ParaView-5.6.3 and OSPRAY
+find_package(ospray REQUIRED)
+
 ADD_PARAVIEW_PLUGIN(OGSSelectTools "1.0"
   SERVER_MANAGER_XML OGSSelectTools.xml
   SERVER_MANAGER_SOURCES ${SRC_PROJ} ../_utils/vtkOperations.cpp vtkOGSSelectCoast.cxx vtkOGSSelectBasin.cxx vtkOGSSelectLand.cxx vtkOGSSelectPolygon.cxx vtkOGSSelectOkuboWeiss.cxx
