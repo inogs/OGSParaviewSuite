@@ -50,7 +50,7 @@ superbuild_set_selectable_source(paraview
   SELECT 5.6.3 DEFAULT
     URL     "http://www.paraview.org/files/v5.6/ParaView-v5.6.3.tar.xz"
     URL_MD5 055773b133bd404457504c4ef59cb76d
-  SELECT 5.6.0 DEFAULT
+  SELECT 5.6.0
     URL     "http://www.paraview.org/files/v5.6/ParaView-v5.6.0.tar.xz"
     URL_MD5 eefb05c36ba2c3a6b25991b73f699981
   SELECT git CUSTOMIZABLE
