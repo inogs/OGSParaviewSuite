@@ -94,7 +94,7 @@ cmake ../paraview-superbuild/ \
    -Dparaview_PLUGIN_OGSDerivatives_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDerivatives \
    -Dparaview_PLUGIN_OGSHovmoeller_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSHovmoeller \
    -Dparaview_PLUGIN_OGSPlotViews_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSPlotViews \
-   -Dparaview_PLUGIN_OGSVortexIdentification_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVortexIdentification \
+   -Dparaview_PLUGIN_OGSVortexIdentification_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVortexIndentification \
    -Dparaview_PLUGIN_OGSReader_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSReader \
    -Dparaview_PLUGIN_OGSSelectTools_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSSelectTools \
    -Dparaview_PLUGIN_OGSSpaghetti_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSSpaghetti \
