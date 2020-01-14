@@ -109,13 +109,22 @@ superbuild_set_revision(embree
   URL     "https://www.paraview.org/files/dependencies/embree-3.2.0.tar.gz"
   URL_MD5 f414fefe6167ba58102fd0eb06c9ee5b)
 
+#superbuild_set_revision(ospray
+#  URL     "https://www.paraview.org/files/dependencies/ospray-1.8.4.tar.gz"
+#  URL_MD5 359a56552d981d057bfbd3e97f4fc0b7)
+
 superbuild_set_revision(ospray
-  URL     "https://www.paraview.org/files/dependencies/ospray-1.8.4.tar.gz"
-  URL_MD5 359a56552d981d057bfbd3e97f4fc0b7)
+  URL     "https://www.paraview.org/files/dependencies/ospray-1.6.1.tar.gz"
+  URL_MD5 58cfed6a24e8023389f63f65455466aa)
+
+#superbuild_set_revision(ospraymaterials
+#  URL     "https://www.paraview.org/files/data/OSPRayMaterials-0.2.tar.gz"
+#  URL_MD5 3b2716318ec8bf719373f25737b0bddc)
 
 superbuild_set_revision(ospraymaterials
-  URL     "https://www.paraview.org/files/data/OSPRayMaterials-0.2.tar.gz"
-  URL_MD5 3b2716318ec8bf719373f25737b0bddc)
+  URL     "https://www.paraview.org/files/data/OSPRayMaterials-0.1.tar.gz"
+  URL_MD5 0b95d2ad4fa79d457278c48125f3d111)
+
 
 superbuild_set_revision(openimagedenoise
   URL     "https://www.paraview.org/files/dependencies/oidn-0.8.1.src.tar.gz"
