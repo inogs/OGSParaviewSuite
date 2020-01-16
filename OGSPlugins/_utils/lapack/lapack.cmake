@@ -14,11 +14,11 @@ else()
 	set( LAPACK_LIB_FOLDER "${CMAKE_CURRENT_LIST_DIR}/macos")
 endif()
 
-set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -I${LAPACK_INC_FOLDER} -DLAPACK -lm -lgfortran") 
-set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${LAPACK_INC_FOLDER} -DLAPACK -lm -lgfortran")
+set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -I${LAPACK_INC_FOLDER} -DUSE_LAPACK") 
+set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${LAPACK_INC_FOLDER} -DUSE_LAPACK")
 
-SET(SRC_LAPACK
-	${LAPACK_LIB_FOLDER}/liblapacke.a
-	${LAPACK_LIB_FOLDER}/liblapack.a
-	${LAPACK_LIB_FOLDER}/libblas.a
-)
+set ( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-whole-archive ${LAPACK_LIB_FOLDER}/liblapacke.a ${LAPACK_LIB_FOLDER}/liblapack.a -Wl,-no-whole-archive ${LAPACK_LIB_FOLDER}/libblas.a -lm -lgfortran") 
+
+set ( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-whole-archive ${LAPACK_LIB_FOLDER}/liblapacke.a ${LAPACK_LIB_FOLDER}/liblapack.a -Wl,-no-whole-archive ${LAPACK_LIB_FOLDER}/libblas.a -lm -lgfortran") 
+
+set ( CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -Wl,-whole-archive ${LAPACK_LIB_FOLDER}/liblapacke.a ${LAPACK_LIB_FOLDER}/liblapack.a -Wl,-no-whole-archive ${LAPACK_LIB_FOLDER}/libblas.a -lm -lgfortran")
