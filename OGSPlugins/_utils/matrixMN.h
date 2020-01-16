@@ -37,11 +37,18 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+#include <type_traits>
 
 // Intel Math Kernel Library containing
 // optimized BLAS functions
 #ifdef MKL
   #include "mkl.h"
+#endif
+
+// LAPACK libraries containing
+// basic algebra operations
+#ifdef LAPACK
+	#include "lapacke.h"
 #endif
 
 #define BLK_LIM 5000
@@ -91,6 +98,13 @@ namespace matMN
 			inline void         iden();  // Identity
 //			inline matrixMN<T>  inv();   // Inverse     (to do)
 //			inline T            det();   // Determinant (to do)
+
+			// Operations allowed by the LAPACK library 
+			#ifdef LAPACK
+				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select);
+				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z);
+				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z, T wr[], T wi[]);
+			#endif
 
 			// Operators
 			inline matrixMN<T> &operator=(const matrixMN<T> &mn)        { clear(); size(mn.m,mn.n); fill(mn.mat); return (*this);}                                                            // Equality of matrix sizes
@@ -244,6 +258,76 @@ namespace matMN
 				this->ij(i,i,1.);
 		}
 	}
+
+	#ifdef LAPACK
+		template<class T>
+		inline matrixMN<T> matrixMN<T>::schur(char sort, LAPACK_D_SELECT2 select) {
+			/*
+				The routine computes for an n-by-n real/complex nonsymmetric matrix A, the eigenvalues, 
+				the real Schur form T, and, optionally, the matrix of Schur vectors Z. 
+				This gives the Schur factorization A = Z*T*ZH.
+
+				Optionally, it also orders the eigenvalues on the diagonal of the real-Schur/Schur form 
+				so that selected eigenvalues are at the top left. 
+				The leading columns of Z then form an orthonormal basis for the invariant subspace 
+				corresponding to the selected eigenvalues.
+			*/
+			if (this->n != this->m) return (*this); // The matrix is not n-by-n
+			// Create the matrix Z
+			matrixMN<T> Z(this->n,0.);
+			// Run overloaded schur algorithm
+			return this->schur(sort,select,Z);
+		}
+
+		template<class T>
+		inline matrixMN<T> matrixMN<T>::schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z) {
+			/*
+				The routine computes for an n-by-n real/complex nonsymmetric matrix A, the eigenvalues, 
+				the real Schur form T, and, optionally, the matrix of Schur vectors Z. 
+				This gives the Schur factorization A = Z*T*ZH.
+
+				Optionally, it also orders the eigenvalues on the diagonal of the real-Schur/Schur form 
+				so that selected eigenvalues are at the top left. 
+				The leading columns of Z then form an orthonormal basis for the invariant subspace 
+				corresponding to the selected eigenvalues.
+			*/
+			if (this->n != this->m) return (*this); // The matrix is not n-by-n
+			// Preallocate the eigenvalue vectors
+			T *wr = new T[this->n], *wi = new T[this->n];
+			// Call overloaded schur to obtain the real Schur form
+			matrixMN<T> A = this->schur(sort,select,Z,wr,wi);
+			// Free memory
+			delete [] wr; delete [] wi;
+			// Return
+			return A;
+		}
+
+		template<class T>
+		inline matrixMN<T> matrixMN<T>::schur(char sort, LAPACK_D_SELECT2 select, 
+			matrixMN<T> &Z, T wr[], T wi[]) {
+			/*
+				The routine computes for an n-by-n real/complex nonsymmetric matrix A, the eigenvalues, 
+				the real Schur form T, and, optionally, the matrix of Schur vectors Z. 
+				This gives the Schur factorization A = Z*T*ZH.
+
+				Optionally, it also orders the eigenvalues on the diagonal of the real-Schur/Schur form 
+				so that selected eigenvalues are at the top left. 
+				The leading columns of Z then form an orthonormal basis for the invariant subspace 
+				corresponding to the selected eigenvalues.
+			*/
+			if (this->n != this->m) return (*this); // The matrix is not n-by-n
+			// Schur algorithm overwrites the input matrix, we will copy and return it
+			// as the schur transformation
+			int sdim = 0;
+			matrixMN<T> A(*this);
+			// wr, wi and Z should already be allocated at this point
+			// Call lapacke routine
+			LAPACKE_dgees(LAPACK_ROW_MAJOR, 'V', sort, select, A.get_n(), A.data(), 
+				A.get_n(), &sdim, &wr[0], &wi[0], Z.data(), A.get_n());
+			// Return A as the real Schur form
+			return A;		
+		}
+	#endif
 
 /* EIGEN carries out the Jacobi eigenvalue iteration.
  *
