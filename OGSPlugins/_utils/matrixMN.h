@@ -47,7 +47,7 @@
 
 // LAPACK libraries containing
 // basic algebra operations
-#ifdef LAPACK
+#ifdef USE_LAPACK
 	#include "lapacke.h"
 #endif
 
@@ -100,7 +100,7 @@ namespace matMN
 //			inline matrixMN<T>  inv();   // Inverse     (to do)
 
 			// Operations allowed by the LAPACK library 
-			#ifdef LAPACK
+			#ifdef USE_LAPACK
 				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select);
 				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z);
 				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z, T wr[], T wi[]);
@@ -291,8 +291,7 @@ namespace matMN
 		return out;
 	}
 
-
-	#ifdef LAPACK
+	#ifdef USE_LAPACK
 		template<class T>
 		inline matrixMN<T> matrixMN<T>::schur(char sort, LAPACK_D_SELECT2 select) {
 			/*
