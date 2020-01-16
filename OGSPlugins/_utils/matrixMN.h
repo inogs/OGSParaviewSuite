@@ -96,8 +96,8 @@ namespace matMN
 			inline T            tra();   // Trace
 			inline T*           diag();  // Diagonal
 			inline void         iden();  // Identity
+			inline T            det();   // Determinant
 //			inline matrixMN<T>  inv();   // Inverse     (to do)
-//			inline T            det();   // Determinant (to do)
 
 			// Operations allowed by the LAPACK library 
 			#ifdef LAPACK
@@ -258,6 +258,39 @@ namespace matMN
 				this->ij(i,i,1.);
 		}
 	}
+
+	template<class T>
+	inline T matrixMN<T>::det() {
+		// Matrix must be n-by-n
+		if (this->n != this->m) return 0.;
+
+		T out = 0., sign = 1.;
+
+		if (this->n == 1) {
+			out = this->ij(0,0);
+		} else if (this->n == 2) {
+			out = this->ij(0,0)*this->ij(1,1) - this->ij(0,1)*this->ij(1,0);
+		} else {
+			matrixMN<T> aux(this->n-1,0.);
+			for (int p=0; p<this->n; ++p) {
+				int subi = 0;
+				for (int i=1; i<this->n; ++i) {
+					int subj = 0;
+					for (int j=0; j<this->n; ++j) {
+						if (j == p) continue;
+						aux[subi][subj] = this->ij(i,j);
+						subj++;
+					}
+					subi++;
+				}
+				out += sign*this->ij(0,p)*aux.det();
+				sign = -sign;
+			}
+		}
+
+		return out;
+	}
+
 
 	#ifdef LAPACK
 		template<class T>
