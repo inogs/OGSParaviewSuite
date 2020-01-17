@@ -128,7 +128,6 @@ namespace field
 		for (int gg = 0; gg < f.get_m(); ++gg)
 			deri[0 + 3*gg] = (f[ind][gg] - f[ind1][gg])/(xyz[ind][0] - xyz[ind1][0]); // dqdx
 
-
 		/* DERIVATIVES WITH RESPECT TO Y */
 		if (jj == 0) {
 			ind  = PNTIND(ii,jj+1,kk,nx,ny); ind1 = PNTIND(ii,jj,kk,nx,ny);
