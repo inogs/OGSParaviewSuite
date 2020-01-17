@@ -40,6 +40,6 @@ find_package(ospray REQUIRED)
 
 ADD_PARAVIEW_PLUGIN(OGSWriter "1.0"
   SERVER_MANAGER_XML OGSWriter.xml
-  SERVER_MANAGER_SOURCES ${SRC_PROJ} ../_utils/OGS.cpp ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/vtkOperations.cpp cnpy.cpp vtkOGSNPZWriter.cxx vtkOGSNPZTableWriter.cxx vtkOGSFieldWriter.cxx vtkOGSNetCDFWriter.cxx
+  SERVER_MANAGER_SOURCES ../_utils/OGS.cpp ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/vtkOperations.cpp cnpy.cpp vtkOGSNPZWriter.cxx vtkOGSNPZTableWriter.cxx vtkOGSFieldWriter.cxx vtkOGSNetCDFWriter.cxx
   REQUIRED_ON_SERVER
   )

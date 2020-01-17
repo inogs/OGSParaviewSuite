@@ -20,7 +20,7 @@
 #include <string>
 #include <map>
 
-#include "proj/src/proj_api.hpp"
+#include "proj_api.h"
 
 #define PROJ_ERR 0
 #define PROJ_OK  1

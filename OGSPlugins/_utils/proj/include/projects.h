@@ -605,7 +605,7 @@ struct projCtx_t {
 };
 
 /* classic public API */
-#include "proj_api.hpp"
+#include "proj_api.h"
 
 
 /* Generate pj_list external or make list from include file */
