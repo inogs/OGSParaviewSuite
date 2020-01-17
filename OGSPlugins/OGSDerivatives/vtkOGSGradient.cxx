@@ -56,6 +56,8 @@
 
 #include "../_utils/matrixMN.h"
 
+lapack_logical sortfun(const double *ER, const double *EI) { return(*EI != 0); }
+
 //-----------------------------------------------------------------------------
 
 #ifdef PARAVIEW_USE_MPI
@@ -134,12 +136,56 @@ namespace
     epsi = (ba_aux > epsi) ? ba_aux : epsi;
   }
 
+  template<class data_type>
+  void ComputeRortexFromGradient(data_type* gradients, data_type* rortex, data_type* omegaCriterion, data_type* aux, data_type& epsi)
+  {
+    // Rortex computation
+    matMN::matrixMN<data_type> A(3,gradients), S(3,(data_type)(0.)), Q(3,(data_type)(0.));
+
+    A = A.t();
+    S = A.schur('S',sortfun,Q); // schur sorting eigenvalues
+
+    // det(Q) can only be 1 or -1
+    if (Q.det() > 0) {
+      Q = Q.t(); // Rewrite Q
+      A = S.t(); // Rewrite A as grad(V)
+    } else { // Q.det() < 0
+      data_type Rval[] = {1,0,0,0,1,0,0,0,-1};
+      matMN::matrixMN<data_type> Rmat(3,Rval);
+      Q = Rmat^Q.t();              // Rewrite Q
+      A = (Q^A)^Q.t(); A = A.t();  // Rewrite A as grad(V)
+    }
+
+    // alpha and beta
+    data_type alpha = 0.5*std::sqrt( (A[1][1]-A[0][0])*(A[1][1]-A[0][0]) +
+      (A[0][1]+A[1][0])*(A[0][1]+A[1][0]) );
+    data_type beta  = 0.5*(A[0][1]-A[1][0]);
+
+    // Rortex magnitude
+    data_type Rm = 0.;
+    if ( (alpha*alpha - beta*beta) < 0. )
+      Rm = (beta > 0.) ? 2*(beta-alpha) : 2*(beta+alpha);
+
+    rortex[0] = Rm*Q[2][0];
+    rortex[1] = Rm*Q[2][1];
+    rortex[2] = Rm*Q[2][2];
+
+    // Omega Rortex
+    aux[0]            = alpha*alpha;
+    omegaCriterion[0] = beta*beta; 
+
+    // Store the maximum of (beta - alpha)
+    data_type ba_aux = omegaCriterion[0] - aux[0];
+    epsi = (ba_aux > epsi) ? ba_aux : epsi;
+  }
+
   // Functions for unstructured grids and polydatas
   template<class data_type>
   void ComputePointGradientsUG(
     vtkDataSet *structure, vtkDataArray *array, data_type *gradients,
     int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* L2Criterion,
-    data_type* omegaCriterion, data_type* divergence, double eps0, double dfact, int highestCellDimension, int contributingCellOption);
+    data_type* omegaCriterion, data_type* rortex, data_type* omegaRCriterion,
+     data_type* divergence, double eps0, double dfact, int highestCellDimension, int contributingCellOption);
 
   int GetCellParametricData(
     vtkIdType pointId, double pointCoord[3], vtkCell *cell, int & subId,
@@ -149,14 +195,16 @@ namespace
   void ComputeCellGradientsUG(
     vtkDataSet *structure, vtkDataArray *array, data_type *gradients,
     int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, 
-    data_type* L2Criterion, data_type* omegaCriterion, data_type* divergence, double eps0, double dfact);
+    data_type* L2Criterion, data_type* omegaCriterion, data_type* rortex, data_type* omegaRCriterion,
+    data_type* divergence, double eps0, double dfact);
 
   // Functions for image data and structured grids
   template<class Grid, class data_type>
   void ComputeGradientsSG(Grid output, vtkDataArray* array, data_type* gradients,
                           int numberOfInputComponents, int fieldAssociation,
                           data_type* vorticity, data_type* qCriterion, data_type* L2Criterion,
-                          data_type* omegaCriterion, data_type* divergence, double eps0, double dfact);
+                          data_type* omegaCriterion, data_type* rortex, data_type* omegaRCriterion,
+                          data_type* divergence, double eps0, double dfact);
 
   bool vtkGradientFilterHasArray(vtkFieldData *fieldData,
                                  vtkDataArray *array)
@@ -230,6 +278,8 @@ vtkOGSGradient::vtkOGSGradient()
   this->QCriterionArrayName = nullptr;
   this->Lambda2CriterionArrayName = nullptr;
   this->OmegaCriterionArrayName = nullptr;
+  this->RortexArrayName = nullptr;
+  this->OmegaRCriterionArrayName = nullptr;
   this->FasterApproximation = 0;
   this->ComputeGradient = 1;
   this->ComputeDivergence = 0;
@@ -237,6 +287,7 @@ vtkOGSGradient::vtkOGSGradient()
   this->ComputeQCriterion = 0;
   this->ComputeLambda2Criterion = 0;
   this->ComputeOmegaCriterion = 0;
+  this->ComputeRortexCriterion = 0;
   this->epsi = 1.e-3;
   this->nProcs = 0;
   this->procId = 0;
@@ -260,6 +311,8 @@ vtkOGSGradient::~vtkOGSGradient()
   this->SetQCriterionArrayName(nullptr);
   this->SetLambda2CriterionArrayName(nullptr);
   this->SetOmegaCriterionArrayName(nullptr);
+  this->SetRortexArrayName(nullptr);
+  this->SetOmegaRCriterionArrayName(nullptr);
 
   #ifdef PARAVIEW_USE_MPI
     this->SetController(NULL);  
@@ -286,6 +339,7 @@ void vtkOGSGradient::PrintSelf(ostream &os, vtkIndent indent)
   os << indent << "ComputeQCriterion:" << this->ComputeQCriterion << endl;
   os << indent << "ComputeLambda2Criterion:" << this->ComputeLambda2Criterion << endl;
   os << indent << "ComputeOmegaCriterion:" << this->ComputeOmegaCriterion << endl;
+  os << indent << "ComputeRortexCriterion:" << this->ComputeRortexCriterion << endl;
   os << indent << "ContributingCellOption:" << this->ContributingCellOption << endl;
   os << indent << "ReplacementValueOption:" << this->ReplacementValueOption << endl;
 }
@@ -417,17 +471,19 @@ int vtkOGSGradient::RequestData(vtkInformation *vtkNotUsed(request),
   bool computeQCriterion = this->ComputeQCriterion != 0;
   bool computeLambda2Criterion = this->ComputeLambda2Criterion != 0;
   bool computeOmegaCriterion = this->ComputeOmegaCriterion != 0;
+  bool computeRortexCriterion = this->ComputeRortexCriterion != 0;
   if( (this->ComputeOmegaCriterion || this->ComputeLambda2Criterion || this->ComputeQCriterion || this->ComputeVorticity ||
        this->ComputeDivergence) && array->GetNumberOfComponents() != 3)
   {
     vtkWarningMacro("Input array must have exactly three components with "
-                    << "ComputeDivergence, ComputeVorticity, ComputeQCriterion, computeLambda2Criterion or computeOmegaCriterion flag enabled."
-                    << "Skipping divergence, vorticity, Q-criterion, Lambda2-criterion and Omega-criterion computation.");
+                    << "ComputeDivergence, ComputeVorticity, ComputeQCriterion, computeLambda2Criterion, computeOmegaCriterion or ComputeRortexCriterion flag enabled."
+                    << "Skipping divergence, vorticity, Q-criterion, Lambda2-criterion, Omega-criterion and Rortex computation.");
     computeVorticity = false;
     computeQCriterion = false;
     computeDivergence = false;
     computeLambda2Criterion = false;
     computeOmegaCriterion = false;
+    computeRortexCriterion = false;
   }
 
   int fieldAssociation;
@@ -454,14 +510,14 @@ int vtkOGSGradient::RequestData(vtkInformation *vtkNotUsed(request),
           output->IsA("vtkRectilinearGrid") )
   {
     this->ComputeRegularGridGradient(
-      array, fieldAssociation, computeVorticity, computeQCriterion, 
-      computeLambda2Criterion, computeOmegaCriterion, computeDivergence, dfact, output);
+      array, fieldAssociation, computeVorticity, computeQCriterion, computeLambda2Criterion, 
+      computeOmegaCriterion, ComputeRortexCriterion, computeDivergence, dfact, output);
   }
   else
   {
     this->ComputeUnstructuredGridGradient(
-      array, fieldAssociation, input, computeVorticity, computeQCriterion, 
-      computeLambda2Criterion, computeOmegaCriterion, computeDivergence, dfact, output);
+      array, fieldAssociation, input, computeVorticity, computeQCriterion, computeLambda2Criterion, 
+      computeOmegaCriterion, computeRortexCriterion, computeDivergence, dfact, output);
   }
 
   return 1;
@@ -470,8 +526,8 @@ int vtkOGSGradient::RequestData(vtkInformation *vtkNotUsed(request),
 //-----------------------------------------------------------------------------
 int vtkOGSGradient::ComputeUnstructuredGridGradient(
   vtkDataArray* array, int fieldAssociation, vtkDataSet* input,
-  bool computeVorticity, bool computeQCriterion, bool computeLambda2Criterion, 
-  bool computeOmegaCriterion, bool computeDivergence, double dfact, vtkDataSet* output)
+  bool computeVorticity, bool computeQCriterion, bool computeLambda2Criterion, bool computeOmegaCriterion, 
+  bool computeRortexCriterion, bool computeDivergence, double dfact, vtkDataSet* output)
 {
   int arrayType = this->GetOutputArrayType(array);
   int numberOfInputComponents = array->GetNumberOfComponents();
@@ -586,6 +642,41 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
     }
   }
 
+  vtkSmartPointer<vtkDataArray> rortex, ORCriterion;
+  if(computeRortexCriterion)
+  {
+    rortex.TakeReference(vtkDataArray::CreateDataArray(arrayType));
+    rortex->SetNumberOfComponents(3);
+    rortex->SetNumberOfTuples(array->GetNumberOfTuples());
+    ORCriterion.TakeReference(vtkDataArray::CreateDataArray(arrayType));
+    ORCriterion->SetNumberOfTuples(array->GetNumberOfTuples());
+    switch (arrayType)
+    {
+      vtkFloatingPointTemplateMacro(Fill(rortex, static_cast<VTK_TT>(0), this->ReplacementValueOption));
+    }
+    switch (arrayType)
+    {
+      vtkFloatingPointTemplateMacro(Fill(ORCriterion, static_cast<VTK_TT>(0), this->ReplacementValueOption));
+    }
+    if (this->RortexArrayName)
+    {
+      rortex->SetName(this->RortexArrayName);
+    }
+    else
+    {
+      rortex->SetName("Rortex");
+    }
+    if (this->OmegaRCriterionArrayName)
+    {
+      ORCriterion->SetName(this->OmegaRCriterionArrayName);
+    }
+    else
+    {
+      ORCriterion->SetName("OmegaR-criterion");
+    }
+  }
+
+
   int highestCellDimension = 0;
   if (this->ContributingCellOption == vtkOGSGradient::DataSetMax)
   {
@@ -623,6 +714,10 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
                             static_cast<VTK_TT *>(L2Criterion->GetVoidPointer(0))),
                            (OCriterion == nullptr ? nullptr :
                             static_cast<VTK_TT *>(OCriterion->GetVoidPointer(0))),
+                           (rortex == nullptr ? nullptr :
+                            static_cast<VTK_TT *>(rortex->GetVoidPointer(0))),
+                           (ORCriterion == nullptr ? nullptr :
+                            static_cast<VTK_TT *>(ORCriterion->GetVoidPointer(0))),
                            (divergence == nullptr ? nullptr :
                             static_cast<VTK_TT *>(divergence->GetVoidPointer(0))),
                            this->epsi, dfact, highestCellDimension, this->ContributingCellOption));
@@ -650,6 +745,11 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
       if(OCriterion)
       {
         output->GetPointData()->AddArray(OCriterion);
+      }
+      if(rortex)
+      {
+        output->GetPointData()->AddArray(rortex);
+        output->GetPointData()->AddArray(ORCriterion);
       }
     }
     else // this->FasterApproximation
@@ -695,11 +795,22 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
         cellL2Criterion->SetNumberOfTuples(input->GetNumberOfCells());
       }
       vtkSmartPointer<vtkDataArray> cellOCriterion = nullptr;
-      if(L2Criterion)
+      if(OCriterion)
       {
         cellOCriterion.TakeReference(vtkDataArray::CreateDataArray(arrayType));
         cellOCriterion->SetName(OCriterion->GetName());
         cellOCriterion->SetNumberOfTuples(input->GetNumberOfCells());
+      }
+      vtkSmartPointer<vtkDataArray> cellrortex = nullptr, cellORCriterion = nullptr;
+      if(rortex)
+      {
+        rortex.TakeReference(vtkDataArray::CreateDataArray(arrayType));
+        rortex->SetName(rortex->GetName());
+        rortex->SetNumberOfComponents(3);
+        rortex->SetNumberOfTuples(input->GetNumberOfCells());
+        cellORCriterion.TakeReference(vtkDataArray::CreateDataArray(arrayType));
+        cellORCriterion->SetName(ORCriterion->GetName());
+        cellORCriterion->SetNumberOfTuples(input->GetNumberOfCells());
       }
 
       switch (arrayType)
@@ -718,6 +829,10 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
              static_cast<VTK_TT *>(cellL2Criterion->GetVoidPointer(0))),
             (OCriterion == nullptr ? nullptr :
              static_cast<VTK_TT *>(cellOCriterion->GetVoidPointer(0))),
+            (rortex == nullptr ? nullptr :
+             static_cast<VTK_TT *>(cellrortex->GetVoidPointer(0))),
+            (ORCriterion == nullptr ? nullptr :
+             static_cast<VTK_TT *>(cellORCriterion->GetVoidPointer(0))),
             (divergence == nullptr ? nullptr :
              static_cast<VTK_TT *>(cellDivergence->GetVoidPointer(0))),
             this->epsi, dfact));
@@ -751,6 +866,11 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
       {
         dummy->GetCellData()->AddArray(cellOCriterion);
       }
+      if(rortex)
+      {
+        dummy->GetCellData()->AddArray(cellrortex);
+        dummy->GetCellData()->AddArray(cellORCriterion);
+      }
 
       vtkNew<vtkCellDataToPointData> cd2pd;
       cd2pd->SetInputData(dummy);
@@ -778,6 +898,13 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
       {
         output->GetPointData()->AddArray(
           cd2pd->GetOutput()->GetPointData()->GetArray(OCriterion->GetName()));
+      }
+      if(rortex)
+      {
+        output->GetPointData()->AddArray(
+          cd2pd->GetOutput()->GetPointData()->GetArray(rortex->GetName()));
+        output->GetPointData()->AddArray(
+          cd2pd->GetOutput()->GetPointData()->GetArray(ORCriterion->GetName()));
       }
       if(divergence)
       {
@@ -823,6 +950,10 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
                           static_cast<VTK_TT *>(L2Criterion->GetVoidPointer(0))),
                          (OCriterion == nullptr ? nullptr :
                           static_cast<VTK_TT *>(OCriterion->GetVoidPointer(0))),
+                         (rortex == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(rortex->GetVoidPointer(0))),
+                         (ORCriterion == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(ORCriterion->GetVoidPointer(0))),
                          (divergence == nullptr ? nullptr :
                           static_cast<VTK_TT *>(divergence->GetVoidPointer(0))),
                          this->epsi, dfact));
@@ -852,6 +983,11 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
     {
       output->GetCellData()->AddArray(OCriterion);
     }
+    if(rortex)
+    {
+      output->GetCellData()->AddArray(rortex);
+      output->GetCellData()->AddArray(ORCriterion);
+    }
     pointScalars->UnRegister(this);
   }
 
@@ -860,8 +996,8 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
 
 //-----------------------------------------------------------------------------
 int vtkOGSGradient::ComputeRegularGridGradient(
-  vtkDataArray* array, int fieldAssociation, bool computeVorticity,
-  bool computeQCriterion, bool computeLambda2Criterion, bool computeOmegaCriterion, 
+  vtkDataArray* array, int fieldAssociation, bool computeVorticity, bool computeQCriterion, 
+  bool computeLambda2Criterion, bool computeOmegaCriterion, bool computeRortexCriterion,
   bool computeDivergence, double dfact, vtkDataSet* output)
 {
   int arrayType = this->GetOutputArrayType(array);
@@ -952,6 +1088,31 @@ int vtkOGSGradient::ComputeRegularGridGradient(
       OCriterion->SetName("Omega-criterion");
     }
   }
+  vtkSmartPointer<vtkDataArray> rortex, ORCriterion;
+  if(computeRortexCriterion)
+  {
+    rortex.TakeReference(vtkDataArray::CreateDataArray(arrayType));
+    rortex->SetNumberOfComponents(3);
+    rortex->SetNumberOfTuples(array->GetNumberOfTuples());
+    ORCriterion.TakeReference(vtkDataArray::CreateDataArray(arrayType));
+    ORCriterion->SetNumberOfTuples(array->GetNumberOfTuples());
+    if (this->RortexArrayName)
+    {
+      rortex->SetName(this->RortexArrayName);
+    }
+    else
+    {
+      rortex->SetName("Rortex");
+    }
+    if (this->OmegaRCriterionArrayName)
+    {
+      ORCriterion->SetName(this->OmegaRCriterionArrayName);
+    }
+    else
+    {
+      ORCriterion->SetName("OmegaR-criterion");
+    }
+  }
 
   if(vtkStructuredGrid* structuredGrid = vtkStructuredGrid::SafeDownCast(output))
   {
@@ -970,6 +1131,10 @@ int vtkOGSGradient::ComputeRegularGridGradient(
                           static_cast<VTK_TT *>(L2Criterion->GetVoidPointer(0))),
                          (OCriterion == nullptr ? nullptr :
                           static_cast<VTK_TT *>(OCriterion->GetVoidPointer(0))),
+                         (rortex == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(rortex->GetVoidPointer(0))),
+                         (ORCriterion == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(ORCriterion->GetVoidPointer(0))),                                                   
                          (divergence == nullptr ? nullptr :
                           static_cast<VTK_TT *>(divergence->GetVoidPointer(0))),
                          this->epsi, dfact));
@@ -993,6 +1158,10 @@ int vtkOGSGradient::ComputeRegularGridGradient(
                           static_cast<VTK_TT *>(L2Criterion->GetVoidPointer(0))),
                          (OCriterion == nullptr ? nullptr :
                           static_cast<VTK_TT *>(OCriterion->GetVoidPointer(0))),
+                         (rortex == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(rortex->GetVoidPointer(0))),
+                         (ORCriterion == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(ORCriterion->GetVoidPointer(0))),                                                   
                          (divergence == nullptr ? nullptr :
                           static_cast<VTK_TT *>(divergence->GetVoidPointer(0))),
                          this->epsi, dfact));
@@ -1014,7 +1183,11 @@ int vtkOGSGradient::ComputeRegularGridGradient(
                          (L2Criterion == nullptr ? nullptr :
                           static_cast<VTK_TT *>(L2Criterion->GetVoidPointer(0))),
                          (OCriterion == nullptr ? nullptr :
-                          static_cast<VTK_TT *>(OCriterion->GetVoidPointer(0))),                         
+                          static_cast<VTK_TT *>(OCriterion->GetVoidPointer(0))),
+                         (rortex == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(rortex->GetVoidPointer(0))),
+                         (ORCriterion == nullptr ? nullptr :
+                          static_cast<VTK_TT *>(ORCriterion->GetVoidPointer(0))),                                                                            
                          (divergence == nullptr ? nullptr :
                           static_cast<VTK_TT *>(divergence->GetVoidPointer(0))),
                          this->epsi, dfact));
@@ -1043,6 +1216,11 @@ int vtkOGSGradient::ComputeRegularGridGradient(
     {
       output->GetPointData()->AddArray(OCriterion);
     }
+    if(rortex)
+    {
+      output->GetPointData()->AddArray(rortex);
+      output->GetPointData()->AddArray(ORCriterion);
+    }    
     if(divergence)
     {
       output->GetPointData()->AddArray(divergence);
@@ -1069,6 +1247,11 @@ int vtkOGSGradient::ComputeRegularGridGradient(
     if(OCriterion)
     {
       output->GetCellData()->AddArray(OCriterion);
+    }
+    if(rortex)
+    {
+      output->GetCellData()->AddArray(rortex);
+      output->GetCellData()->AddArray(ORCriterion);
     }
     if(divergence)
     {
@@ -1099,16 +1282,17 @@ namespace {
   template<class data_type>
   void ComputePointGradientsUG(
     vtkDataSet *structure, vtkDataArray *array, data_type *gradients,
-    int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* L2Criterion,
-    data_type* OCriterion, data_type* divergence, double eps0, double dfact, int highestCellDimension, int contributingCellOption)
+    int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* L2Criterion, 
+    data_type* OCriterion, data_type* rortex, data_type* ORCriterion, data_type* divergence, 
+    double eps0, double dfact, int highestCellDimension, int contributingCellOption)
   {
 
     vtkIdType numpts = structure->GetNumberOfPoints();
     int numberOfOutputComponents = 3*numberOfInputComponents;
-    data_type epsi = 0.;
-    std::vector<data_type> aux(numpts);
+    data_type epsi = 0., epsiR = 0.;
+    std::vector<data_type> aux(numpts), auxR(numpts);
 
-    #pragma omp parallel firstprivate(numpts,contributingCellOption,numberOfOutputComponents) reduction(max:epsi,highestCellDimension)
+    #pragma omp parallel firstprivate(numpts,contributingCellOption,numberOfOutputComponents) reduction(max:epsi,epsiR,highestCellDimension)
     {
     std::vector<data_type> g(numberOfOutputComponents);
     vtkNew<vtkIdList> currentPoint; currentPoint->SetNumberOfIds(1);
@@ -1213,6 +1397,10 @@ namespace {
         {
           ComputeOmegaCriterionFromGradient(&g[0], OCriterion+point, &aux[point], epsi);
         }
+        if(rortex)
+        {
+          ComputeRortexFromGradient(&g[0], rortex+3*point, ORCriterion+point, &auxR[point], epsiR);
+        }
         if(divergence)
         {
           ComputeDivergenceFromGradient(&g[0], divergence+point);
@@ -1228,13 +1416,16 @@ namespace {
     }  // iterating over points in grid
     }
 
-    if(OCriterion)
+    if(OCriterion || rortex)
     {
-      epsi *= eps0;
-      #pragma omp parallel firstprivate(epsi)
+      if (OCriterion) epsi *= eps0;
+      if (rortex)     epsiR *= eps0;
+      #pragma omp parallel firstprivate(numpts)
       {
-      for (vtkIdType point = OMP_THREAD_NUM; point < numpts; point+=OMP_NUM_THREADS)
-        OCriterion[point] /= (aux[point] + OCriterion[point] + epsi);
+      for (vtkIdType point = OMP_THREAD_NUM; point < numpts; point+=OMP_NUM_THREADS) {
+        if (OCriterion) OCriterion[point]  /= (aux[point]  + OCriterion[point]  + epsi);
+        if (rortex)     ORCriterion[point] /= (auxR[point] + ORCriterion[point] + epsiR);
+      }
       }
     }
   }
@@ -1273,15 +1464,15 @@ namespace {
 //-----------------------------------------------------------------------------
   template<class data_type>
     void ComputeCellGradientsUG(
-      vtkDataSet *structure, vtkDataArray *array, data_type *gradients,
-      int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, 
-      data_type* L2Criterion, data_type* OCriterion, data_type* divergence, double eps0, double dfact)
+      vtkDataSet *structure, vtkDataArray *array, data_type *gradients, int numberOfInputComponents, 
+      data_type* vorticity, data_type* qCriterion, data_type* L2Criterion, data_type* OCriterion, 
+      data_type* rortex, data_type* ORCriterion, data_type* divergence, double eps0, double dfact)
   {
     vtkIdType numcells = structure->GetNumberOfCells();
-    data_type epsi = 0.;
-    std::vector<data_type> aux(numcells);
+    data_type epsi = 0., epsiR = 0.;
+    std::vector<data_type> aux(numcells), auxR(numcells);
 
-    #pragma omp parallel firstprivate(numcells,numberOfInputComponents) reduction(max:epsi)
+    #pragma omp parallel firstprivate(numcells,numberOfInputComponents) reduction(max:epsi,epsiR)
     {
     vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
     std::vector<double> values(8);
@@ -1339,6 +1530,10 @@ namespace {
       {
         ComputeOmegaCriterionFromGradient(&cellGradients[0], OCriterion+cellid, &aux[cellid], epsi);
       }
+      if(rortex)
+      {
+        ComputeRortexFromGradient(&cellGradients[0], rortex+3*cellid, ORCriterion+cellid, &auxR[cellid], epsiR);
+      }
       if(divergence)
       {
         ComputeDivergenceFromGradient(&cellGradients[0], divergence+cellid);
@@ -1346,24 +1541,26 @@ namespace {
     }
     }
 
-    if(OCriterion)
+    if(OCriterion || rortex)
     {
-      epsi *= eps0;
-
+      if (OCriterion) epsi *= eps0;
+      if (rortex)     epsiR *= eps0;
       #pragma omp parallel firstprivate(numcells)
       {
-      for (vtkIdType cellid = OMP_THREAD_NUM; cellid < numcells; cellid+=OMP_NUM_THREADS)
-        OCriterion[cellid] /= (aux[cellid] + OCriterion[cellid] + epsi);
+      for (vtkIdType cellid = OMP_THREAD_NUM; cellid < numcells; cellid+=OMP_NUM_THREADS) {
+        if (OCriterion) OCriterion[cellid] /= (aux[cellid]  + OCriterion[cellid]  + epsi);
+        if (rortex)    ORCriterion[cellid] /= (auxR[cellid] + ORCriterion[cellid] + epsiR);
+      }
       }
     }
   }
 
 //-----------------------------------------------------------------------------
   template<class Grid, class data_type>
-  void ComputeGradientsSG(Grid output, vtkDataArray* array, data_type* gradients,
-                          int numberOfInputComponents, int fieldAssociation,
-                          data_type* vorticity, data_type* qCriterion, data_type* L2Criterion,
-                          data_type* OCriterion, data_type* divergence, double eps0, double dfact)
+  void ComputeGradientsSG(Grid output, vtkDataArray* array, data_type* gradients, int numberOfInputComponents, 
+                          int fieldAssociation, data_type* vorticity, data_type* qCriterion, 
+                          data_type* L2Criterion, data_type* OCriterion, data_type* rortex,
+                          data_type* ORCriterion, data_type* divergence, double eps0, double dfact)
   {
     int dims[3];
     output->GetDimensions(dims);
@@ -1377,10 +1574,10 @@ namespace {
     }
     int ijsize = dims[0]*dims[1];
 
-    data_type epsi = 0.;
-    std::vector<data_type> aux(dims[0]*dims[1]*dims[2]);
+    data_type epsi = 0., epsiR = 0.;
+    std::vector<data_type> aux(dims[0]*dims[1]*dims[2]), auxR(dims[0]*dims[1]*dims[2]);
 
-    #pragma omp parallel firstprivate(dims,fieldAssociation,numberOfInputComponents) reduction(max:epsi)
+    #pragma omp parallel firstprivate(dims,fieldAssociation,numberOfInputComponents) reduction(max:epsi, epsiR)
     {
 
     int idx, idx2, inputComponent;
@@ -1677,6 +1874,10 @@ namespace {
           {
             ComputeOmegaCriterionFromGradient(&localGradients[0], OCriterion+idx, &aux[idx], epsi);
           }
+          if(rortex)
+          {
+            ComputeRortexFromGradient(&localGradients[0], rortex+3*idx, ORCriterion+idx, &auxR[idx], epsiR);
+          }
           if(divergence)
           {
             ComputeDivergenceFromGradient(&localGradients[0], divergence+idx);
@@ -1686,9 +1887,10 @@ namespace {
     }
     }
 
-    if (OCriterion)
+    if (OCriterion || rortex)
     {
-      epsi *= eps0;
+      if (OCriterion) epsi *= eps0;
+      if (rortex)     epsiR *= eps0;
 
       #pragma omp parallel for collapse(3)
       for (int k=0; k<dims[2]; k++)
@@ -1698,7 +1900,8 @@ namespace {
           for (int i=0; i<dims[0]; i++)
           {
             int idx = i + j*dims[0] + k*ijsize;
-            OCriterion[idx] /= (aux[idx] + OCriterion[idx] + epsi);
+            if (OCriterion) OCriterion[idx]  /= (aux[idx]  + OCriterion[idx]  + epsi);
+            if (rortex)     ORCriterion[idx] /= (auxR[idx] + ORCriterion[idx] + epsiR);
           }
         }
       }
