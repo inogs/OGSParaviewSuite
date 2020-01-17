@@ -90,6 +90,9 @@ namespace matMN
 			inline T    ij(const int i, const int j) const           { return mat[n*i + j]; }
 			inline void print(const char *style); 
 
+			template <class U>
+			inline matrixMN<U> convert()                             { matrixMN<U> A(n,m); std::copy(mat,mat+sz,A.data()); return A; }
+
 			// Matrix operations
 			inline T            norm2(); // Frobenius norm squared
 			inline matrixMN<T>  t();     // Transpose
@@ -103,7 +106,8 @@ namespace matMN
 			#ifdef USE_LAPACK
 				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select);
 				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z);
-				inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z, T wr[], T wi[]);
+				inline matrixMN<double> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<double> &Z, double wr[], double wi[]);
+				inline matrixMN<float>  schur(char sort, LAPACK_D_SELECT2 select, matrixMN<float> &Z, float wr[], float wi[]);
 			#endif
 
 			// Operators
@@ -271,7 +275,7 @@ namespace matMN
 		} else if (this->n == 2) {
 			out = this->ij(0,0)*this->ij(1,1) - this->ij(0,1)*this->ij(1,0);
 		} else {
-			matrixMN<T> aux(this->n-1,0.);
+			matrixMN<T> aux(this->n-1,T(0.));
 			for (int p=0; p<this->n; ++p) {
 				int subi = 0;
 				for (int i=1; i<this->n; ++i) {
@@ -334,9 +338,9 @@ namespace matMN
 			return A;
 		}
 
-		template<class T>
-		inline matrixMN<T> matrixMN<T>::schur(char sort, LAPACK_D_SELECT2 select, 
-			matrixMN<T> &Z, T wr[], T wi[]) {
+		template<>
+		inline matrixMN<double> matrixMN<double>::schur(char sort, LAPACK_D_SELECT2 select, 
+			matrixMN<double> &Z, double wr[], double wi[]) {
 			/*
 				The routine computes for an n-by-n real/complex nonsymmetric matrix A, the eigenvalues, 
 				the real Schur form T, and, optionally, the matrix of Schur vectors Z. 
@@ -350,12 +354,43 @@ namespace matMN
 			if (this->n != this->m) return (*this); // The matrix is not n-by-n
 			// Schur algorithm overwrites the input matrix, we will copy and return it
 			// as the schur transformation
-			int sdim = 0;
-			matrixMN<T> A(*this);
+			int sdim = 0; matrixMN<double> A(*this);
 			// wr, wi and Z should already be allocated at this point
 			// Call lapacke routine
 			LAPACKE_dgees(LAPACK_ROW_MAJOR, 'V', sort, select, A.get_n(), A.data(), 
 				A.get_n(), &sdim, &wr[0], &wi[0], Z.data(), A.get_n());
+			// Return A as the real Schur form
+			return A;		
+		}
+
+		template<>
+		inline matrixMN<float> matrixMN<float>::schur(char sort, LAPACK_D_SELECT2 select, 
+			matrixMN<float> &Z, float wr[], float wi[]) {
+			/*
+				The routine computes for an n-by-n real/complex nonsymmetric matrix A, the eigenvalues, 
+				the real Schur form T, and, optionally, the matrix of Schur vectors Z. 
+				This gives the Schur factorization A = Z*T*ZH.
+
+				Optionally, it also orders the eigenvalues on the diagonal of the real-Schur/Schur form 
+				so that selected eigenvalues are at the top left. 
+				The leading columns of Z then form an orthonormal basis for the invariant subspace 
+				corresponding to the selected eigenvalues.
+			*/
+			if (this->n != this->m) return (*this); // The matrix is not n-by-n
+			// Schur algorithm overwrites the input matrix, we will copy and return it
+			// as the schur transformation
+			int sdim = 0; matrixMN<float> A(*this);
+			// wr, wi and Z should already be allocated at this point
+			// Lapack works in doubles
+			matrixMN<double> A_aux = A.convert<double>(), Z_aux = Z.convert<double>();
+			double *wr_aux = new double[this->n], *wi_aux = new double[this->n];
+			// Call lapacke routine
+			LAPACKE_dgees(LAPACK_ROW_MAJOR, 'V', sort, select, A_aux.get_n(), A_aux.data(), 
+				A_aux.get_n(), &sdim, &wr_aux[0], &wi_aux[0], Z_aux.data(), A_aux.get_n());
+			// Copy outputs
+			std::copy(wr_aux,wr_aux+this->n,wr); std::copy(wi_aux,wi_aux+this->n,wi);
+			A = A_aux.convert<float>(); Z = Z_aux.convert<float>();
+			delete [] wr_aux; delete [] wi_aux;
 			// Return A as the real Schur form
 			return A;		
 		}
