@@ -676,7 +676,6 @@ int vtkOGSGradient::ComputeUnstructuredGridGradient(
     }
   }
 
-
   int highestCellDimension = 0;
   if (this->ContributingCellOption == vtkOGSGradient::DataSetMax)
   {
