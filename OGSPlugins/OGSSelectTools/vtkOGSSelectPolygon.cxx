@@ -49,18 +49,13 @@ vtkStandardNewMacro(vtkOGSSelectPolygon);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDMASK uint8_t
-#define VTKMASK vtkTypeUInt8Array
-
-#include "../_utils/V3.h"
-#include "../_utils/vtkOperations.hpp"
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/geometry.h"
-#include "../_utils/Projection.h"
+#include "macros.h"
+#include "V3.h"
+#include "field.h"
+#include "geometry.h"
+#include "projection.h"
+#include "vtkOperations.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 void strsplit(const std::string& str, std::vector<std::string> &cont, char delim) {

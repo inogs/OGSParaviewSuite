@@ -24,6 +24,8 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+# UTILS detection
+include(../_utils/utils.cmake)
 # LAPACK detection
 include(../_utils/lapack/lapack.cmake)
 
@@ -38,6 +40,6 @@ find_package(ospray REQUIRED)
 
 ADD_PARAVIEW_PLUGIN(OGSDerivatives "1.0"
   SERVER_MANAGER_XML OGSDerivatives.xml
-  SERVER_MANAGER_SOURCES ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSDerivatives.cxx vtkOGSGradient.cxx
+  SERVER_MANAGER_SOURCES ${OPS} vtkOGSDerivatives.cxx vtkOGSGradient.cxx
   REQUIRED_ON_SERVER
   )

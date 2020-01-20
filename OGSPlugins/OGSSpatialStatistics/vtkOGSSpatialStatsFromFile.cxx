@@ -46,19 +46,13 @@ vtkCxxSetObjectMacro(vtkOGSSpatialStatsFromFile, Controller, vtkMultiProcessCont
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
 //----------------------------------------------------------------------------
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-#define FLDMASK uint8_t
-#define VTKMASK vtkTypeUInt8Array
 
 #define STTIND(bId,cId,kk,sId,ns,nz,nc) ( (ns)*(nz)*(nc)*(bId) + (ns)*(nz)*(cId) + (ns)*(kk) + (sId) )
 
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/netcdfio.hpp"
+#include "macros.h"
+#include "field.h"
+#include "netcdfio.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){

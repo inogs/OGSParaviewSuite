@@ -13,18 +13,23 @@ set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${UTILS_INC_FOLDER}")
 # Now define a set of variables containing various code
 # that might be linked when compiling
 
-# Operations with field arrays
-set( FIELD_OPS
-	${UTILS_FOLDER}/fieldOperations.cpp
-	)
-
 # VTK field creation
 set( VTKFIELDS
 	${UTILS_FOLDER}/vtkFields.cpp
 	)
 
+# Operations with field arrays
+set( FIELDOPS
+	${UTILS_FOLDER}/fieldOperations.cpp
+	)
+
 # Operations with VTK fields
-set( VTKFIELDS
+set( VTKOPS
+	${UTILS_FOLDER}/vtkOperations.cpp
+	)
+# Field and VTK operations combined
+set( OPS
+	${UTILS_FOLDER}/fieldOperations.cpp
 	${UTILS_FOLDER}/vtkOperations.cpp
 	)
 

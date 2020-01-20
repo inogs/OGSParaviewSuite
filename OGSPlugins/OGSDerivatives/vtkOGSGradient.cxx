@@ -54,7 +54,7 @@
 #define OMP_THREAD_NUM  0
 #endif
 
-#include "../_utils/matrixMN.h"
+#include "matrixMN.h"
 
 lapack_logical sortfun(const double *ER, const double *EI) { return(*EI != 0); }
 

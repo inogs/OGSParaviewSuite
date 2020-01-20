@@ -24,7 +24,7 @@
 
 #include <string>
 
-#include "../_utils/OGS.hpp"
+#include "OGS.hpp"
 
 class vtkDataSet;
 class vtkDataArraySelection;

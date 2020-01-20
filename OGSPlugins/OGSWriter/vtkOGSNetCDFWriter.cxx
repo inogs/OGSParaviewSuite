@@ -49,21 +49,14 @@ vtkStandardNewMacro(vtkOGSNetCDFWriter);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define FLDMASK  uint8_t
-#define VTKARRAY vtkDoubleArray
-#define VTKMASK  vtkTypeUInt8Array
-
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/vtkOperations.hpp"
-#include "../_utils/OGS.hpp"
-#include "../_utils/netcdfio.hpp"
-#include "../_utils/Projection.h"
+#include "macros.h"
+#include "V3.h"
+#include "field.h"
+#include "projection.h"
+#include "vtkFields.h"
+#include "vtkOperations.h"
+#include "netcdfio.h"
+#include "OGS.hpp"
 
 //----------------------------------------------------------------------------
 void FindCell(v3::V3 p, v3::V3v &xyz, int &pos_min, double &dist_min, double epsi) {

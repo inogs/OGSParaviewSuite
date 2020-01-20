@@ -23,7 +23,7 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 
-#include "../_utils/Projection.h"
+#include "projection.h"
 
 #include <cmath>
 

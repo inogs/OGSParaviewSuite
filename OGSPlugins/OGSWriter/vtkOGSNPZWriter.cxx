@@ -42,20 +42,14 @@ vtkStandardNewMacro(vtkOGSNPZWriter);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define FLDMASK  uint8_t
-#define VTKARRAY vtkDoubleArray
-#define VTKMASK  vtkTypeUInt8Array
+#include "macros.h"
 
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/vtkOperations.hpp"
+#include "V3.h"
+#include "field.h"
+#include "vtkFields.h"
+#include "vtkOperations.h"
 
-#include"cnpy.hpp"
+#include "cnpy.hpp"
 
 //----------------------------------------------------------------------------
 vtkOGSNPZWriter::vtkOGSNPZWriter() : FileName(nullptr), varname(nullptr), dfact(1000.), append(0), singlevar(0), ii_cur(0) {}

@@ -23,8 +23,8 @@
 #include <vector>
 #include <string>
 
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
+#include "V3.h"
+#include "field.h"
 
 class vtkStringArray;
 class vtkAbstractCellLocator;

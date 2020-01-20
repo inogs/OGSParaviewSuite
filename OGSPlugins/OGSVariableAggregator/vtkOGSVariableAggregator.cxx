@@ -37,7 +37,7 @@
 #define OMP_THREAD_NUM  0
 #endif
 
-#include "pugixml.hpp"
+#include "pugixml.h"
 namespace xml = pugi;
 
 
@@ -50,14 +50,9 @@ vtkStandardNewMacro(vtkOGSVariableAggregator);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
+#include "macros.h"
+#include "field.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 void addVar(vtkDataArraySelection *AggrVar, std::map<std::string, std::string> *Var2Aggr) {

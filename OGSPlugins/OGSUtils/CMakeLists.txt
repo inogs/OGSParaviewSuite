@@ -24,6 +24,9 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+# UTILS detection
+# for header includes
+include(../_utils/utils.cmake)
 # PROJ detection
 include(../_utils/proj/proj.cmake)
 

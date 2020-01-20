@@ -36,18 +36,13 @@ vtkStandardNewMacro(vtkOGSNPZTableWriter);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
+#include "macros.h"
+#include "V3.h"
+#include "field.h"
+#include "vtkFields.h"
+#include "vtkOperations.h"
 
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/vtkOperations.hpp"
-
-#include"cnpy.hpp"
+#include "cnpy.hpp"
 
 //----------------------------------------------------------------------------
 vtkOGSNPZTableWriter::vtkOGSNPZTableWriter() : FileName(nullptr) {}

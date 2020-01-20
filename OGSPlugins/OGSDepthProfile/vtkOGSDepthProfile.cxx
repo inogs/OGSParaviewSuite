@@ -58,12 +58,10 @@ vtkCxxSetObjectMacro(vtkOGSDepthProfile, Controller, vtkMultiProcessController);
 /*
 	Macro to set the array precision 
 */
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-
-#include "../_utils/field.h"
-#include "../_utils/V3.h"
-#include "../_utils/vtkFields.hpp"
+#include "macros.h"
+#include "V3.h"
+#include "field.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 vtkOGSDepthProfile::vtkOGSDepthProfile() {

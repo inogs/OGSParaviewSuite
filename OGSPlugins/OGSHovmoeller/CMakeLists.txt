@@ -24,6 +24,9 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+# UTILS detection
+include(../_utils/utils.cmake)
+
 if(NOT APPLE)
 # OpenMP does not work with Apple's clang so we deactivate it.
   set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
@@ -35,6 +38,6 @@ find_package(ospray REQUIRED)
 
 ADD_PARAVIEW_PLUGIN(OGSHovmoeller "1.0"
   SERVER_MANAGER_XML OGSHovmoeller.xml
-  SERVER_MANAGER_SOURCES ../_utils/netcdfio.cpp ../_utils/vtkFields.cpp ../_utils/OGS.cpp ../_utils/fieldOperations.cpp ../_utils/vtkOperations.cpp vtkOGSHovmoeller.cxx
+  SERVER_MANAGER_SOURCES ${OGS} ${OPS} ${VTKFIELDS} vtkOGSHovmoeller.cxx
   REQUIRED_ON_SERVER
   )

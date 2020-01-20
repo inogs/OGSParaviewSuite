@@ -1,7 +1,6 @@
 /*=========================================================================
 
-	Program:   Projection
-	Module:    Projection.h
+	Module:    Projection
 
 	Map projection conversions using the proj API.
 

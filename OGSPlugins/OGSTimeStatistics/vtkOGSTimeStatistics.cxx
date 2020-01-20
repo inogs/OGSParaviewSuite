@@ -52,16 +52,11 @@ vtkCxxSetObjectMacro(vtkOGSTimeStatistics, Controller, vtkMultiProcessController
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/OGS.hpp"
-#include "../_utils/netcdfio.hpp"
+#include "macros.h"
+#include "field.h"
+#include "netcdfio.h"
+#include "OGS.hpp"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 void InitializeStatistics(std::vector<std::string> &arrNames, std::vector<std::string> &arrNamesNotComputed,

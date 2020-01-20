@@ -26,7 +26,7 @@
 #include <omp.h>
 #endif
 
-#include "OGS.h"
+#include "OGS.hpp"
 
 #ifndef OGS_NO_NETCDF
 #include "netcdfio.h"
