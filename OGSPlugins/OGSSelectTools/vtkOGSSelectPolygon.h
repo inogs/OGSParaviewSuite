@@ -20,6 +20,7 @@
 #include "vtkThreshold.h"
 
 #include <string>
+#include "geometry.h"
 
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
@@ -33,8 +34,8 @@ public:
   vtkTypeMacro(vtkOGSSelectPolygon, vtkThreshold);
 
   // Description:
-  // Get the name of the mask field to operate
-  vtkSetStringMacro(strPoints);
+  // Obtain the polygon points from the textbox.
+  void GetPolygon(const char *);
 
   // Description:
   // If false, do not include the meshmask. True by default.
@@ -67,8 +68,9 @@ private:
 
   int procId, nProcs, Invert;
   double dfact;
-  char *strPoints;
+
   std::string projName;
+  Geom::Polygon<double> poly;
 };
 
 #endif

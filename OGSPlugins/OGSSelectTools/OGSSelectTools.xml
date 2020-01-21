@@ -601,7 +601,7 @@
      <!-- Points -->
      <StringVectorProperty name="Points"
                            label="Polygon points: "
-                           command="SetstrPoints"
+                           command="GetPolygon"
                            default_values=""
                            number_of_elements="1">
         <Documentation>
