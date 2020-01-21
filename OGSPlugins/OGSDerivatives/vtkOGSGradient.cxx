@@ -43,6 +43,7 @@
 
 #include <limits>
 #include <vector>
+#include <algorithm>
 
 #ifdef __linux__
 // Include OpenMP when working with GCC
@@ -106,17 +107,20 @@ namespace
   void ComputeLambda2CriterionFromGradient(data_type* gradients, data_type* l2Criterion, int n)
   {
     // Compute S, O and R matrices
-    matMN::matrixMN<data_type> grad(3,gradients), V(3,(data_type)(0.));
-    matMN::matrixMN<data_type> A = 0.5*(grad + grad.t()); //A /= std::sqrt(A.norm2());
-    matMN::matrixMN<data_type> B = 0.5*(grad - grad.t()); //B /= std::sqrt(B.norm2());
+    matMN::matrixMN<data_type> grad(3,gradients);
+    matMN::matrixMN<data_type> A = 0.5*(grad + grad.t()); // A /= std::sqrt(A.norm2());
+    matMN::matrixMN<data_type> B = 0.5*(grad - grad.t()); // B /= std::sqrt(B.norm2());
     matMN::matrixMN<data_type> C = (A^A) + (B^B);         // Dot product
 
-    // Compute the eigenvalues and eigenvectors of R
-    data_type e[3] = {0.,0.,0.};
-    int n_iter = matMN::eigen(C,e,V,n);
+    // Compute the eigenvalues and eigenvectors of C
+    data_type wr[3] = {0.,0.,0.}, wi[3] = {0.,0.,0.};
+    C.eigen(wr,wi);
+
+    // Sort in ascending order (l2 will always be in the middle)
+    std::sort(wr,wr+3);
 
     // Store Lambda2
-    l2Criterion[0] = e[1];
+    l2Criterion[0] = wr[1];
   }
 
   template<class data_type>
