@@ -145,6 +145,7 @@ if __name__ == '__main__':
 
 	argpar = argparse.ArgumentParser(prog="OGS plugin install",description="Install OGS plugins to ParaView.")
 	argpar.add_argument('-pv','--paraview',type=str,help='Full path to ParaView directory',required=True,dest='pvpath')
+	argpar.add_argument('-dl','--deploy-launchers',action='store_true',help='Deploy launchers',dest='deplaunch')
 
 	# Parse input arguments
 	# ---------------------
@@ -191,7 +192,7 @@ You can go grab a coffee meanwhile.
 	# Compilation and installation of python tools
 	# --------------------------------------------
 	installOGSMesh(args.pvpath,"_utils")
-	installLaunchers(args.pvpath,"../bin")
+	if args.deplaunch: installLaunchers(args.pvpath,"../bin")
 	sys.stdout.write("  done!\n\n")
 
 
