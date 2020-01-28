@@ -150,6 +150,7 @@ namespace v3
 			// Functions
 			inline void size(const int nn);
 			inline void size(const int nn, const V3 *val);
+			inline void size(const V3v &v);
 			inline void size(const int nn, const float *val);
 			inline void size(const int nn, const double *val);
 
@@ -225,7 +226,7 @@ namespace v3
 	inline V3v::V3v(const int nn, const float *val)        { alloc = false; n = 0; size(nn,val); }
 	inline V3v::V3v(const int nn, const double *val)       { alloc = false; n = 0; size(nn,val); }
 	inline V3v::V3v(const int nn, const V3 *val)           { alloc = false; n = 0; size(nn,val); }
-	inline V3v::V3v(const V3v &val)                        { alloc = false; n = 0; size(val.n,val.v); }
+	inline V3v::V3v(const V3v &val)                        { alloc = false; n = 0; size(val); }
 	inline V3v::~V3v()                                     { clear(); }
 
 	// Operators
@@ -237,6 +238,7 @@ namespace v3
 	// Functions
 	inline void V3v::size(const int nn)                    { n = nn; v = new V3[n]; alloc = true; }
 	inline void V3v::size(const int nn, const V3 *val)     { size(nn); std::memcpy(v,val,n*sizeof(V3)); }
+	inline void V3v::size(const V3v &val)                  { size(val.n,val.v); }
 	inline void V3v::size(const int nn, const float *val)  { 
 		size(nn);
 		#pragma omp parallel for
