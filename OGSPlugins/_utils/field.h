@@ -60,6 +60,8 @@ namespace field
 
 			template <class U>
 			inline Field<U> convert()                                 { Field<U> f(n,m); std::copy(val,val+sz,f.data()); return f; }
+			inline void     to_C_style();
+			inline void     to_F_style();
 
 			// Operators
 			inline T         *operator[](int i)                   { return (i>=0) ? val + m*i : val + m*(n+i); }
@@ -150,6 +152,38 @@ namespace field
 	Field<T> operator*(const T v, const Field<T> &ff) { Field<T> f(ff.n,ff.m); for(int i=0;i<ff.sz;i++) {f.val[i] = v / ff.val[i];} return f; }
 	template<class T> 
 	Field<T> operator/(const T v, const Field<T> &ff) { Field<T> f(ff.n,ff.m); for(int i=0;i<ff.sz;i++) {f.val[i] = v * ff.val[i];} return f; }
+
+	template<class T>
+	inline void Field<T>::to_C_style() {
+		T *aux; aux = new T[sz];
+		std::memcpy(aux,val,sz*sizeof(T));
+
+		#pragma omp parallel for
+		for (int i=0; i<n; ++i){
+			#pragma loop_count min(1), max(9), avg(3) // for vectorization
+			for (int j=0; j<m; ++j)
+				val[m*i + j] = aux[i + n*j];
+		}
+
+		delete [] aux;
+	}
+	template<class T>
+	inline void Field<T>::to_F_style() {
+		T *aux; aux = new T[sz];
+		std::memcpy(aux,val,sz*sizeof(T));
+
+		#pragma omp parallel for
+		for (int i=0; i<n; ++i){
+			#pragma loop_count min(1), max(9), avg(3) // for vectorization
+			for (int j=0; j<m; ++j)
+				val[i + n*j] = aux[m*i + j];
+		}
+		
+		delete [] aux;
+	}
+
+
+
 }
 
 #endif 
