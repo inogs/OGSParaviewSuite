@@ -46,7 +46,7 @@ namespace field
 			inline ~Field()                                           { clear(); }
 
 			// Functions
-			inline void   set_dim(const int nn, const int mm)         { n = nn; m = mm; sz = (size_t)(n*m); val = new T[sz]; alloc = true; }
+			inline void   set_dim(const int nn, const int mm)         { if (!alloc) { n = nn; m = mm; sz = (size_t)(n*m); val = new T[sz]; alloc = true; } }
 			inline void   set_val(const T  v)                         { if (alloc) std::fill(val,val+sz,v); }
 			inline void   set_val(const T *v)                         { if (alloc) std::memcpy(val,v,sz*sizeof(T)); }
 			inline void   clear()                                     { n = 0; if (alloc) { delete [] val; } alloc = false; }
@@ -65,7 +65,7 @@ namespace field
 
 			// Operators
 			inline T         *operator[](int i)                   { return (i>=0) ? val + m*i : val + m*(n+i); }
-			inline Field<T>  &operator=(const Field<T> &f)        { set(f.n,f.m,f.val); return (*this); }
+			inline Field<T>  &operator=(const Field<T> &f)        { clear(); set(f.n,f.m,f.val); return (*this); }
 
 			inline Field<T>   operator+(const T v) const          { Field<T> f(n,m); for(int i=0;i<sz;i++) {f.val[i] = val[i] + v;} return f; }
 			inline Field<T>   operator-(const T v) const          { Field<T> f(n,m); for(int i=0;i<sz;i++) {f.val[i] = val[i] - v;} return f; }
