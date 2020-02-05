@@ -168,7 +168,7 @@ namespace
     // Rortex magnitude
     data_type Rm = 0.;
     if ( (alpha*alpha - beta*beta) < 0. )
-      Rm = (beta > 0.) ? 2*(beta-alpha) : 2*(beta+alpha);
+      Rm = (beta > 0.) ? 2*(beta-alpha) : -2*(beta+alpha);
 
     rortex[0] = Rm*Q[2][0];
     rortex[1] = Rm*Q[2][1];
