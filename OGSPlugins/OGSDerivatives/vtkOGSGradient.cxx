@@ -150,25 +150,26 @@ namespace
     S = A.schur('S',sortfun,Q); // schur sorting eigenvalues
 
     // det(Q) can only be 1 or -1
+    A = S.t(); // Rewrite A as grad(V)
     if (Q.det() > 0) {
       Q = Q.t(); // Rewrite Q
-      A = S.t(); // Rewrite A as grad(V)
     } else { // Q.det() < 0
       data_type Rval[] = {1,0,0,0,1,0,0,0,-1};
       matMN::matrixMN<data_type> Rmat(3,Rval);
-      Q = Rmat^Q.t();              // Rewrite Q
-      A = (Q^A)^Q.t(); A = A.t();  // Rewrite A as grad(V)
+      Q = Rmat^Q.t();               // Rewrite Q
+      A[2][0] *= -1; A[2][1] *= -1; // Rewrite A as grad(V)
     }
 
     // alpha and beta
-    data_type alpha = 0.5*std::sqrt( (A[1][1]-A[0][0])*(A[1][1]-A[0][0]) +
-      (A[0][1]+A[1][0])*(A[0][1]+A[1][0]) );
-    data_type beta  = 0.5*(A[0][1]-A[1][0]);
+    data_type alpha = 0.5*std::sqrt( 
+      (A[1][1]-A[0][0])*(A[1][1]-A[0][0]) + (A[1][0]+A[0][1])*(A[1][0]+A[0][1]) 
+      );
+    data_type beta  = 0.5*(A[1][0]-A[0][1]);
 
     // Rortex magnitude
     data_type Rm = 0.;
-    if ( (alpha*alpha - beta*beta) < 0. )
-      Rm = (beta > 0.) ? 2*(beta-alpha) : -2*(beta+alpha);
+    if ( (beta*beta - alpha*alpha) > 0. )
+      Rm = (beta > 0.) ? 2*(beta-alpha) : 2*(beta+alpha);
 
     rortex[0] = Rm*Q[2][0];
     rortex[1] = Rm*Q[2][1];
