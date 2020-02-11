@@ -40,6 +40,11 @@ public:
   vtkGetMacro(epsi, double);
 
   // Description:
+  // Get the coefficient for the Rortex mask
+  vtkSetMacro(coef, double);
+  vtkGetMacro(coef, double);
+
+  // Description:
   // Gradient method for computing Okubo-Weiss
   vtkSetMacro(grad_type, int);
   vtkGetMacro(grad_type, int);
@@ -80,7 +85,7 @@ private:
 
   char *field;
   int grad_type, use_modified_Omega, procId, nProcs;
-  double epsi;
+  double epsi, coef;
 
   bool isReqInfo;
 

@@ -538,6 +538,19 @@
         </Documentation>
       </StringVectorProperty>
 
+      <!-- Rortex coefficent value -->
+      <DoubleVectorProperty name="coef"
+                            label="Rortex mask filter coefficient: "
+                            command="Setcoef"
+                            animateable="1"
+                            default_values="0.2"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" min="0.0" max="10.0" />
+        <Documentation>
+          Rortex mask filter coefficient as R0 = coef*std_dev(R)
+        </Documentation>
+      </DoubleVectorProperty>
+
       <!-- Epsilon -->
       <DoubleVectorProperty name="epsi"
                             label="Epsilon: "
