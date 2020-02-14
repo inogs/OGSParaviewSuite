@@ -304,13 +304,13 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 		FLDARRAY delta = stats[1][ii] - R_mean;
 		R_std += stats[2][ii] + delta*delta*sum_weights_old*stats[0][ii]/sum_weights;
 	}
-	R_std = this->coef*this->coef*R_std/sum_weights;
+	R_std = this->coef*sqrt(R_std/sum_weights);
 
 	this->UpdateProgress(0.5);
 
 	// Now that we have the standard deviation, we can work out the OmegaR
 	// and the Rortex mask
-	field::Field<FLDMASK> Rm(array.get_n(),1,(FLDMASK)(0));
+	field::Field<FLDMASK> Rmask(array.get_n(),1,(FLDMASK)(0));
 
 
 	if (this->use_modified_Omega) {
@@ -335,8 +335,8 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 					Omega[ind][0] += eps;
 					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + 2.*eps);
 					// Set the values of the mask
-					FLDARRAY Rmod = Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2];
-					if (Rmod > R_std) Rm[ind][0] = 1; // Vorticity-dominated flow
+					FLDARRAY Rmod = sqrt(Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2]);
+					if (Rmod > R_std) Rmask[ind][0] = (FLDMASK)(1); // Vorticity-dominated flow
 				}
 			}
 		}
@@ -361,8 +361,8 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 					// Omega = (b)/(a+b+eps)
 					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + eps);
 					// Set the values of the mask
-					FLDARRAY Rmod = Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2];
-					if (Rmod > R_std) Rm[ind][0] = 1; // Vorticity-dominated flow
+					FLDARRAY Rmod = sqrt(Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2]);
+					if (Rmod > R_std) Rmask[ind][0] = (FLDMASK)(1); // Vorticity-dominated flow
 				}
 			}
 		}
@@ -375,7 +375,7 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
 	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("OmegaR_criterion",Omega);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
-	vtkMask  = VTK::createVTKfromField<VTKMASK,FLDMASK>("Rortex mask",Rm);
+	vtkMask  = VTK::createVTKfromField<VTKMASK,FLDMASK>("Rortex mask",Rmask);
 	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
 	// Make "Omega_criterion" as the active scalar
