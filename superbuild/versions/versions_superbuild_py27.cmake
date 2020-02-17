@@ -16,11 +16,10 @@ superbuild_set_revision(bzip2
   URL_MD5 00b516f4704d4a7cb50a1d97e6e8e15b)
 
 superbuild_set_revision(zlib
-#  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.11.tar.xz"
-#  URL_MD5 85adef240c5f370b308da8c938951a68)
-  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.7.tar.gz"
-  URL_MD5 60df6a37c56e7c1366cca812414f7b85)
-
+  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.11.tar.xz"
+  URL_MD5 85adef240c5f370b308da8c938951a68)
+#  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.7.tar.gz"
+#  URL_MD5 60df6a37c56e7c1366cca812414f7b85)
 
 superbuild_set_revision(ffmpeg
   URL     "https://www.paraview.org/files/dependencies/ffmpeg-2.3.3.tar.bz2"
@@ -57,6 +56,16 @@ else()
     URL_MD5 a80ae3cc478460b922242f43a1b4094d)
 endif()
 
+if (WIN32)
+  superbuild_set_revision(python3
+    URL "https://www.paraview.org/files/dependencies/Python-3.7.4-win64-no-ssl.tar.xz"
+    URL_MD5 c73455c755f2c79031fc92036040a90b)
+else()
+  superbuild_set_revision(python3
+    URL     "https://www.paraview.org/files/dependencies/Python-3.7.4.tar.xz"
+    URL_MD5 d33e4aae66097051c2eca45ee3604803)
+endif()
+
 superbuild_set_revision(ftjam
   URL     "https://www.paraview.org/files/dependencies/ftjam-2.5.2-win32.tar.bz2"
   URL_MD5 ee52f3faff6d31ffb89a2fedb3b0caf6)
@@ -71,8 +80,8 @@ superbuild_set_revision(gperf
   URL_MD5 9e251c0a618ad0824b51117d5d9db87e)
 
 superbuild_set_revision(fontconfig
-  URL     "https://www.paraview.org/files/dependencies/fontconfig-2.12.6.tar.bz2"
-  URL_MD5 733f5e2371ca77b69707bd7b30cc2163)
+  URL     "https://www.paraview.org/files/dependencies/fontconfig-2.13.1.tar.bz2"
+  URL_MD5 36cdea1058ef13cbbfdabe6cb019dc1c)
 
 superbuild_set_revision(libxml2
   URL     "https://www.paraview.org/files/dependencies/libxml2-2.9.9.tar.gz"
@@ -81,17 +90,6 @@ superbuild_set_revision(libxml2
 superbuild_set_revision(nlohmannjson
   URL     "https://www.paraview.org/files/dependencies/nlohmannjson-3.6.1.tar.gz"
   URL_MD5 c53592d55e7fec787cf0a406d36098a3)
-
-if (WIN32)
-  set(qt4_ver "4.8.4")
-  set(qt4_md5 "89c5ecba180cae74c66260ac732dc5cb")
-else ()
-  set(qt4_ver "4.8.6")
-  set(qt4_md5 "2edbe4d6c2eff33ef91732602f3518eb")
-endif ()
-superbuild_set_revision(qt4
-  URL     "https://www.paraview.org/files/dependencies/qt-everywhere-opensource-src-${qt4_ver}.tar.gz"
-  URL_MD5 "${qt4_md5}")
 
 if (WIN32)
   set(qt5_ext "zip")
@@ -142,7 +140,7 @@ superbuild_set_selectable_source(qt5
     URL     "https://www.paraview.org/files/dependencies/qt-everywhere-src-${qt5_12_ver}.${qt5_ext}"
     URL_MD5 "${qt5_12_md5}"
   SELECT 5.13 
-    URL     "http://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz" 
+    URL     "http://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-${qt5_13_ver}.${qt5_ext}" 
     URL_MD5 "${qt5_13_md5}")
 
 if (WIN32 AND NOT superbuild_building_prebuilt_python)
@@ -163,7 +161,7 @@ else ()
     URL_MD5 136c5ee1bc4b259a12a7efe331b15d64)
 endif ()
 
-if (WIN32 AND NOT superbuild_building_prebuilt_python)
+if (WIN32 AND NOT superbuild_building_prebuilt_python AND NOT ENABLE_python3 AND NOT python3_enabled)
   if (superbuild_is_64bit)
     superbuild_set_revision(matplotlib
       URL     "https://www.paraview.org/files/dependencies/matplotlib-1.1.1-win64-20180905.tar.gz"
@@ -173,12 +171,18 @@ if (WIN32 AND NOT superbuild_building_prebuilt_python)
       "Prebuilt Python binaries for Windows 32 bit are not provided.")
   endif ()
 else ()
-  superbuild_set_revision(matplotlib
-    URL     "https://files.pythonhosted.org/packages/eb/a0/31b6ba00bc4dcbc06f0b80d1ad6119a9cc3081ecb04a00117f6c1ca3a084/matplotlib-2.2.3.tar.gz"
-    URL_MD5 403b0bddd751d71187416f20d4cff100)
+  if (ENABLE_python3 OR python3_enabled)
+    superbuild_set_revision(matplotlib
+      URL "https://www.paraview.org/files/dependencies/matplotlib-3.1.1-no-jquery.tar.xz"
+      URL_MD5 20f4c3a9ba1df1d6f7b2a509f617ddb1)
+  else()
+    superbuild_set_revision(matplotlib
+      URL     "https://files.pythonhosted.org/packages/eb/a0/31b6ba00bc4dcbc06f0b80d1ad6119a9cc3081ecb04a00117f6c1ca3a084/matplotlib-2.2.3.tar.gz"
+      URL_MD5 403b0bddd751d71187416f20d4cff100)
+  endif()
 endif ()
 
-if (WIN32 AND NOT superbuild_building_prebuilt_python)
+if (WIN32 AND NOT superbuild_building_prebuilt_python AND NOT ENABLE_python3 AND NOT python3_enabled)
   if (superbuild_is_64bit)
     superbuild_set_revision(pywin32
       URL     "https://www.paraview.org/files/dependencies/pywin32-220-win64-20180905.tar.gz"
@@ -187,6 +191,10 @@ if (WIN32 AND NOT superbuild_building_prebuilt_python)
     message(FATAL_ERROR
       "Prebuilt Python binaries for Windows 32 bit are not provided.")
   endif ()
+elseif (ENABLE_python3 OR python3_enabled)
+  superbuild_set_revision(pywin32
+    URL "https://www.paraview.org/files/dependencies/pywin32-224-amd64.tar.xz"
+    URL_MD5 1a79e2571d276eeb26f54d944daf39e4)
 else ()
   superbuild_set_revision(pywin32
     URL     "https://www.paraview.org/files/dependencies/pywin32-220.zip"
@@ -206,32 +214,17 @@ superbuild_set_revision(netcdf
   URL_MD5 37134a12a49e80c45fb58777aa3e9e3b)
 
 # Using Intel Threading Building Blocks 2018 Update 2
-#set(tbb_ver "2019_20190410oss")
-#if (WIN32)
-#  set(tbb_file "tbb${tbb_ver}_win.zip")
-#  set(tbb_md5 63fc9feb34ec973b0c8ae439afb30f5e)
-#elseif (APPLE)
-#  set(tbb_file "tbb${tbb_ver}_mac.tgz")
-#  set(tbb_md5 d1420b7b6e1d2b9c7e737123bd7e8315)
-#else ()
-#  set(tbb_file "tbb${tbb_ver}_lin.tgz")
-#  set(tbb_md5 cb95ed04d2522e54d2327afd1c56938f)
-#endif ()
-set(tbb_ver "2018_20171205oss")
+set(tbb_ver "2019_20190410oss")
 if (WIN32)
   set(tbb_file "tbb${tbb_ver}_win.zip")
-  set(tbb_md5 "e37abf02d74a638f7a6629c992f23918")
+  set(tbb_md5 63fc9feb34ec973b0c8ae439afb30f5e)
 elseif (APPLE)
-  # using older version on Mac since newer version has issues
-  # with changing install name.
-  set(tbb_ver "44_20150728oss")
-  set(tbb_file "tbb${tbb_ver}_osx.tgz")
-  set(tbb_md5 "a767d7a8b375e6b054e44e2317d806b8")
+  set(tbb_file "tbb${tbb_ver}_mac.tgz")
+  set(tbb_md5 d1420b7b6e1d2b9c7e737123bd7e8315)
 else ()
   set(tbb_file "tbb${tbb_ver}_lin.tgz")
-  set(tbb_md5 "d637d29f59ee31fe5830a0366e2e973a")
+  set(tbb_md5 cb95ed04d2522e54d2327afd1c56938f)
 endif ()
-
 
 superbuild_set_revision(tbb
   URL     "https://www.paraview.org/files/dependencies/${tbb_file}"
@@ -256,17 +249,6 @@ superbuild_set_revision(pythoncycler
 superbuild_set_revision(pythonsetuptools
   URL     "https://www.paraview.org/files/dependencies/setuptools-23.0.0.tar.gz"
   URL_MD5 100a90664040f8ff232fbac02a4c5652)
-
-set(mpi4py_ver "3.0.0")
-if (WIN32)
-  superbuild_set_revision(pythonmpi4py
-    URL     "https://www.paraview.org/files/dependencies/mpi4py-${mpi4py_ver}-cp27m-win_amd64.whl"
-    URL_MD5 9b95d5644b3d18819a39f4db858756ac)
-else ()
-  superbuild_set_revision(pythonmpi4py
-    URL     "https://www.paraview.org/files/dependencies/mpi4py-${mpi4py_ver}.tar.gz"
-    URL_MD5 bfe19f20cef5e92f6e49e50fb627ee70)
-endif ()
 
 superbuild_set_revision(pythonautobahn
   URL     "https://www.paraview.org/files/dependencies/autobahn-17.10.1.tar.gz"
@@ -325,5 +307,9 @@ superbuild_set_revision(pythonattrs
   URL_MD5 2be7bce157988928f5ff2bb50a0b510d)
 
 superbuild_set_revision(ffi
-  URL     "https://www.paraview.org/files/dependencies/libffi-3.0.5.tar.gz"
-  URL_MD5 29544f542140da929221805e332407b9)
+  URL     "https://www.paraview.org/files/dependencies/libffi-3.3.tar.gz"
+  URL_MD5 6313289e32f1d38a9df4770b014a2ca7)
+
+superbuild_set_revision(utillinux
+  URL     "https://www.paraview.org/files/dependencies/util-linux-2.34.tar.xz"
+  URL_MD5 a78cbeaed9c39094b96a48ba8f891d50)
