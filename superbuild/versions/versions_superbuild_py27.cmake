@@ -16,10 +16,10 @@ superbuild_set_revision(bzip2
   URL_MD5 00b516f4704d4a7cb50a1d97e6e8e15b)
 
 superbuild_set_revision(zlib
-  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.11.tar.xz"
-  URL_MD5 85adef240c5f370b308da8c938951a68)
-#  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.7.tar.gz"
-#  URL_MD5 60df6a37c56e7c1366cca812414f7b85)
+#  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.11.tar.xz"
+#  URL_MD5 85adef240c5f370b308da8c938951a68)
+  URL     "https://www.paraview.org/files/dependencies/zlib-1.2.7.tar.gz"
+  URL_MD5 60df6a37c56e7c1366cca812414f7b85)
 
 superbuild_set_revision(ffmpeg
   URL     "https://www.paraview.org/files/dependencies/ffmpeg-2.3.3.tar.bz2"
