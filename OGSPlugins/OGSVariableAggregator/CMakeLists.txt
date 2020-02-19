@@ -24,6 +24,12 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+# UTILS detection
+# for header includes
+include(../_utils/utils.cmake)
+# PUGI detection
+include(../_utils/pugixml/pugi.cmake)
+
 if(NOT APPLE)
 # OpenMP does not work with Apple's clang so we deactivate it.
   set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
@@ -35,6 +41,6 @@ find_package(ospray REQUIRED)
 
 ADD_PARAVIEW_PLUGIN(OGSVariableAggregator "1.0"
   SERVER_MANAGER_XML OGSVariableAggregator.xml
-  SERVER_MANAGER_SOURCES pugixml.cpp vtkOGSVariableAggregator.cxx
+  SERVER_MANAGER_SOURCES ${PUGIXML} vtkOGSVariableAggregator.cxx
   REQUIRED_ON_SERVER
   )

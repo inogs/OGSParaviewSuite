@@ -52,19 +52,12 @@ vtkCxxSetObjectMacro(vtkOGSSpaghetti, Controller, vtkMultiProcessController);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-#define FLDMASK uint8_t
-#define VTKMASK vtkTypeUInt8Array
-
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/OGS.hpp"
-#include "../_utils/netcdfio.hpp"
-#include "../_utils/fieldOperations.hpp"
-#include "../_utils/vtkOperations.hpp"
+#include "macros.h"
+#include "vtkFields.h"
+#include "netcdfio.h"
+#include "OGS.hpp"
+#include "fieldOperations.h"
+#include "vtkOperations.h"
 
 void strsplit(std::string str, std::string splitBy, std::vector<std::string> &tokens) {
     // Store the original string in the array, so we can loop the rest of the algorithm.

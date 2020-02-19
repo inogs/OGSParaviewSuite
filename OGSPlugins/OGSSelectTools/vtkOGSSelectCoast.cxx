@@ -47,14 +47,9 @@ vtkStandardNewMacro(vtkOGSSelectCoast);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDMASK uint8_t
-#define VTKMASK vtkTypeUInt8Array
-
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
+#include "macros.h"
+#include "field.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 void addCoasts(vtkDataArraySelection *CoastsDataArraySelection) {

@@ -22,7 +22,7 @@
 #include "vtkPolyData.h"
 #include "vtkRandomSequence.h"
 
-#include "../_utils/Projection.h"
+#include "projection.h"
 
 #include <cfloat>
 #include <cmath>

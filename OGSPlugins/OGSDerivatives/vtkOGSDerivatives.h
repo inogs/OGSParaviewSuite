@@ -22,8 +22,8 @@
 
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
+#include "V3.h"
+#include "field.h"
 
 #ifdef PARAVIEW_USE_MPI
   class vtkMultiProcessController;

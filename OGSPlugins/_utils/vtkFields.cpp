@@ -28,7 +28,7 @@
 #define OMP_THREAD_NUM  0
 #endif
 
-#include "vtkFields.hpp"
+#include "vtkFields.h"
 
 namespace VTK
 {

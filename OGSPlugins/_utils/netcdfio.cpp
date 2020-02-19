@@ -18,8 +18,8 @@
 // Include NetCDF functions
 // The ParaView NetCDF library is linked here instead of an external one
 // so as not to incur in compilation duplicates
-#include "vtknetcdf/include/netcdf.h"
-#include "netcdfio.hpp"
+#include "vtknetcdf/netcdf.h"
+#include "netcdfio.h"
 
 #include <algorithm>
 

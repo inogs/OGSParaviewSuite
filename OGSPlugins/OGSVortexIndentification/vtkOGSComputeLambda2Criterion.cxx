@@ -30,6 +30,8 @@
 
 #include "vtkObjectFactory.h"
 
+#include <algorithm>
+
 #ifdef __linux__
 // Include OpenMP when working with GCC
 #include <omp.h>
@@ -44,19 +46,12 @@ vtkStandardNewMacro(vtkOGSComputeLambda2Criterion);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define FLDMASK  uint8_t
-#define VTKARRAY vtkDoubleArray
-#define VTKMASK  vtkTypeUInt8Array
-
 // V3.h and field.h defined in vtkOGSDerivatives.h
-#include "../_utils/matrixMN.h"
-#include "../_utils/fieldOperations.hpp"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/vtkOperations.hpp"
+#include "macros.h"
+#include "matrixMN.h"
+#include "fieldOperations.h"
+#include "vtkFields.h"
+#include "vtkOperations.h"
 
 //----------------------------------------------------------------------------
 vtkOGSComputeLambda2Criterion::vtkOGSComputeLambda2Criterion() {
@@ -238,20 +233,18 @@ int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(reques
 				}
 
 				// Compute S, O and R matrices
-				matMN::matrixMN<FLDARRAY> A = 0.5*(deri + deri.t()); //A /= std::sqrt(A.norm2());
-				matMN::matrixMN<FLDARRAY> B = 0.5*(deri - deri.t()); //B /= std::sqrt(B.norm2());
+				matMN::matrixMN<FLDARRAY> A = 0.5*(deri + deri.t()); // A /= std::sqrt(A.norm2());
+				matMN::matrixMN<FLDARRAY> B = 0.5*(deri - deri.t()); // B /= std::sqrt(B.norm2());
 				matMN::matrixMN<FLDARRAY> C = (A^A) + (B^B);         // Dot product
 
 				// Compute the eigenvalues and eigenvectors of R
-				FLDARRAY e[3] = {0.,0.,0.};
-				matMN::matrixMN<FLDARRAY> V(3,0.);
-	
-				int n_iter = matMN::eigen(C,e,V,100);
-				if (n_iter >= 100)
-					vtkWarningMacro("Maximum number of iterations reach in Eigenvalue computation! Results might be compromised...");
+				FLDARRAY wr[3] = {0.,0.,0.}, wi[3] = {0.,0.,0.};
+				C.eigen(wr,wi);
+				// Sort in ascending order (l2 will always be in the middle)
+				std::sort(wr,wr+3);
 
 				// Store Lambda2
-				Lambda2[ind][0] = e[1];
+				Lambda2[ind][0] = wr[1];
 			}
 		}
 	}

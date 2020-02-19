@@ -17,7 +17,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "fieldOperations.hpp"
+#include "fieldOperations.h"
 
 namespace field 
 {

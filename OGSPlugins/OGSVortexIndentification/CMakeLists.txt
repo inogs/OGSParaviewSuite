@@ -24,6 +24,11 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+# UTILS detection
+include(../_utils/utils.cmake)
+# LAPACK detection
+include(../_utils/lapack/lapack.cmake)
+
 if(NOT APPLE)
 # OpenMP does not work with Apple's clang so we deactivate it.
   set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
@@ -35,6 +40,6 @@ find_package(ospray REQUIRED)
 
 ADD_PARAVIEW_PLUGIN(OGSVortexIndentification "1.0"
   SERVER_MANAGER_XML OGSVortexIndentification.xml
-  SERVER_MANAGER_SOURCES ../_utils/vtkOperations.cpp vtkOGSComputeOkuboWeiss.cxx vtkOGSComputeQCriterion.cxx vtkOGSComputeLambda2Criterion.cxx vtkOGSComputeOmegaCriterion.cxx
+  SERVER_MANAGER_SOURCES ${VTKOPS} vtkOGSComputeOkuboWeiss.cxx vtkOGSComputeQCriterion.cxx vtkOGSComputeLambda2Criterion.cxx vtkOGSComputeOmegaCriterion.cxx vtkOGSComputeRortexCriterion.cxx
   REQUIRED_ON_SERVER
   )

@@ -147,6 +147,17 @@ public:
   vtkSetStringMacro(OmegaCriterionArrayName);
   //@}
 
+  /**
+   * Get/Set the name of the Rortex criterion array to create. This is only
+   * used if ComputeRortexCriterion is non-zero. If nullptr (the
+   * default) then the output array will be named "Rortex".
+   */
+  vtkGetStringMacro(RortexArrayName);
+  vtkSetStringMacro(RortexArrayName);
+  vtkGetStringMacro(OmegaRCriterionArrayName);
+  vtkSetStringMacro(OmegaRCriterionArrayName);
+  //@}
+
  //@{
  /**
   * When this flag is on (default is off), the gradient filter will provide a
@@ -234,6 +245,17 @@ public:
   //@}
 
   /**
+   * Add Rortex to the output field data.  The name of the array
+   * will be RortexArrayName and will be the same type as the input
+   * array.  The input array must have 3 components in order to
+   * compute this. The default is off.
+   */
+  vtkSetMacro(ComputeRortexCriterion, int);
+  vtkGetMacro(ComputeRortexCriterion, int);
+  vtkBooleanMacro(ComputeRortexCriterion, int);
+  //@}
+
+  /**
    * Small number to avoid division per zero in the Omega criterion.
    */
   vtkSetMacro(epsi, double);
@@ -286,7 +308,8 @@ protected:
   virtual int ComputeUnstructuredGridGradient(
     vtkDataArray* Array, int fieldAssociation, vtkDataSet* input,
     bool computeVorticity, bool computeQCriterion, bool computeLambda2Criterion,
-     bool computeOmegaCriterion, bool computeDivergence, double dfact, vtkDataSet* output);
+    bool computeOmegaCriterion, bool computeRortexCriterion, bool computeDivergence, 
+    double dfact, vtkDataSet* output);
 
   /**
    * Compute the gradients for either a vtkImageData, vtkRectilinearGrid or
@@ -295,7 +318,8 @@ protected:
    */
   virtual int ComputeRegularGridGradient(
     vtkDataArray* Array, int fieldAssociation, bool computeVorticity, bool computeQCriterion, 
-    bool computeOmegaCriterion, bool computeLambda2Criterion, bool computeDivergence, double dfact, vtkDataSet* output);
+    bool computeLambda2Criterion, bool computeOmegaCriterion, bool computeRortexCriterion, 
+    bool computeDivergence, double dfact, vtkDataSet* output);
 
   /**
    * Get the proper array type to compute requested derivative quantities for.
@@ -342,6 +366,12 @@ protected:
   char *OmegaCriterionArrayName;
 
   /**
+   * If non-null then it contains the name of the outputted Rortex array.
+   * By default it is "Rortex".
+   */
+  char *RortexArrayName, *OmegaRCriterionArrayName;
+
+  /**
    * When this flag is on (default is off), the gradient filter will provide a
    * less accurate (but close) algorithm that performs fewer derivative
    * calculations (and is therefore faster).  The error contains some smoothing
@@ -385,6 +415,13 @@ protected:
    * 3 components.  By default ComputeOmegaCriterion is off.
    */
   int ComputeOmegaCriterion;
+
+  /**
+   * Flag to indicate that the Rortex of the input vector is to
+   * be computed.  The input array to be processed must have
+   * 3 components.  By default ComputeRortexCriterion is off.
+   */
+  int ComputeRortexCriterion;
 
   /**
    * Flag to indicate that vorticity/curl of the input vector is to

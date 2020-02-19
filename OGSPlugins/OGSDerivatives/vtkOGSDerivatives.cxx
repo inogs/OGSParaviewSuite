@@ -40,16 +40,11 @@ vtkStandardNewMacro(vtkOGSDerivatives);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-
 // V3.h and field.h defined in vtkOGSDerivatives.h
-#include "../_utils/fieldOperations.hpp"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/vtkOperations.hpp"
+#include "macros.h"
+#include "fieldOperations.h"
+#include "vtkFields.h"
+#include "vtkOperations.h"
 
 //----------------------------------------------------------------------------
 vtkOGSDerivatives::vtkOGSDerivatives() {

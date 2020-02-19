@@ -42,19 +42,12 @@ vtkStandardNewMacro(vtkOGSFieldWriter);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define FLDMASK  uint8_t
-#define VTKARRAY vtkDoubleArray
-#define VTKMASK  vtkTypeUInt8Array
-
-#include "../_utils/V3.h"
-#include "../_utils/field.h"
-#include "../_utils/fieldOperations.hpp"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/vtkOperations.hpp"
+#include "macros.h"
+#include "V3.h"
+#include "field.h"
+#include "fieldOperations.h"
+#include "vtkFields.h"
+#include "vtkOperations.h"
 
 //----------------------------------------------------------------------------
 vtkOGSFieldWriter::vtkOGSFieldWriter() : FileName(nullptr), varname(nullptr), dfact(1000.), fstride(1) {}

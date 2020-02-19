@@ -46,14 +46,9 @@ vtkStandardNewMacro(vtkOGSCompareVariables);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
+#include "macros.h"
+#include "field.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 std::string& ltrim(std::string& str, const std::string& chars = "\t\n\v\f\r ") { str.erase(0, str.find_first_not_of(chars)); return str; }

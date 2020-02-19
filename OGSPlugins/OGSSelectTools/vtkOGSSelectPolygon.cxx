@@ -49,18 +49,12 @@ vtkStandardNewMacro(vtkOGSSelectPolygon);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDMASK uint8_t
-#define VTKMASK vtkTypeUInt8Array
-
-#include "../_utils/V3.h"
-#include "../_utils/vtkOperations.hpp"
-#include "../_utils/field.h"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/geometry.h"
-#include "../_utils/Projection.h"
+#include "macros.h"
+#include "V3.h"
+#include "field.h"
+#include "projection.h"
+#include "vtkOperations.h"
+#include "vtkFields.h"
 
 //----------------------------------------------------------------------------
 void strsplit(const std::string& str, std::vector<std::string> &cont, char delim) {
@@ -76,11 +70,10 @@ void strsplit(const std::string& str, std::vector<std::string> &cont, char delim
 
 //----------------------------------------------------------------------------
 vtkOGSSelectPolygon::vtkOGSSelectPolygon() {
-
-	this->strPoints  = NULL;
 	this->nProcs     = 0;
 	this->Invert     = 0;
 	this->dfact      = 1000.;
+	this->projName   = std::string("Mercator");
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;
@@ -90,7 +83,7 @@ vtkOGSSelectPolygon::vtkOGSSelectPolygon() {
 
 //----------------------------------------------------------------------------
 vtkOGSSelectPolygon::~vtkOGSSelectPolygon() {
-	this->SetstrPoints(NULL);
+	this->poly.clear();
 
 	#ifdef PARAVIEW_USE_MPI
 		this->SetController(NULL);	
@@ -124,41 +117,6 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 	this->projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
 	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
 
-	// Parse the points inputted by the user, project to meters and define the polygon
-	std::vector<std::string> aux;
-	strsplit(std::string(this->strPoints),aux,'\n'); // Split by endline
-
-	std::vector<Geom::Point<double>> points;
-	PROJ::Projection p;	
-
-	// Loop the user inputed points
-	for (std::string str : aux) {
-		// Split again by ;
-		std::vector<std::string> aux2;
-		strsplit(str,aux2,' ');
-		// Check correctness
-		if (str.size() == 0 || aux2.size() != 2) {
-			vtkErrorMacro("Problems parsing points! Check the input points.");
-			return 0;
-		}
-		// Convert to double
-		double lon = std::stod(aux2[1]), lat = std::stod(aux2[0]);
-		// Project
-		p.transform_point("degrees",this->projName,lon,lat);
-		// Store point
-		points.push_back( Geom::Point<double>(lon,lat,0.) );
-	}
-	points.push_back( points[0] ); // We need to close the polygon for a correct definition
-
-	// Define the polygon and compute the bounding box
-	Geom::Polygon<double> poly((int)(points.size()),points.data());
-	
-	// Compute the polygon bounding box for a faster performance
-	Geom::Ball<double> bbox(poly);
-	poly.set_bbox(bbox);
-
-	this->UpdateProgress(0.1);
-
 	// Understand whether we are under cell or point data and compute the points of
 	// the mesh
 	int n_cell_vars  = input->GetCellData()->GetNumberOfArrays();
@@ -166,22 +124,43 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 
 	bool iscelld = (n_cell_vars > n_point_vars) ? true : false;
 
+	// Obtain the cell centers or points
 	v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,this->dfact) : VTK::getVTKCellPoints(input,this->dfact);
 
-	// Generate a new field (initialized at zero) that will be used as cutting mask
-	field::Field<FLDMASK> cutmask(xyz.len(),1);
+	// Generate a new field that will be used as cutting mask
+	field::Field<FLDMASK> cutmask(xyz.len(),(FLDMASK)(1));
 
-	this->UpdateProgress(0.2);
+	// At this point "this->poly" should contain the polygon in degrees or be empty
+	if ( !this->poly.isempty() ) {
+		// Loop the polygon and project it
+		PROJ::Projection p;
+		for (int ip=0; ip < this->poly.get_npoints(); ++ip)
+			p.transform_point("degrees",this->projName,this->poly[ip][0],this->poly[ip][1]);
+	
+		// Compute the polygon bounding box for a faster performance
+		Geom::Ball<double> bbox(poly); this->poly.set_bbox(bbox);
+		this->UpdateProgress(0.1);
 
-	// Loop and update cutting mask (Mesh loop, can be parallelized)
-	#pragma omp parallel shared(cutmask,poly,xyz)
-	{
-	for (int ii = 0 + OMP_THREAD_NUM; ii < cutmask.get_n(); ii += OMP_NUM_THREADS) {
-		// Check if the point of the mesh is inside the polygon and set the cutmask
-		// accordingly
-		cutmask[ii][0] = (poly > Geom::Point<double>(xyz[ii][0],xyz[ii][1],0.)) ? 1 : 0;
+		// Loop and update cutting mask (Mesh loop, can be parallelized)
+		#pragma omp parallel shared(cutmask,xyz)
+		{
+		for (int ii = 0 + OMP_THREAD_NUM; ii < cutmask.get_n(); ii += OMP_NUM_THREADS) {
+			// Check if the point of the mesh is inside the polygon and set the cutmask
+			// accordingly
+			cutmask[ii][0] = (this->poly > Geom::Point<double>(xyz[ii][0],xyz[ii][1],0.)) ? 1 : 0;
+		}
+		}
+		
+		// Force ThresholdBetween to obtain values that are greater than 0
+		if (this->Invert)
+			this->Superclass::ThresholdBetween(0.,0.5);
+		else
+			this->Superclass::ThresholdBetween(0.5,1.);
+	} else {
+		this->Superclass::ThresholdBetween(0.,1.);
+		vtkWarningMacro("Problems parsing points! Check the input points.");
 	}
-	}
+	this->UpdateProgress(0.4);
 
 	// Convert field to vtkArray and add it to input
 	VTKMASK *vtkcutmask;
@@ -199,14 +178,6 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 			vtkDataObject::FIELD_ASSOCIATION_POINTS,"CutMask");
 	}
 
-	this->UpdateProgress(0.4);
-
-	// Force ThresholdBetween to obtain values that are greater than 0
-	if (this->Invert)
-		this->Superclass::ThresholdBetween(0.,0.5);
-	else
-		this->Superclass::ThresholdBetween(0.5,1.);
-
 	this->UpdateProgress(0.6);
 
 	// Run the actual threshold filter
@@ -222,8 +193,47 @@ int vtkOGSSelectPolygon::RequestData(vtkInformation *vtkNotUsed(request),
 
 	vtkcutmask->Delete();
 
-
 	// Return
 	this->UpdateProgress(1.0);
 	return 1;
+}
+
+//----------------------------------------------------------------------------
+void vtkOGSSelectPolygon::GetPolygon(const char *arg) {
+	/*
+		This function parses the text box and obtains the polygon to be
+		used for cutting the mesh.
+	*/
+	this->poly.clear(); // Make sure the polygon is empty before we start
+
+	if (arg) {
+		// Split the string by endline
+		std::vector<std::string> aux; strsplit(std::string(arg),aux,'\n');
+
+		// Loop the user inputed points
+		bool error = false;
+		std::vector<Geom::Point<double>> points;
+		for (std::string str : aux) {
+			// Split again by ;
+			std::vector<std::string> aux2; strsplit(str,aux2,' ');
+			// Check correctness
+			if (str.size() == 0 || aux2.size() != 2) {
+				error = true; break;
+			}
+			// Convert to double
+			double lon = std::stod(aux2[1]), lat = std::stod(aux2[0]);
+			// Store point
+			points.push_back( Geom::Point<double>(lon,lat,0.) );
+		}
+		// Only update polygon if the size is positive and there has been no error
+		if (points.size() > 0 && !error) {
+			points.push_back( points[0] ); // We need to close the polygon for a correct definition
+
+			// Define the polygon and compute the bounding box
+			this->poly.set_npoints( (int)(points.size()) );
+			this->poly.set_points( points.data() );
+		}
+	}
+	this->Superclass::Modified();
+	this->Modified();
 }

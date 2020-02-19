@@ -46,17 +46,11 @@ vtkStandardNewMacro(vtkOGSReader);
 
 //----------------------------------------------------------------------------
 
-/*
-	Macro to set the array precision 
-*/
-#define FLDARRAY double
-#define VTKARRAY vtkDoubleArray
-
-#include "../_utils/field.h"
-#include "../_utils/fieldOperations.hpp"
-#include "../_utils/OGS.hpp"
-#include "../_utils/vtkFields.hpp"
-#include "../_utils/netcdfio.hpp"
+#include "macros.h"
+#include "field.h"
+#include "fieldOperations.h"
+#include "vtkFields.h"
+#include "netcdfio.h"
 
 //----------------------------------------------------------------------------
 vtkOGSReader::vtkOGSReader() {

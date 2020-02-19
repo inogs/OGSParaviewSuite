@@ -24,6 +24,10 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
+# UTILS detection
+# for header includes
+include(../_utils/utils.cmake)
+
 if(NOT APPLE)
 # OpenMP does not work with Apple's clang so we deactivate it.
   set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
