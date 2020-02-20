@@ -204,7 +204,7 @@ printf "OK\n"
 # Compile OGSMesh
 printf "Compiling OGSMesh... "
 cd paraview-superbuild/$SUITEDIR/OGSPlugins/_utils
-g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC -fopenmp OGS.cpp netcdfio.cpp -I../../../../paraview-build/install/include/paraview-5.6
+g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC -fopenmp -std=c++11 OGS.cpp -DOGS_NO_NETCDF
 cd ../../../../
 printf "OK\n"
 

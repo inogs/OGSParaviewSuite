@@ -208,7 +208,7 @@ printf "OK\n"
 printf "Deploying OGS tools... "
 # libOGS
 cd paraview-superbuild/$SUITEDIR/OGSPlugins/_utils
-g++ -shared -o $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries/libOGS.dylib -fPIC -std=c++11 OGS.cpp netcdfio.cpp -I../../../../paraview-build/install/include/paraview-5.6 -L $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries/ -l vtkNetCDF-pv5.6
+g++ -shared -o $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Libraries/libOGS.dylib -fPIC -std=c++11 OGS.cpp -DOGS_NO_NETCDF
 cd ../../../../
 # Python utils
 cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py $INSTALL_PREFIX/ParaView-$PV_VERS.app/Contents/Python/
