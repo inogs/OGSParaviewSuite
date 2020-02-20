@@ -123,13 +123,6 @@ make -j $NPROCS install
 cp -r install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp install/lib/python2.7/site-packages/kiwisolver-1.1.0-py2.7-linux-x86_64.egg/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
 
-# Dowload extra sources from google drive
-#fileid="13L4jjYfTa85cAluJdqZYa0MhU4j9pLP4"
-#filename="extra_src.tar.gz"
-#curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}" > /dev/null
-#curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
-#tar xzf extra_src.tar.gz
-
 # Load environment
 export PATH=$PATH:$INSTALL_PREFIX/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_PREFIX/lib:$INSTALL_PREFIX/lib/paraview-5.6
@@ -191,32 +184,6 @@ cp -r install/lib/python2.7/site-packages/urllib3 $INSTALL_PREFIX/lib/python2.7/
 cp -r install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
-
-## Compile and install geos
-#tar xf extra_src/geos-3.7.0.tar.bz2 && cd geos-3.7.0
-#./configure --prefix=$PWD/install
-#export GEOS_DIR=$PWD/install
-#make -j $NPROCS install
-#ln -s $PWD/install/lib $PWD/install/lib64
-#cd ../
-## Compile and install basemap
-#tar xfz extra_src/basemap-1.1.0.tar.gz && cd basemap-1.1.0
-#python setup.py build
-#cp build/lib.linux-x86_64-2.7/_geoslib.so $INSTALL_PREFIX/lib/python2.7/site-packages/
-#cp -r build/lib.linux-x86_64-2.7/mpl_toolkits/basemap $INSTALL_PREFIX/lib/python2.7/site-packages/mpl_toolkits/
-#cd ../
-#
-## Compile and install proj
-#tar xzf extra_src/proj-6.1.0.tar.gz && cd proj-6.1.0
-#./configure --prefix=$INSTALL_PREFIX
-#unzip ../extra_src/proj-datumgrid-1.8.zip -d data/
-#make -j $NPROCS install
-#cd ../
-## Compile and install pyproj
-#tar xzf extra_src/pyproj-1.9.6.tar.gz && cd pyproj-1.9.6
-#python setup.py build
-#cp -r build/lib.linux-x86_64-2.7/pyproj $INSTALL_PREFIX/lib/python2.7/site-packages/
-#cd ../
 
 # Copy ffmpeg
 cp install/bin/ffmpeg $INSTALL_PREFIX/bin
