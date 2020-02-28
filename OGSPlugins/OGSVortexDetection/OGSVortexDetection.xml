@@ -1,0 +1,264 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSVortexDetection"
+                class="vtkOGSVortexDetection" 
+                label="OGS Vortex Detection">
+     <Documentation
+        long_help="This plugin enables to detect and compute properties of the vortices."
+        short_help="Enables to detect and compute properties of the vortices.">
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+     <!-- Vectorial array -->
+     <StringVectorProperty name="arrName"
+                           label="Vectorial array: "
+                           command="SetarrName"
+                           animateable="1"
+                           default_values="Rortex"
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Vectors"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <Documentation>
+         Name of the vectorial array to which compute the 
+         vortex properties. Expected Rortex, vorticity can
+         also work.
+       </Documentation>
+     </StringVectorProperty>
+
+     <!-- Scalar array -->
+     <StringVectorProperty name="omegArrName"
+                           label="Scalar array: "
+                           command="SetomegArrName"
+                           animateable="1"
+                           default_values="Omega-R"
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Scalars"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <Documentation>
+         Name of the scalar array in which to compute the
+         vortex properties. Expected Omega-R, Omega or Q can
+         also work.
+       </Documentation>
+     </StringVectorProperty>
+
+     <!-- Compute mask -->
+     <IntVectorProperty name="computeMask"
+                        label="Compute mask"
+                        command="SetcomputeMask"
+                        default_values="0"
+                        number_of_elements="1">
+       <Documentation>
+         Activate/Deactivate mask computation.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- Mask array -->
+     <StringVectorProperty name="maskArray2"
+                           label="Mask array: "
+                           command="SetmaskArrName2"
+                           animateable="1"
+                           default_values="mask"
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Scalars"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <Hints>
+         <PropertyWidgetDecorator type="HideWidgetDecorator">
+           <Property name="computeMask" function="boolean" />
+         </PropertyWidgetDecorator>
+       </Hints>
+       <Documentation>
+         Name of the array from which to compute the mask or
+         name of the mask array.
+       </Documentation>
+     </StringVectorProperty>
+     <StringVectorProperty name="maskArray1"
+                           label="Array for masking: "
+                           command="SetmaskArrName1"
+                           animateable="1"
+                           default_values="Rortex"
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Scalars"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <Hints>
+         <PropertyWidgetDecorator type="ShowWidgetDecorator">
+           <Property name="computeMask" function="boolean" />
+         </PropertyWidgetDecorator>
+       </Hints>
+       <Documentation>
+         Name of the array from which to compute the mask or
+         name of the mask array.
+       </Documentation>
+     </StringVectorProperty>
+
+     <!-- Mask coefficent value -->
+     <DoubleVectorProperty name="coef"
+                           label="Mask filter coefficient: "
+                           command="Setcoef"
+                           animateable="1"
+                           default_values="0.2"
+                           number_of_elements="1">
+       <DoubleRangeDomain name="range" min="0.0" max="20.0" />
+       <Documentation>
+         Mask filter coefficient.
+       </Documentation>
+       <Hints>
+         <PropertyWidgetDecorator type="ShowWidgetDecorator">
+           <Property name="computeMask" function="boolean" />
+         </PropertyWidgetDecorator>
+       </Hints>
+     </DoubleVectorProperty>
+
+     <!-- Minimum resolution for a vortex -->
+     <IntVectorProperty name="minResolution"
+                        label="Resolution: "
+                        command="Setminres"
+                        default_values="5"
+                        number_of_elements="1"
+                        panel_visibility="advanced">
+       <Documentation>
+         Minimum resolution of elements 
+         for a vortex to be considered as such.
+       </Documentation>
+     </IntVectorProperty>
+     <!-- Number of iterations of the detection algorithm -->
+     <IntVectorProperty name="nIters"
+                        label="Iterations: "
+                        command="Setmaxiter"
+                        default_values="100"
+                        number_of_elements="1"
+                        panel_visibility="advanced">
+       <Documentation>
+         Number of iterations of the detection algorithm.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Number of repetitions of the detection algorithm -->
+     <IntVectorProperty name="nReps"
+                        label="Repetitions: "
+                        command="Setmaxreps"
+                        default_values="5"
+                        number_of_elements="1"
+                        panel_visibility="advanced">
+       <Documentation>
+         Number of repetitions of the detection algorithm.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Selection of depth scale factor -->
+     <DoubleVectorProperty name="DepthScale"
+                           label="Scale factor for depth:"
+                           command="Setdfact"
+                           number_of_elements="1"
+                           default_values="1000."
+                           panel_visibility="advanced">
+       <Documentation>
+         Factor in which the depth is multiplied.
+       </Documentation>                            
+     </DoubleVectorProperty>
+
+     <!-- Projection -->
+     <StringVectorProperty name="ProjInfo"
+                           command="GetProjections"
+                           information_only="1">
+       <StringArrayHelper />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="Projection"
+                           command="SetProjection"
+                           number_of_elements="1"
+                           label="Projection: "
+                           panel_visibility="advanced">
+        <StringListDomain name="array_list">
+            <RequiredProperties>
+                <Property name="ProjInfo" function="ArrayList" />
+            </RequiredProperties>
+        </StringListDomain>
+        <Hints>
+          <NoDefault />
+        </Hints>
+        <Documentation>
+          Set the projection to use.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- Compute mask -->
+     <IntVectorProperty name="changemask"
+                        label="Change mask sign"
+                        command="Setchangemask"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         If active, sets all values for the anticyclonic gyres to negative
+         on the vortex mask.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- PROPERTY GROUPS -->
+     <!-- ARRAYS -->
+     <PropertyGroup label="Array selection">
+       <Property name="arrName"/>
+       <Property name="omegArrName"/>
+     </PropertyGroup>
+     <!-- MASK COMPUTATION -->
+     <PropertyGroup label="Detection mask settings">
+       <Property name="computeMask"/>
+       <Property name="maskArray1"/>
+       <Property name="maskArray2"/>
+       <Property name="coef"/>
+       <Property name="minResolution"/>
+       <Property name="nIters"/>
+       <Property name="nReps"/>
+     </PropertyGroup>
+     <!-- PARAMETERS -->
+     <PropertyGroup label="Other parameters">
+       <Property name="DepthScale"/>
+       <Property name="Projection"/>
+       <Property name="changemask"/>
+     </PropertyGroup>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <OutputPort name="Detection View" index="0" id="port0"/>
+     <OutputPort name="Vortex Data"    index="1" id="port1"/>
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+     </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>
