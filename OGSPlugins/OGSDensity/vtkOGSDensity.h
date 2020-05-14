@@ -39,6 +39,21 @@ public:
   vtkSetStringMacro(Tarrname);
   vtkSetStringMacro(Sarrname);
 
+  // Description:
+  // Base density
+  vtkGetMacro(rau0, double);
+  vtkSetMacro(rau0, double); 
+
+  // Description:
+  // Diffusion for temperature
+  vtkGetMacro(ralpha, double);
+  vtkSetMacro(ralpha, double);
+
+  // Description:
+  // Diffusion for salinity
+  vtkGetMacro(rbeta, double);
+  vtkSetMacro(rbeta, double);
+
   #ifdef PARAVIEW_USE_MPI
     // Description:
     // Set the controller use in compositing (set to
@@ -64,6 +79,7 @@ private:
   void operator=(const vtkOGSDensity&) = delete;
 
   int method, procId, nProcs;
+  double rau0, ralpha, rbeta;
   char *Tarrname, *Sarrname;
 };
 

@@ -33,6 +33,7 @@
           <Entry text="Linear with temperature"              value="0" />
           <Entry text="Linear with temperature and salinity" value="1" />
           <Entry text="JAOT 12"                              value="2" />
+          <Entry text="JAOT 20"                              value="3" />
         </EnumerationDomain>
         <Documentation>
           Set the method used to compute water density.
@@ -77,6 +78,47 @@
        </Documentation>
      </StringVectorProperty>
 
+     <!-- Density base value -->
+     <DoubleVectorProperty name="rau0"
+                           label="Density base value: "
+                           command="Setrau0"
+                           number_of_elements="1"
+                           default_values="1020."
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the density base value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- Temperature diffusivity -->
+     <DoubleVectorProperty name="ralpha"
+                           label="Alpha: "
+                           command="Setralpha"
+                           number_of_elements="1"
+                           default_values="2e-4."
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the temperature diffusivity value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- Salinity diffusivity -->
+     <DoubleVectorProperty name="rbeta"
+                           label="Beta: "
+                           command="Setrbeta"
+                           number_of_elements="1"
+                           default_values="0.001"
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the salinity diffusivity value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <PropertyGroup label="Linear method parameters">
+       <Property name="rau0"/>
+       <Property name="ralpha"/>
+       <Property name="rbeta"/>
+     </PropertyGroup>
 
      <!-- END EXPOSED PROPERTIES -->
 

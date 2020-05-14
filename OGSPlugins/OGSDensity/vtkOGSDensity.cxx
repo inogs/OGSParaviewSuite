@@ -73,8 +73,8 @@ void rhoLinT(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, double ralp
 	#pragma omp parallel
 	{
 	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
-		double rdn = (0.028 - ralpha*T[ii][0]); // Density anomaly
-		rho[ii][0] = (rau0*rdn + rau0);
+		double rdn = 0.028 - ralpha*T[ii][0]; // Density anomaly
+		rho[ii][0] = rau0*rdn + rau0;
 	}
 	}
 }
@@ -92,8 +92,9 @@ void rhoLinTS(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fie
 	#pragma omp parallel
 	{
 	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
-		double rdn = (rbeta*S[ii][0] - ralpha*T[ii][0] - 1.); // Density anomaly
-		rho[ii][0] = (rau0*rdn + rau0);
+		double rdn = rbeta*S[ii][0] - ralpha*T[ii][0] - 1.; // Density anomaly
+		rho[ii][0] = rau0*rdn + rau0;
+printf("rdn=%f, rho=%f ralpha=%e rbeta=%e rau0=%f\n",rdn,rho[ii][0],ralpha,rbeta,rau0);
 	}
 	}	
 }
@@ -173,16 +174,49 @@ void rhoJAOT12(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fi
 		rho[ii][0] /= 1. - P/bulkmod;
 	}
 	}
-
 }
 
+void rhoJAOT20(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Field<FLDARRAY> &S, v3::V3v &xyz) {
+/*
+	Density of Sea Water using McDougall et al. 2003 (JAOT 20) polynomial
+*/	
+	// coefficients nonlinear equation of state in pressure coordinates for
+	double eosMDJWFnum[] = { 7.35212840e+00, -5.45928211e-02, 3.98476704e-04, 2.96938239e+00, -7.23268813e-03, 2.12382341e-03, 1.04004591e-02, 1.03970529e-07, 5.18761880e-06, -3.24041825e-08, -1.23869360e-11, 9.99843699e+02 };
+	double eosMDJWFden[] = { 7.28606739e-03, -4.60835542e-05, 3.68390573e-07, 1.80809186e-10, 2.14691708e-03, -9.27062484e-06, -1.78343643e-10, 4.76534122e-06, 1.63410736e-09, 5.30848875e-06, -3.03175128e-16, -1.27934137e-17, 1.00000000e+00 };
+	double epsi = 0.;
 
+	// Loop the mesh
+	#pragma omp parallel
+	{
+	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
+		// pressure
+		double P = 10.*Z2P(xyz[ii][2]); // dbar
+
+		double sp5  = sqrt(S[ii][0]);
+		double p1t1 = P*T[ii][0];
+
+		double num = eosMDJWFnum[11] + T[ii][0]*(eosMDJWFnum[0] + T[ii][0]*(eosMDJWFnum[1] + eosMDJWFnum[2]*T[ii][0]))
+				   + S[ii][0]*(eosMDJWFnum[3] + eosMDJWFnum[4]*T[ii][0]  + eosMDJWFnum[5]*S[ii][0])
+				   + P*(eosMDJWFnum[6] + eosMDJWFnum[7]*POW2(T[ii][0]) + eosMDJWFnum[8]*S[ii][0] + P*(eosMDJWFnum[9] + eosMDJWFnum[10]*POW2(T[ii][0])));
+
+		double den =  eosMDJWFden[12] + T[ii][0]*(eosMDJWFden[0] + T[ii][0]*(eosMDJWFden[1] + T[ii][0]*(eosMDJWFden[2] + T[ii][0]*eosMDJWFden[3])))
+				   + S[ii][0]*(eosMDJWFden[4] + T[ii][0]*(eosMDJWFden[5] + eosMDJWFden[6]*POW2(T[ii][0])) + sp5*(eosMDJWFden[7] + eosMDJWFden[8]*POW2(T[ii][0])))
+				   + P*(eosMDJWFden[9] + p1t1*(eosMDJWFden[10]*POW2(T[ii][0]) + eosMDJWFden[11]*P));
+
+		// final density
+		rho[ii][0] = num/(epsi+den);
+	}
+	}
+}
 
 //----------------------------------------------------------------------------
 vtkOGSDensity::vtkOGSDensity() {
 	this->Tarrname = NULL;
 	this->Sarrname = NULL;
 	this->method   = 0;
+	this->rau0     = 1020.;
+	this->ralpha   = 2.e-4;
+	this->rbeta    = 0.001;
 	this->nProcs   = 0;
 	this->procId   = 0;
 
@@ -291,15 +325,21 @@ int vtkOGSDensity::RequestData(vtkInformation *vtkNotUsed(request),
 	// Select, according to the user, which density model to use
 	switch(this->method) {
 		case 0: // Linear depending on temperature
-//			rhoLinT(rho,T,ralpha,rau0);
+			rhoLinT(rho,T,this->ralpha,this->rau0);
 			break;
 		case 1: // Linear depending on temperature and salinity
-//			rhoLinTS(rho,T,S,ralpha,rbeta,rau0);
+			rhoLinTS(rho,T,S,this->ralpha,this->rbeta,this->rau0);
 			break;
 		case 2: // JAOT 12
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
 				rhoJAOT12(rho,T,S,xyz);
+			}
+			break;
+		case 3: // JAOT 20
+			{
+				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
+				rhoJAOT20(rho,T,S,xyz);
 			}
 			break;
 		default:
