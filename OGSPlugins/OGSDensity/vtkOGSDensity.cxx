@@ -94,7 +94,56 @@ void rhoLinTS(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fie
 	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
 		double rdn = rbeta*S[ii][0] - ralpha*T[ii][0] - 1.; // Density anomaly
 		rho[ii][0] = rau0*rdn + rau0;
-printf("rdn=%f, rho=%f ralpha=%e rbeta=%e rau0=%f\n",rdn,rho[ii][0],ralpha,rbeta,rau0);
+	}
+	}	
+}
+
+void rhoJMD94(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Field<FLDARRAY> &S, v3::V3v &xyz) {
+/*
+	Jackett and McDougall (1994) equation of state.
+*/
+	// Loop the mesh
+	#pragma omp parallel
+	{
+	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
+		// potential temperature and salinity
+		double zt = T[ii][0];
+		double zs = S[ii][0];
+
+		// depth
+		double zh = -xyz[ii][2]; // since depth are negative in z
+
+		// square root salinity
+		double zsr = sqrt( fabs( zs ) );
+
+		// compute volumic mass pure water at atm pressure
+		double zr1 = ( ( ( ( 6.536332e-9*zt-1.120083e-6 )*zt+1.001685e-4)*zt-9.095290e-3 )*zt+6.793952e-2 )*zt+999.842594;
+
+		// seawater volumic mass atm pressure
+		double zr2 = ( ( ( 5.3875e-9*zt-8.2467e-7 ) *zt+7.6438e-5 ) *zt -4.0899e-3 ) *zt+0.824493;
+		double zr3 = ( -1.6546e-6*zt+1.0227e-4 ) *zt-5.72466e-3;
+		double zr4 = 4.8314e-4;
+
+		// potential volumic mass (reference to the surface)
+		double zrhop = ( zr4*zs + zr3*zsr + zr2 ) *zs + zr1;
+
+		// add the compression terms
+		double ze  = ( -3.508914e-8*zt-1.248266e-8 ) *zt-2.595994e-6;
+		double zbw = (  1.296821e-6*zt-5.782165e-9 ) *zt+1.045941e-4;
+		double zb  = zbw + ze * zs;
+
+		double zd  = -2.042967e-2;
+		double zc  =   (-7.267926e-5*zt+2.598241e-3 ) *zt+0.1571896;
+		double zaw = ( ( 5.939910e-6*zt+2.512549e-3 ) *zt-0.1028859 ) *zt -4.721788;
+		double za  = ( zd*zsr + zc ) *zs + zaw;
+
+		double zb1 =   (-0.1909078*zt+7.390729 ) *zt-55.87545;
+		double za1 = ( ( 2.326469e-3*zt+1.553190)*zt-65.00517 ) *zt+1044.077;
+		double zkw = ( ( (-1.361629e-4*zt-1.852732e-2 ) *zt-30.41638 ) *zt +2098.925 ) *zt+190925.6;
+		double zk0 = ( zb1*zsr + za1 )*zs + zkw;
+
+		// in situ density
+		rho[ii][0] = zrhop / (  1.0 - zh / ( zk0 - zh * ( za - zh * zb ) )  );
 	}
 	}	
 }
@@ -330,13 +379,19 @@ int vtkOGSDensity::RequestData(vtkInformation *vtkNotUsed(request),
 		case 1: // Linear depending on temperature and salinity
 			rhoLinTS(rho,T,S,this->ralpha,this->rbeta,this->rau0);
 			break;
-		case 2: // JAOT 12
+		case 2: // JMD 94
+			{
+				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
+				rhoJMD94(rho,T,S,xyz);
+			}
+			break;
+		case 3: // JAOT 12
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
 				rhoJAOT12(rho,T,S,xyz);
 			}
 			break;
-		case 3: // JAOT 20
+		case 4: // JAOT 20
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
 				rhoJAOT20(rho,T,S,xyz);
