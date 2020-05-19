@@ -92,6 +92,7 @@ void rhoLinTS(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fie
 	#pragma omp parallel
 	{
 	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
+		// Possibly check!!
 		double rdn = rbeta*S[ii][0] - ralpha*T[ii][0] - 1.; // Density anomaly
 		rho[ii][0] = rau0*rdn + rau0;
 	}
@@ -374,10 +375,10 @@ int vtkOGSDensity::RequestData(vtkInformation *vtkNotUsed(request),
 	// Select, according to the user, which density model to use
 	switch(this->method) {
 		case 0: // Linear depending on temperature
-			rhoLinT(rho,T,this->ralpha,this->rau0);
+			rhoLinT(rho,T,this->ralpha,this->rau0); // Not used!
 			break;
 		case 1: // Linear depending on temperature and salinity
-			rhoLinTS(rho,T,S,this->ralpha,this->rbeta,this->rau0);
+			rhoLinTS(rho,T,S,this->ralpha,this->rbeta,this->rau0); // Not used!
 			break;
 		case 2: // JMD 94
 			{
@@ -395,6 +396,11 @@ int vtkOGSDensity::RequestData(vtkInformation *vtkNotUsed(request),
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
 				rhoJAOT20(rho,T,S,xyz);
+			}
+			break;
+		case 5: // TEOS10
+			{
+				vtkWarningMacro("TEOS10 not implemented yet!");
 			}
 			break;
 		default:

@@ -28,13 +28,14 @@
                         label="Method"
                         command="Setmethod"
                         number_of_elements="1"
-                        default_values="0">
+                        default_values="2">
         <EnumerationDomain name="enum">
-          <Entry text="Linear with temperature"              value="0" />
-          <Entry text="Linear with temperature and salinity" value="1" />
+          <!--<Entry text="Linear with temperature"              value="0" />-->
+          <!--<Entry text="Linear with temperature and salinity" value="1" />-->
           <Entry text="JMD 94"                               value="2" />
           <Entry text="JAOT 12"                              value="3" />
           <Entry text="JAOT 20"                              value="4" />
+          <Entry text="TEOS 10"                              value="5" />
         </EnumerationDomain>
         <Documentation>
           Set the method used to compute water density.
