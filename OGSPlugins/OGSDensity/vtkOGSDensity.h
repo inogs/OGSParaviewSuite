@@ -40,6 +40,12 @@ public:
   vtkSetStringMacro(Sarrname);
 
   // Description:
+  // Use depth for density computation
+  vtkGetMacro(useDepth, int);
+  vtkSetMacro(useDepth, int); 
+  vtkBooleanMacro(useDepth, int);
+
+  // Description:
   // Base density
   vtkGetMacro(rau0, double);
   vtkSetMacro(rau0, double); 
@@ -81,6 +87,7 @@ private:
   int method, procId, nProcs;
   double rau0, ralpha, rbeta;
   char *Tarrname, *Sarrname;
+  bool useDepth;
 };
 
 #endif

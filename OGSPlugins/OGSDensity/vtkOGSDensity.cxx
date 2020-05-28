@@ -42,7 +42,7 @@
 #define POW4(x) (x)*(x)*(x)*(x)
 #define POW5(x) (x)*(x)*(x)*(x)*(x)
 
-#define Z2P(x) -0.098097057*(x) // meter 2 bar (correct the sign as z are negative)
+#define Z2P(x) -9.80665*997.0474*1e-5*(x) // meter 2 bar (correct the sign as z are negative)
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
@@ -82,24 +82,22 @@ void rhoLinT(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, double ralp
 void rhoLinTS(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Field<FLDARRAY> &S,
 	double ralpha, double rbeta, double rau0) {
 /*
-	linear equation of state function of temperature and salinity
-		rdn(t,s)  = ( rho(t,s) - rau0 ) / rau0  = rbeta * s - ralpha * tn - 1.
-		rhop(t,s) = rho(t,s)
+	Atmosphere, Ocean and Climate Dynamics, Marshall & Plumb
 
-	from OGSTM PHYS/eos.f90
+	Equation of state eq. (9-5)
 */
 	// Loop the mesh
 	#pragma omp parallel
 	{
 	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
-		// Possibly check!!
-		double rdn = rbeta*S[ii][0] - ralpha*T[ii][0] - 1.; // Density anomaly
+		double rdn = rbeta*S[ii][0] - ralpha*T[ii][0];
 		rho[ii][0] = rau0*rdn + rau0;
 	}
 	}	
 }
 
-void rhoJMD94(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Field<FLDARRAY> &S, v3::V3v &xyz) {
+void rhoJMD94(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, 
+	field::Field<FLDARRAY> &S, v3::V3v &xyz, bool useDepth) {
 /*
 	Jackett and McDougall (1994) equation of state.
 */
@@ -112,7 +110,7 @@ void rhoJMD94(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fie
 		double zs = S[ii][0];
 
 		// depth
-		double zh = -xyz[ii][2]; // since depth are negative in z
+		double zh = (useDepth) ? -xyz[ii][2] : 0.; // since depth are negative in z
 
 		// square root salinity
 		double zsr = sqrt( fabs( zs ) );
@@ -149,7 +147,8 @@ void rhoJMD94(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fie
 	}	
 }
 
-void rhoJAOT12(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Field<FLDARRAY> &S, v3::V3v &xyz) {
+void rhoJAOT12(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, 
+	field::Field<FLDARRAY> &S, v3::V3v &xyz, bool useDepth) {
 /*
 	Density of Sea Water using the Jackett and McDougall 1995 (JAOT 12) polynomial
 */	
@@ -186,7 +185,7 @@ void rhoJAOT12(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fi
 					    + eosJMDCSw[8]*POW2(S[ii][0]);
 		
 		// pressure
-		double P = Z2P(xyz[ii][2]); // bar
+		double P = (useDepth) ? Z2P(xyz[ii][2]) : 0.; // bar
 
 		// secant bulk modulus of fresh water at the surface
 		double bulkmod = eosJMDCKFw[0]
@@ -226,7 +225,8 @@ void rhoJAOT12(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fi
 	}
 }
 
-void rhoJAOT20(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Field<FLDARRAY> &S, v3::V3v &xyz) {
+void rhoJAOT20(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, 
+	field::Field<FLDARRAY> &S, v3::V3v &xyz, bool useDepth) {
 /*
 	Density of Sea Water using McDougall et al. 2003 (JAOT 20) polynomial
 */	
@@ -240,7 +240,7 @@ void rhoJAOT20(field::Field<FLDARRAY> &rho, field::Field<FLDARRAY> &T, field::Fi
 	{
 	for (int ii=OMP_THREAD_NUM; ii<rho.get_n(); ii+=OMP_NUM_THREADS) {
 		// pressure
-		double P = 10.*Z2P(xyz[ii][2]); // dbar
+		double P = (useDepth) ? 10.*Z2P(xyz[ii][2]) : 0.; // dbar
 
 		double sp5  = sqrt(S[ii][0]);
 		double p1t1 = P*T[ii][0];
@@ -264,6 +264,7 @@ vtkOGSDensity::vtkOGSDensity() {
 	this->Tarrname = NULL;
 	this->Sarrname = NULL;
 	this->method   = 0;
+	this->useDepth = true;
 	this->rau0     = 1020.;
 	this->ralpha   = 2.e-4;
 	this->rbeta    = 0.001;
@@ -383,19 +384,19 @@ int vtkOGSDensity::RequestData(vtkInformation *vtkNotUsed(request),
 		case 2: // JMD 94
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
-				rhoJMD94(rho,T,S,xyz);
+				rhoJMD94(rho,T,S,xyz,this->useDepth);
 			}
 			break;
 		case 3: // JAOT 12
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
-				rhoJAOT12(rho,T,S,xyz);
+				rhoJAOT12(rho,T,S,xyz,this->useDepth);
 			}
 			break;
 		case 4: // JAOT 20
 			{
 				v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(input,dfact) : VTK::getVTKCellPoints(input,dfact);
-				rhoJAOT20(rho,T,S,xyz);
+				rhoJAOT20(rho,T,S,xyz,this->useDepth);
 			}
 			break;
 		case 5: // TEOS10
