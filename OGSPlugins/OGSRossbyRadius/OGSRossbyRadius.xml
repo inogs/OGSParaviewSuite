@@ -1,0 +1,132 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+
+   <SourceProxy name="OGSRossbyRadius" 
+                class="vtkOGSRossbyRadius" 
+                label="OGS Rossby Radius">
+     <Documentation
+        long_help="This filter computes the external and internal Rossby radius."
+        short_help="Computes the Rossby radius.">
+        This filter computes the external and internal given a section of the mesh,
+        basin, coast or the whole Mediterranean Sea.
+     </Documentation>
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkRectilinearGrid"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+      <!-- BEGIN EXPOSED PROPERTIES -->
+      
+      <!-- dT 
+      <DoubleVectorProperty name="dT"
+                            label="Temperature difference: "
+                            command="SetdT"
+                            animateable="1"
+                            default_values="0.2"
+                            number_of_elements="1">
+        <Documentation>
+          Temperature difference.
+        </Documentation>
+      </DoubleVectorProperty>
+-->
+      <!-- Use Density 
+      <IntVectorProperty name="UseDensity"
+                        label="Use Density"
+                        command="SetuseDensity"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 1, the density will be used
+          to compute the MLD.
+        </Documentation>
+      </IntVectorProperty>
+-->
+      <!-- drho 
+      <DoubleVectorProperty name="drho"
+                            label="Temperature difference: "
+                            command="Setdrho"
+                            animateable="1"
+                            default_values="0.03"
+                            number_of_elements="1">
+        <Documentation>
+          Density difference.
+        </Documentation>
+      </DoubleVectorProperty>
+-->
+      <!-- Zref 
+      <DoubleVectorProperty name="zref"
+                            label="Reference depth: "
+                            command="Setzref"
+                            animateable="1"
+                            default_values="10."
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Reference depth.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="MLD parameters">
+        <Property name="dT"/>
+        <Property name="UseDensity"/>
+        <Property name="drho"/>
+        <Property name="zref"/>
+      </PropertyGroup>
+-->
+      <!-- Name of coast mask array -->
+      <StringVectorProperty name="mask_field"
+                           label="Coast mask: "
+                           command="Setmask_field"
+                           animateable="1"
+                           default_values="coast mask"
+                           number_of_elements="1"
+                           panel_visibility="advanced">
+         <ArrayListDomain name="array_list"
+                          attribute_type="Scalars"
+          input_domain_name="inputs_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input" />
+          </RequiredProperties>
+         </ArrayListDomain>
+         <Documentation>
+            Name of the coast mask field
+         </Documentation>
+      </StringVectorProperty>
+
+      <!-- Tolerance -->
+      <DoubleVectorProperty name="Tolerance"
+                            label="Tolerance: "
+                            command="Setepsi"
+                            animateable="1"
+                            default_values="0.001"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Tolerance for finding the different depth levels.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="Other parameters">
+        <Property name="mask_field"/>
+        <Property name="Tolerance"/>
+      </PropertyGroup>
+
+      <!-- END EXPOSED PROPERTIES -->
+      
+      <Hints>
+        <Visibility replace_input="1" />
+        <ShowInMenu category="OGS" />
+        <RepresentationType view="RenderView" type="Surface" />
+      </Hints>
+   </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>
