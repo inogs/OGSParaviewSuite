@@ -102,7 +102,7 @@ namespace field
 					inline iterator(Field<T>* ff, int ii) : f(ff), i(ii) {}
 
 					inline       pointer   operator*()            { return (*f)[i]; }
-					inline const pointer   operator*() const      { return (*f)[i]; }
+					inline       pointer   operator*() const      { return (*f)[i]; }
 					inline       reference operator[](int j)      { return (*f)[i][j]; }
 					inline       reference operator[](int j)const { return (*f)[i][j]; }
 
