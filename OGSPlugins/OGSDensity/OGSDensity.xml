@@ -23,6 +23,18 @@
 
      <!-- BEGIN EXPOSED PROPERTIES -->
 
+     <!-- In-situ -->
+     <IntVectorProperty name="UseDepth"
+                        label="Use In-situ"
+                        command="SetuseDepth"
+                        number_of_elements="1"
+                        default_values="1">
+       <BooleanDomain name="bool"/>
+       <Documentation>
+         If this property is set to 1, use in-situ density.
+       </Documentation>
+     </IntVectorProperty>
+
      <!-- Mode of operation -->
      <IntVectorProperty name="method"
                         label="Method"
@@ -80,20 +92,6 @@
        </Documentation>
      </StringVectorProperty>
 
-     <!-- Use Depth -->
-     <IntVectorProperty name="UseDepth"
-                        label="Use Depth"
-                        command="SetuseDepth"
-                        number_of_elements="1"
-                        default_values="1"
-                        panel_visibility="advanced">
-       <BooleanDomain name="bool"/>
-       <Documentation>
-         If this property is set to 1, depth will be used in
-         the computation of the equation of state when needed.
-       </Documentation>
-     </IntVectorProperty>
-
      <!-- Density base value -->
      <DoubleVectorProperty name="rau0"
                            label="Density base value: "
@@ -131,7 +129,6 @@
      </DoubleVectorProperty>
 
      <PropertyGroup label="Linear method parameters">
-       <Property name="UseDepth"/>
        <Property name="rau0"/>
        <Property name="ralpha"/>
        <Property name="rbeta"/>
