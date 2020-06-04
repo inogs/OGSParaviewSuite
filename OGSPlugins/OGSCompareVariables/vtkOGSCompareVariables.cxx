@@ -27,16 +27,6 @@
 #include <sstream>
 #include <vector>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#define OMP_NUM_THREADS omp_get_num_threads()
-#define OMP_THREAD_NUM  omp_get_thread_num()
-#else
-#define OMP_NUM_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
 vtkCxxSetObjectMacro(vtkOGSCompareVariables, Controller, vtkMultiProcessController);
@@ -45,7 +35,6 @@ vtkCxxSetObjectMacro(vtkOGSCompareVariables, Controller, vtkMultiProcessControll
 vtkStandardNewMacro(vtkOGSCompareVariables);
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 #include "field.h"
 #include "vtkFields.h"

@@ -36,7 +36,6 @@
 
 #include <vtksys/SystemTools.hxx>
 
-
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
 vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
@@ -45,7 +44,6 @@ vtkCxxSetObjectMacro(vtkOGSReader, Controller, vtkMultiProcessController);
 vtkStandardNewMacro(vtkOGSReader);
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 #include "field.h"
 #include "fieldOperations.h"

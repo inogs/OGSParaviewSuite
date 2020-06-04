@@ -51,7 +51,6 @@ vtkCxxSetObjectMacro(vtkOGSSpaghetti, Controller, vtkMultiProcessController);
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 #include "vtkFields.h"
 #include "netcdfio.h"
@@ -333,8 +332,8 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 		Initialize arrays.
 
 	*/
-	std::string FileName;
-	int cellList, projId = 0;
+	std::string FileName, projName;
+	int cellList;
 	vtkStringArray *vtkmetadata;
 
 	#ifdef PARAVIEW_USE_MPI
@@ -345,7 +344,7 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 		// Recover metadata array
 		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 		// Recover projection Id
-		projId = std::stod( vtkmetadata->GetValue(7) );
+		projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
 		cellList = ComputeCellId(input,source);
 		// Recover the master file name from source
@@ -354,13 +353,14 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 
 	// Broadcast the information to all other threads if applicable
 	if (this->nProcs > 1) {
+		char buff[128] = "";
 		// Broadcast projection ID
-		this->Controller->Broadcast(&projId,1,0);
+		sprintf(buff,"%s",projName.c_str());
+		this->Controller->Broadcast(buff,projName.length(),0);
+		projName = std::string(buff);
 		// Broadcast master file name
-		int str_len = FileName.length();
-		this->Controller->Broadcast(&str_len,1,0);
-		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str());
-		this->Controller->Broadcast(buff,str_len,0);
+		sprintf(buff,"%s",FileName.c_str());
+		this->Controller->Broadcast(buff,FileName.length(),0);
 		FileName = std::string(buff);
 		// Broadcast cellList
 		this->Controller->Broadcast(&cellList,1,0);
@@ -371,8 +371,7 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 	// Recover metadata array
 	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 	// Recover projection Id
-	projId = std::stod( vtkmetadata->GetValue(7) );
-
+	projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
 	// This is the normal non-parallel algorithm
 	cellList = ComputeCellId(input,source);
 	RecoverMasterFileName(FileName, source);
@@ -384,6 +383,12 @@ int vtkOGSSpaghetti::Spaghetti3DDataset(vtkDataSet *input, vtkDataSet *source, v
 	if (ogsdata.readMainFile() == -1) { 
 		vtkErrorMacro("Cannot read <"<<FileName<<">!\nAborting");
 		return 0;
+	}
+
+	// Obtain the projection index
+	int projId = 0;
+	for (int ii = 0; ii < ogsdata.n_projs(); ++ii) {
+		if (ogsdata.projection(ii) == projName) { projId = ii; break; }
 	}
 
 	// Read the mesh data (necessary to load the files)
@@ -548,6 +553,7 @@ int vtkOGSSpaghetti::SpaghettiAverage(int ntsteps, vtkDataSet *input, vtkDataSet
 
 		this->isReqInfo = false;
 		
+printf("kkk <%s>\n",vtkmetadata->GetValue(2).c_str()); fflush(stdout);
 		this->dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
 		
 		if (vtkmetadata == NULL) 

@@ -51,7 +51,6 @@ vtkCxxSetObjectMacro(vtkOGSHovmoeller, Controller, vtkMultiProcessController);
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 
 #include "vtkFields.h"
@@ -300,9 +299,8 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		Initialize arrays.
 
 	*/
-	std::string FileName;
+	std::string FileName, projName;
 	std::vector<int> cellList;
-	int projId = 0;
 	vtkStringArray *vtkmetadata;
 
 	#ifdef PARAVIEW_USE_MPI
@@ -313,7 +311,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		// Recover metadata array
 		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 		// Recover projection Id
-		projId = std::stod( vtkmetadata->GetValue(7) );
+		projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
 		ComputeCellIds(cellList,input,source);
 		// Recover the master file name from source
@@ -322,13 +320,14 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 
 	// Broadcast the information to all other threads if applicable
 	if (this->nProcs > 1) {
+		char buff[128] = "";
 		// Broadcast projection ID
-		this->Controller->Broadcast(&projId,1,0);
+		sprintf(buff,"%s",projName.c_str());
+		this->Controller->Broadcast(buff,projName.length(),0);
+		projName = std::string(buff);
 		// Broadcast master file name
-		int str_len = FileName.length();
-		this->Controller->Broadcast(&str_len,1,0);
-		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str());
-		this->Controller->Broadcast(buff,str_len,0);
+		sprintf(buff,"%s",FileName.c_str());
+		this->Controller->Broadcast(buff,FileName.length(),0);
 		FileName = std::string(buff);
 		// Broadcast cellList
 		int cellList_len = cellList.size();
@@ -342,7 +341,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 	// Recover metadata array
 	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
 	// Recover projection Id
-	projId = std::stod( vtkmetadata->GetValue(7) );
+	projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
 
 	// This is the normal non-parallel algorithm
 	ComputeCellIds(cellList,input,source);
@@ -355,6 +354,12 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 	if (ogsdata.readMainFile() == -1) { 
 		vtkErrorMacro("Cannot read <"<<FileName<<">!\nAborting");
 		return 0;
+	}
+
+	// Obtain the projection index
+	int projId = 0;
+	for (int ii = 0; ii < ogsdata.n_projs(); ++ii) {
+		if (ogsdata.projection(ii) == projName) { projId = ii; break; }
 	}
 
 	// Read the mesh data (necessary to load the files)

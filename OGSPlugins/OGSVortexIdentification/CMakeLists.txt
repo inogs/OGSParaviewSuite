@@ -10,13 +10,14 @@ include(./../OGSPlugins.cmake)
 #--------------------------------------------------
 # Libraries
 #--------------------------------------------------
-include(${UTILS}) # UTILS detection
+include(${UTILS})  # UTILS detection
+include(${LAPACK}) # LAPACK detection
 
 #--------------------------------------------------
 # ParaView plugin
 #--------------------------------------------------
-add_paraview_plugin(OGSSpaghetti "1.0"
-  SERVER_MANAGER_XML     OGSSpaghetti.xml
-  SERVER_MANAGER_SOURCES ${VTKFIELDS} ${OGS} ${OPS} vtkOGSSpaghetti.cxx
+add_paraview_plugin(OGSVortexIndentification "1.0"
+  SERVER_MANAGER_XML     OGSVortexIndentification.xml
+  SERVER_MANAGER_SOURCES ${VTKOPS} vtkOGSComputeOkuboWeiss.cxx vtkOGSComputeQCriterion.cxx vtkOGSComputeLambda2Criterion.cxx vtkOGSComputeOmegaCriterion.cxx vtkOGSComputeRortexCriterion.cxx
   REQUIRED_ON_SERVER
 )

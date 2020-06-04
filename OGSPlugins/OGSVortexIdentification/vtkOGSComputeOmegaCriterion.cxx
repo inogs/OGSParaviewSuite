@@ -1,7 +1,7 @@
 /*=========================================================================
 
-  Program:   OGSComputeRortexCriterion
-  Module:    vtkOGSComputeRortexCriterion.cxx
+  Program:   OGSComputeOmegaCriterion
+  Module:    vtkOGSComputeOmegaCriterion.cxx
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -26,43 +26,28 @@
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOGSComputeRortexCriterion.h"
+#include "vtkOGSComputeOmegaCriterion.h"
 
 #include "vtkObjectFactory.h"
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#define OMP_MAX_THREADS omp_get_max_threads()
-#define OMP_THREAD_NUM  omp_get_thread_num()
-#else
-#define OMP_MAX_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSComputeRortexCriterion, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSComputeOmegaCriterion, Controller, vtkMultiProcessController);
 #endif
 
-vtkStandardNewMacro(vtkOGSComputeRortexCriterion);
+vtkStandardNewMacro(vtkOGSComputeOmegaCriterion);
 
 //----------------------------------------------------------------------------
-
 // V3.h and field.h defined in vtkOGSDerivatives.h
 #include "macros.h"
-#include "matrixMN.h"
 #include "fieldOperations.h"
 #include "vtkFields.h"
 #include "vtkOperations.h"
 
-lapack_logical sortfun(const double *ER, const double *EI) { return(*EI != 0); }
-
 //----------------------------------------------------------------------------
-vtkOGSComputeRortexCriterion::vtkOGSComputeRortexCriterion() {
+vtkOGSComputeOmegaCriterion::vtkOGSComputeOmegaCriterion() {
 	this->field     = NULL;
 	this->grad_type = 0;
-	this->coef      = 0.2;
 	this->epsi      = 1.e-3;
 	this->nProcs    = 0;
 	this->procId    = 0;
@@ -74,7 +59,7 @@ vtkOGSComputeRortexCriterion::vtkOGSComputeRortexCriterion() {
 }
 
 //----------------------------------------------------------------------------
-vtkOGSComputeRortexCriterion::~vtkOGSComputeRortexCriterion() {
+vtkOGSComputeOmegaCriterion::~vtkOGSComputeOmegaCriterion() {
 	this->Setfield(NULL);
 
 	#ifdef PARAVIEW_USE_MPI
@@ -83,7 +68,7 @@ vtkOGSComputeRortexCriterion::~vtkOGSComputeRortexCriterion() {
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeRortexCriterion::RequestInformation(vtkInformation* vtkNotUsed(request),
+int vtkOGSComputeOmegaCriterion::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
 	/* SET UP THE PARALLEL CONTROLLER
@@ -107,7 +92,7 @@ int vtkOGSComputeRortexCriterion::RequestInformation(vtkInformation* vtkNotUsed(
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request),
+int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
@@ -192,7 +177,7 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 
 	// Loop on the 3D mesh and compute the Q criterion also new scalar arrays 
 	// to store the values for the weights and the mean
-	field::Field<FLDARRAY> Rortex(array.get_n(),3,0.), Omega(array.get_n(),1,0.), aux(array.get_n(),1,0.),  stats(3,OMP_MAX_THREADS,0.);
+	field::Field<FLDARRAY> Omega(array.get_n(),1,0.), aux(array.get_n(),1,0.);
 	FLDARRAY eps = 0.;
 
 	this->UpdateProgress(0.1);
@@ -215,103 +200,48 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 				}
 
 				// Compute the gradient
-				matMN::matrixMN<FLDARRAY> deri(3,0.);
+				FLDARRAY deri[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 				switch (this->grad_type) {
 					case 0: // Second order, face centered gradient
 							// This gradient is unsafe as it relies on the mesh projection
-						field::gradXYZ2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri.data());
+						field::gradXYZ2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri);
 						break;
 					case 1: // Fourth order, face centered gradient
 							// This gradient is unsafe as it relies on the mesh projection
-						field::gradXYZ4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri.data());
+						field::gradXYZ4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri);
 						break;
 					case 2:	// OGSTM-BFM approach according to the NEMO handbook
 							// This gradient is safe as it relies on the code implementation
-						field::gradOGS1_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
+						field::gradOGS1_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
 						break;
 					case 3:	// 2nd order OGSTM-BFM approach
 							// This gradient is experimental
-						field::gradOGS2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
+						field::gradOGS2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
 						break;
 					case 4:	// 4th order OGSTM-BFM approach
 							// This gradient is experimental
-						field::gradOGS4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
+						field::gradOGS4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
 						break;
 				}
+				// Directly compute a and b
+				aux[ind][0]   = 0.5*(deri[1] + deri[3])*(deri[1] + deri[3]) + 
+								0.5*(deri[2] + deri[6])*(deri[2] + deri[6]) +
+								0.5*(deri[5] + deri[7])*(deri[5] + deri[7]) +
+								deri[0]*deri[0] + deri[4]*deri[4] + deri[8]*deri[8]; // a (Frobenius norm squared)
+				Omega[ind][0] = 0.5*(deri[1] - deri[3])*(deri[1] - deri[3]) + 
+								0.5*(deri[2] - deri[6])*(deri[2] - deri[6]) +
+								0.5*(deri[5] - deri[7])*(deri[5] - deri[7]); // b (Frobenius norm squared)
 
-				// Rortex computation
-				matMN::matrixMN<FLDARRAY> A(3,0.), S(3,0.), Q(3,0.);
-
-				A = deri.t();
-				S = A.schur('S',sortfun,Q); // schur sorting eigenvalues
-
-				// det(Q) can only be 1 or -1
-				A = S.t(); // Rewrite A as grad(V)
-				if (Q.det() > 0) {
-					Q = Q.t(); // Rewrite Q
-				} else { // Q.det() < 0
-					FLDARRAY Rval[] = {1,0,0,0,1,0,0,0,-1};
-					matMN::matrixMN<FLDARRAY> Rmat(3,Rval);
-					Q = Rmat^Q.t();               // Rewrite Q
-					A[2][0] *= -1; A[2][1] *= -1; // Rewrite A as grad(V)
-				}
-
-				// alpha and beta
-				FLDARRAY alpha = 0.5*std::sqrt( 
-					(A[1][1]-A[0][0])*(A[1][1]-A[0][0]) + (A[1][0]+A[0][1])*(A[1][0]+A[0][1]) );
-				FLDARRAY beta  = 0.5*(A[1][0]-A[0][1]);
-
-				// Rortex magnitude
-				FLDARRAY Rm = 0.;
-				if ( (beta*beta - alpha*alpha) > 0. )
-					Rm = (beta > 0.) ? 2*(beta-alpha) : 2*(beta+alpha);
-				Rortex[ind][0] = Rm*Q[2][0];
-				Rortex[ind][1] = Rm*Q[2][1];
-				Rortex[ind][2] = Rm*Q[2][2];
-
-				// Omega Rortex
-				aux[ind][0]   = alpha*alpha;
-				Omega[ind][0] = beta*beta; 
-
-				// Store the maximum of (beta - alpha)
+				// Store the maximum of (b - a)
 				FLDARRAY ba_aux = Omega[ind][0] - aux[ind][0];
 				eps = (ba_aux > eps) ? ba_aux : eps;
-
-				// Compute the statistics
-				int        tId = OMP_THREAD_NUM;        // Which thread are we
-				FLDARRAY     w = e1[ind][0]*e2[ind][0]; // Weight
-				FLDARRAY m_old = stats[1][tId];         // Mean Old
-
-				stats[0][tId] += w;                                    // sum(weight)
-				stats[1][tId] += w/stats[0][tId]*(Rm - stats[1][tId]); // accumulate mean
-				stats[2][tId] += w*(Rm - m_old)*(Rm - stats[1][tId]);  // accumulate std deviation
 			}
 		}
 	}
 	eps *= this->epsi;
 
-	// stats is a shared array containing the statistics per each thread. We must now
-	// reduce to obtain the mean and standard deviation
-	FLDARRAY sum_weights = 0., R_mean = 0., R_std = 0.;
-	for (int ii = 0; ii < OMP_MAX_THREADS; ++ii) {
-		FLDARRAY sum_weights_old = sum_weights;
-		// Weights
-		sum_weights += stats[0][ii];
-		// Mean
-		R_mean = (sum_weights_old*R_mean + stats[0][ii]*stats[1][ii])/sum_weights;
-		// Standard deviation
-		FLDARRAY delta = stats[1][ii] - R_mean;
-		R_std += stats[2][ii] + delta*delta*sum_weights_old*stats[0][ii]/sum_weights;
-	}
-	R_std = this->coef*sqrt(R_std/sum_weights);
-
 	this->UpdateProgress(0.5);
-
-	// Now that we have the standard deviation, we can work out the OmegaR
-	// and the Rortex mask
-	field::Field<FLDMASK> Rmask(array.get_n(),1,(FLDMASK)(0));
-
 
 	if (this->use_modified_Omega) {
 		// Set the value of Omega
@@ -334,9 +264,6 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 					// Modified Omega = (b + eps)/(a+b+2eps)
 					Omega[ind][0] += eps;
 					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + 2.*eps);
-					// Set the values of the mask
-					FLDARRAY Rmod = sqrt(Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2]);
-					if (Rmod > R_std) Rmask[ind][0] = (FLDMASK)(1); // Vorticity-dominated flow
 				}
 			}
 		}
@@ -358,11 +285,8 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 						}
 						if (skip_ind) continue;
 					}
-					// Omega = (b)/(a+b+eps)
+
 					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + eps);
-					// Set the values of the mask
-					FLDARRAY Rmod = sqrt(Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2]);
-					if (Rmod > R_std) Rmask[ind][0] = (FLDMASK)(1); // Vorticity-dominated flow
 				}
 			}
 		}
@@ -371,15 +295,11 @@ int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request
 	this->UpdateProgress(0.9);
 		
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Rortex",Rortex);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Omega_criterion",Omega);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("OmegaR_criterion",Omega);
-	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
-	vtkMask  = VTK::createVTKfromField<VTKMASK,FLDMASK>("Rortex mask",Rmask);
-	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
 	// Make "Omega_criterion" as the active scalar
-	output->GetCellData()->SetActiveScalars("OmegaR_criterion");
+	output->GetCellData()->SetActiveScalars("Omega_criterion");
 
 	// Copy the input grid
 	this->UpdateProgress(1.);

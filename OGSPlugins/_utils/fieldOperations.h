@@ -23,8 +23,7 @@
 #include <vector>
 #include <cstdio>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
+#ifdef USE_OMP
 #include <omp.h>
 #endif
 
@@ -32,7 +31,6 @@
 
 namespace field
 {
-
 	/* UVW2T
 
 		Projection of a face centered array to a cell centered array. Useful

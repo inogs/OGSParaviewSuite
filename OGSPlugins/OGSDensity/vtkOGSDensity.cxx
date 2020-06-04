@@ -27,16 +27,6 @@
 #include <sstream>
 #include <vector>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#define OMP_NUM_THREADS omp_get_num_threads()
-#define OMP_THREAD_NUM  omp_get_thread_num()
-#else
-#define OMP_NUM_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
 #define POW2(x) (x)*(x)
 #define POW3(x) (x)*(x)*(x)
 #define POW4(x) (x)*(x)*(x)*(x)
@@ -52,7 +42,6 @@ vtkCxxSetObjectMacro(vtkOGSDensity, Controller, vtkMultiProcessController);
 vtkStandardNewMacro(vtkOGSDensity);
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 #include "V3.h"
 #include "field.h"

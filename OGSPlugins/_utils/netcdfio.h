@@ -24,8 +24,8 @@
 #include <vector>
 #include <string>
 
-#define NETCDF_ERR 0
-#define NETCDF_OK  1
+#define NETCDF_ERR    0
+#define NETCDF_OK     1
 #define MISSING_VALUE 1.e20
 
 namespace NetCDF

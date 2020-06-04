@@ -25,19 +25,17 @@
 
 #include <string>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
+#ifdef USE_OMP
 #include <omp.h>
 #endif
 
 #include "field.h"
 
-#define CLLIND(ii,jj,kk,nx,ny)          ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
-#define PNTIND(ii,jj,kk,nx,ny)          ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
+#define CLLIND(ii,jj,kk,nx,ny)  ( (nx-1)*(ny-1)*(kk) + (nx-1)*(jj) + (ii) )
+#define PNTIND(ii,jj,kk,nx,ny)  ( (nx)*(ny)*(kk) + (nx)*(jj) + (ii) )
 
 namespace VTK
 {
-
 	/* CREATEVTKFROMFIELD
 		
 		Creates a vtk array from a field given the array name.

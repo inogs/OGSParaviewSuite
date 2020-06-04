@@ -1,7 +1,7 @@
 /*=========================================================================
 
-  Program:   OGSComputeOmegaCriterion
-  Module:    vtkOGSComputeOmegaCriterion.cxx
+  Program:   OGSComputeLambda2Criterion
+  Module:    vtkOGSComputeLambda2Criterion.cxx
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -26,35 +26,31 @@
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOGSComputeOmegaCriterion.h"
+#include "vtkOGSComputeLambda2Criterion.h"
 
 #include "vtkObjectFactory.h"
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#endif
+#include <algorithm>
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSComputeOmegaCriterion, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSComputeLambda2Criterion, Controller, vtkMultiProcessController);
 #endif
 
-vtkStandardNewMacro(vtkOGSComputeOmegaCriterion);
+vtkStandardNewMacro(vtkOGSComputeLambda2Criterion);
 
 //----------------------------------------------------------------------------
-
 // V3.h and field.h defined in vtkOGSDerivatives.h
 #include "macros.h"
+#include "matrixMN.h"
 #include "fieldOperations.h"
 #include "vtkFields.h"
 #include "vtkOperations.h"
 
 //----------------------------------------------------------------------------
-vtkOGSComputeOmegaCriterion::vtkOGSComputeOmegaCriterion() {
+vtkOGSComputeLambda2Criterion::vtkOGSComputeLambda2Criterion() {
 	this->field     = NULL;
 	this->grad_type = 0;
-	this->epsi      = 1.e-3;
 	this->nProcs    = 0;
 	this->procId    = 0;
 
@@ -65,16 +61,16 @@ vtkOGSComputeOmegaCriterion::vtkOGSComputeOmegaCriterion() {
 }
 
 //----------------------------------------------------------------------------
-vtkOGSComputeOmegaCriterion::~vtkOGSComputeOmegaCriterion() {
+vtkOGSComputeLambda2Criterion::~vtkOGSComputeLambda2Criterion() {
 	this->Setfield(NULL);
-
+	
 	#ifdef PARAVIEW_USE_MPI
 		this->SetController(NULL);	
 	#endif
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeOmegaCriterion::RequestInformation(vtkInformation* vtkNotUsed(request),
+int vtkOGSComputeLambda2Criterion::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
 	/* SET UP THE PARALLEL CONTROLLER
@@ -93,27 +89,27 @@ int vtkOGSComputeOmegaCriterion::RequestInformation(vtkInformation* vtkNotUsed(r
 	if (this->procId > 0) return 1;
 	#endif
 
-  	this->isReqInfo = true;
-  	return 1;
+	this->isReqInfo = true;
+	return 1;
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request),
+int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
-
-	// Stop all threads except from the master to execute
-	#ifdef PARAVIEW_USE_MPI
-	if (this->procId > 0) return 1;
-	#endif
 
 	// Get the input and output
 	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
 	vtkRectilinearGrid *output = vtkRectilinearGrid::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	output->ShallowCopy(input);
 
@@ -183,12 +179,11 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 
 	// Loop on the 3D mesh and compute the Q criterion also new scalar arrays 
 	// to store the values for the weights and the mean
-	field::Field<FLDARRAY> Omega(array.get_n(),1,0.), aux(array.get_n(),1,0.);
-	FLDARRAY eps = 0.;
+	field::Field<FLDARRAY> Lambda2(array.get_n(),1,0.);
 
 	this->UpdateProgress(0.1);
 
-	#pragma omp parallel for collapse(3) reduction(max:eps)
+	#pragma omp parallel for collapse(3)
 	for (int kk = 0; kk < nz-1; ++kk) {
 		for (int jj = 0; jj < ny-1; ++jj) {
 			for (int ii = 0; ii < nx-1; ++ii) {
@@ -206,106 +201,55 @@ int vtkOGSComputeOmegaCriterion::RequestData(vtkInformation *vtkNotUsed(request)
 				}
 
 				// Compute the gradient
-				FLDARRAY deri[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
+				matMN::matrixMN<FLDARRAY> deri(3,0.);
 
 				switch (this->grad_type) {
 					case 0: // Second order, face centered gradient
 							// This gradient is unsafe as it relies on the mesh projection
-						field::gradXYZ2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri);
+						field::gradXYZ2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri.data());
 						break;
 					case 1: // Fourth order, face centered gradient
 							// This gradient is unsafe as it relies on the mesh projection
-						field::gradXYZ4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri);
+						field::gradXYZ4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,this->xyz,array,deri.data());
 						break;
 					case 2:	// OGSTM-BFM approach according to the NEMO handbook
 							// This gradient is safe as it relies on the code implementation
-						field::gradOGS1_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
+						field::gradOGS1_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
 						break;
 					case 3:	// 2nd order OGSTM-BFM approach
 							// This gradient is experimental
-						field::gradOGS2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
+						field::gradOGS2_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
 						break;
 					case 4:	// 4th order OGSTM-BFM approach
 							// This gradient is experimental
-						field::gradOGS4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri);
+						field::gradOGS4_ijk(ii,jj,kk,nx-1,ny-1,nz-1,array,e1,e2,e3,deri.data());
 						break;
 				}
-				// Directly compute a and b
-				aux[ind][0]   = 0.5*(deri[1] + deri[3])*(deri[1] + deri[3]) + 
-								0.5*(deri[2] + deri[6])*(deri[2] + deri[6]) +
-								0.5*(deri[5] + deri[7])*(deri[5] + deri[7]) +
-								deri[0]*deri[0] + deri[4]*deri[4] + deri[8]*deri[8]; // a (Frobenius norm squared)
-				Omega[ind][0] = 0.5*(deri[1] - deri[3])*(deri[1] - deri[3]) + 
-								0.5*(deri[2] - deri[6])*(deri[2] - deri[6]) +
-								0.5*(deri[5] - deri[7])*(deri[5] - deri[7]); // b (Frobenius norm squared)
 
-				// Store the maximum of (b - a)
-				FLDARRAY ba_aux = Omega[ind][0] - aux[ind][0];
-				eps = (ba_aux > eps) ? ba_aux : eps;
+				// Compute S, O and R matrices
+				matMN::matrixMN<FLDARRAY> A = 0.5*(deri + deri.t()); // A /= std::sqrt(A.norm2());
+				matMN::matrixMN<FLDARRAY> B = 0.5*(deri - deri.t()); // B /= std::sqrt(B.norm2());
+				matMN::matrixMN<FLDARRAY> C = (A^A) + (B^B);         // Dot product
+
+				// Compute the eigenvalues and eigenvectors of R
+				FLDARRAY wr[3] = {0.,0.,0.}, wi[3] = {0.,0.,0.};
+				C.eigen(wr,wi);
+				// Sort in ascending order (l2 will always be in the middle)
+				std::sort(wr,wr+3);
+
+				// Store Lambda2
+				Lambda2[ind][0] = wr[1];
 			}
 		}
 	}
-	eps *= this->epsi;
-
-	this->UpdateProgress(0.5);
-
-	if (this->use_modified_Omega) {
-		// Set the value of Omega
-		#pragma omp parallel for collapse(3)
-		for (int kk = 0; kk < nz-1; kk++) {
-			for(int jj = 0; jj < ny-1; jj++){
-				for (int ii = 0; ii < nx-1; ii++) {
-					// Compute current point
-					int ind = CLLIND(ii,jj,kk,nx,ny);
-
-					// Use the mask to determine whether we are in the sea or not
-					// to improve the averaging
-					if (!mask.isempty()) {
-						bool skip_ind = true;
-						for (int ii = 0; ii < mask.get_m(); ++ii) {
-							if (mask[ind][ii] > 0) {skip_ind = false; break;}
-						}
-						if (skip_ind) continue;
-					}
-					// Modified Omega = (b + eps)/(a+b+2eps)
-					Omega[ind][0] += eps;
-					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + 2.*eps);
-				}
-			}
-		}
-	} else {
-		// Set the value of Omega
-		#pragma omp parallel for collapse(3)
-		for (int kk = 0; kk < nz-1; kk++) {
-			for(int jj = 0; jj < ny-1; jj++){
-				for (int ii = 0; ii < nx-1; ii++) {
-					// Compute current point
-					int ind = CLLIND(ii,jj,kk,nx,ny);
-
-					// Use the mask to determine whether we are in the sea or not
-					// to improve the averaging
-					if (!mask.isempty()) {
-						bool skip_ind = true;
-						for (int ii = 0; ii < mask.get_m(); ++ii) {
-							if (mask[ind][ii] > 0) {skip_ind = false; break;}
-						}
-						if (skip_ind) continue;
-					}
-
-					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + eps);
-				}
-			}
-		}
-	}
-
 	this->UpdateProgress(0.9);
 		
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Omega_criterion",Omega);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Lambda2_criterion",Lambda2);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
 
-	// Make "Omega_criterion" as the active scalar
-	output->GetCellData()->SetActiveScalars("Omega_criterion");
+	// Make "Lambda2_criterion" as the active scalar
+	output->GetCellData()->SetActiveScalars("Lambda2_criterion");
 
 	// Copy the input grid
 	this->UpdateProgress(1.);

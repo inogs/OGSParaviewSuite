@@ -33,16 +33,6 @@
 
 #include <string>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#define OMP_NUM_THREADS omp_get_num_threads()
-#define OMP_THREAD_NUM  omp_get_thread_num()
-#else
-#define OMP_NUM_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
 vtkStandardNewMacro(vtkOGSDepthProfile);
@@ -54,10 +44,6 @@ vtkCxxSetObjectMacro(vtkOGSDepthProfile, Controller, vtkMultiProcessController);
 #endif
 
 //----------------------------------------------------------------------------
-
-/*
-	Macro to set the array precision 
-*/
 #include "macros.h"
 #include "V3.h"
 #include "field.h"

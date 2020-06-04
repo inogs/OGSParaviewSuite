@@ -13,6 +13,11 @@
 
 =========================================================================*/
 
+#include "vtkFloatArray.h"
+#include "vtkDoubleArray.h"
+#include "vtkTypeUInt8Array.h"
+#include <cstdint>
+
 /* ARRAY PRECISION
 
 	The macros here define the array precision for all the
@@ -22,7 +27,30 @@
 		> FLDMASK:  Mask array precision (uint8_t = 8 byte)
 		> VTKMASK:  VTK mask array precision
 */
+
+#ifdef VTK_USE_DOUBLE
 #define FLDARRAY double
 #define VTKARRAY vtkDoubleArray
-#define FLDMASK uint8_t
-#define VTKMASK vtkTypeUInt8Array
+#else
+#define FLDARRAY float
+#define VTKARRAY vtkFloatArray
+#endif
+
+#define FLDMASK  uint8_t
+#define VTKMASK  vtkTypeUInt8Array
+
+/* OPENMP SUPPORT
+
+  Sets up macros for OpenMP parallelization.
+*/
+
+#ifdef USE_OMP
+#include <omp.h>
+#define OMP_THREAD_NUM  omp_get_thread_num()
+#define OMP_NUM_THREADS omp_get_num_threads()
+#define OMP_MAX_THREADS omp_get_max_threads()
+#else
+#define OMP_THREAD_NUM  0
+#define OMP_NUM_THREADS 1
+#define OMP_MAX_THREADS 1
+#endif

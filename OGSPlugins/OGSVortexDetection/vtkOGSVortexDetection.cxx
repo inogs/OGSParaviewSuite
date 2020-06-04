@@ -33,17 +33,6 @@
 
 #include <vector>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#define OMP_MAX_THREADS omp_get_max_threads()
-#define OMP_NUM_THREADS omp_get_num_threads()
-#define OMP_THREAD_NUM  omp_get_thread_num()
-#else
-#define OMP_MAX_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
 vtkCxxSetObjectMacro(vtkOGSVortexDetection, Controller, vtkMultiProcessController);
@@ -52,7 +41,6 @@ vtkCxxSetObjectMacro(vtkOGSVortexDetection, Controller, vtkMultiProcessControlle
 vtkStandardNewMacro(vtkOGSVortexDetection);
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 #include "field.h"
 #include "projection.h"
