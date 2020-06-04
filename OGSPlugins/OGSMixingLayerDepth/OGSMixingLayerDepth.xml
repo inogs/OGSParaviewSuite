@@ -51,7 +51,7 @@
 
       <!-- drho -->
       <DoubleVectorProperty name="drho"
-                            label="Temperature difference: "
+                            label="Density difference: "
                             command="Setdrho"
                             animateable="1"
                             default_values="0.03"
