@@ -17,6 +17,6 @@ include(${UTILS}) # UTILS detection
 #--------------------------------------------------
 add_paraview_plugin(OGSRossbyRadius "1.0"
   SERVER_MANAGER_XML     OGSRossbyRadius.xml
-  SERVER_MANAGER_SOURCES ${VTKFIELDS} ${OGS} vtkOGSRossbyRadius.cxx
+  SERVER_MANAGER_SOURCES ${OPS} vtkOGSRossbyRadius.cxx
   REQUIRED_ON_SERVER
 )
