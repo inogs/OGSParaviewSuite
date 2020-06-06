@@ -48,7 +48,33 @@ vtkStandardNewMacro(vtkOGSVortexDetection);
 #include "vtkOperations.h"
 
 //----------------------------------------------------------------------------
-std::vector<int> getConnectedPoints(vtkDataSet *mesh, int pointId) {
+typedef enum _MASK_TYPE {
+	NONE,
+	OKUBOWEISS,
+	QCRITERION,
+	RORTEX
+}MASK_TYPE;
+
+MASK_TYPE int2mask(const int imask) {
+	if (imask == 0) return OKUBOWEISS;
+	if (imask == 1) return QCRITERION;
+	if (imask == 2) return RORTEX;
+	return NONE;
+}
+
+MASK_TYPE str2mask(const char *mask) {
+	std::string strmask(mask);
+	std::transform(strmask.begin(), strmask.end(), strmask.begin(), ::tolower);
+	if (strmask == "qcriterion")  return QCRITERION;
+	if (strmask == "q-criterion") return QCRITERION;
+	if (strmask == "okuboweiss")  return OKUBOWEISS;
+	if (strmask == "okubo-weiss") return OKUBOWEISS;
+	if (strmask == "rortex")      return RORTEX;
+	return NONE;
+}
+
+//----------------------------------------------------------------------------
+std::vector<int> getConnectedPoints(vtkDataSet *mesh, const int pointId) {
 	
 	std::vector<int> connectedPoints;
 	vtkIdList *cellIdList = vtkIdList::New();
@@ -75,7 +101,7 @@ std::vector<int> getConnectedPoints(vtkDataSet *mesh, int pointId) {
 }
 
 //----------------------------------------------------------------------------
-std::vector<int> getConnectedCells(vtkDataSet *mesh, int cellId) {
+std::vector<int> getConnectedCells(vtkDataSet *mesh, const int cellId) {
 
 	std::vector<int> connectedCells;
 	vtkIdList *pointIdList = vtkIdList::New();
@@ -110,18 +136,28 @@ vtkOGSVortexDetection::vtkOGSVortexDetection() {
 	this->SetNumberOfInputPorts(1);
 	this->SetNumberOfOutputPorts(2);
 
-	this->arrName      = NULL;
-	this->omegArrName  = NULL;
-	this->maskArrName1 = NULL;
-	this->maskArrName2 = NULL;
+	this->vecFName     = NULL;
+	this->scaFName     = NULL;
+//	this->normName     = NULL;
+	this->arr2Mask     = NULL;
+	this->maskName     = NULL;
+
 	this->projName     = std::string("Mercator");
+	this->dfact        = 1000.;
 	this->computeMask  = 1;
 	this->coef         = 0.2;
 	this->maxreps      = 5;
 	this->maxiter      = 100;
 	this->minres       = 5;
-	this->dfact        = 1000.;
 	this->changemask   = 1;
+
+	this->computeBCent = 0;
+	this->computeCent  = 1;
+	this->computeSize  = 1;
+	this->computeRAxis = 1;
+	this->computeAStr  = 1;
+	this->computeRStr  = 1;
+	this->computeCirc  = 0;
 
 	this->nProcs       = 0;
 	this->procId       = 0;
@@ -136,10 +172,11 @@ vtkOGSVortexDetection::vtkOGSVortexDetection() {
 
 //----------------------------------------------------------------------------
 vtkOGSVortexDetection::~vtkOGSVortexDetection() {
-	this->SetarrName(NULL);
-	this->SetomegArrName(NULL);
-	this->SetmaskArrName1(NULL);
-	this->SetmaskArrName2(NULL);
+	this->SetvecFName(NULL);
+	this->SetscaFName(NULL);
+//	this->SetnormName(NULL);
+	this->Setarr2Mask(NULL);
+	this->SetmaskName(NULL);
 
 	#ifdef PARAVIEW_USE_MPI
 		this->SetController(NULL);	
@@ -295,15 +332,16 @@ int vtkOGSVortexDetection::RequestUpdateExtent(vtkInformation* vtkNotUsed(reques
 
 //----------------------------------------------------------------------------
 int vtkOGSVortexDetection::computeMaskArray(bool iscelld, vtkDataSet *d) {
+	
 	// Load array as cell or point data
 	VTKARRAY *vtkArray;
 	if (iscelld)
-		vtkArray = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray(this->maskArrName1) );
+		vtkArray = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray(this->arr2Mask) );
 	else
-		vtkArray = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray(this->maskArrName1) );
+		vtkArray = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray(this->arr2Mask) );
 
 	if (vtkArray == NULL) {
-		vtkErrorMacro("Cannot load mask field "<<this->maskArrName1<<"!");
+		vtkErrorMacro("Cannot load mask field "<<this->arr2Mask<<"!");
 		return 0;
 	}
 
@@ -379,19 +417,27 @@ int vtkOGSVortexDetection::computeMaskArray(bool iscelld, vtkDataSet *d) {
 			sqrt(array[ii][0]*array[ii][0] + array[ii][1]*array[ii][1] + array[ii][2]*array[ii][2]);
 
 		// Set the values of the mask
-		if (std::string(this->maskArrName1) == std::string("OkuboWeiss") && val < -std)
-			mask[ii][0] = (FLDMASK)(1); // Vorticity-dominated flow
-		else if (std::string(this->maskArrName1) == std::string("Qcriterion") && val > 0.5*std) 
-			mask[ii][0] = (FLDMASK)(1); // Vorticity-dominated flow
-		else if (val > std)     
-			mask[ii][0] = (FLDMASK)(1); // Vorticity-dominated flow
+		switch (str2mask(this->arr2Mask)) {
+			case OKUBOWEISS:
+				mask[ii][0] = (val < -std) ? (FLDMASK)(1) : 0; // Vorticity-dominated flow
+				break;
+			case QCRITERION:
+				mask[ii][0] = (val > 0.5*std) ? (FLDMASK)(1) : 0; // Vorticity-dominated flow
+				break;
+			case RORTEX:
+				mask[ii][0] = (val > std)     ? (FLDMASK)(1) : 0; // Vorticity-dominated flow
+				break;
+			default:
+				mask[ii][0] = 0;
+				break;
+		}
 	}
 	} // end omp
 	this->UpdateProgress(0.3);
 
 	// Add mask to output
-	VTKMASK *vtkMask; vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>("mask",mask);
-	this->SetmaskArrName2("mask");
+	this->SetmaskName("mask");
+	VTKMASK *vtkMask; vtkMask = VTK::createVTKfromField<VTKMASK,FLDMASK>(this->maskName,mask);
 
 	if (iscelld)
 		d->GetCellData()->AddArray(vtkMask);
@@ -406,16 +452,15 @@ int vtkOGSVortexDetection::computeMaskArray(bool iscelld, vtkDataSet *d) {
 //----------------------------------------------------------------------------
 int vtkOGSVortexDetection::computeDetectionMask(bool iscelld, vtkDataSet *d, vortex::VortexList &vortexList) {
 	int nvortices = 0;
-
 	// Load mask as cell or point data
 	VTKMASK *vtkMask;
 	if (iscelld)
-		vtkMask = VTKMASK::SafeDownCast( d->GetCellData()->GetArray(this->maskArrName2) );
+		vtkMask = VTKMASK::SafeDownCast( d->GetCellData()->GetArray(this->maskName) );
 	else
-		vtkMask = VTKMASK::SafeDownCast( d->GetPointData()->GetArray(this->maskArrName2) );
+		vtkMask = VTKMASK::SafeDownCast( d->GetPointData()->GetArray(this->maskName) );
 
 	if (!vtkMask) {
-		vtkErrorMacro("Error loading <"<<this->maskArrName2<<">! Aborting!");
+		vtkErrorMacro("Error loading <"<<this->maskName<<">! Aborting...");
 		return 0;
 	}
 
@@ -534,7 +579,7 @@ int vtkOGSVortexDetection::computeDetectionMask(bool iscelld, vtkDataSet *d, vor
 		// Loop all the elements that form the vortex
 		for (int ii = 0; ii < vortexList[ivort].get_n(); ++ii) {
 			int iel = vortexList[ivort][ii];
-			lmask[iel][0] = ivort;
+			lmask[iel][0] = ivort+1; // Since we start counting at 0
 		}
 	}
 
@@ -559,6 +604,53 @@ int vtkOGSVortexDetection::computeVortexProperties(bool iscelld, vortex::VortexL
 	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
 		d->GetFieldData()->GetAbstractArray("Metadata"));
 	
+	if (vtkmetadata == NULL)
+		vtkWarningMacro("Field array Metadata not found! Using user input values.");
+	
+	this->dfact    = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : this->dfact;
+	this->projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
+	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
+
+	v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(d,this->dfact) : VTK::getVTKCellPoints(d,this->dfact);
+
+	// Load arrays
+	VTKMASK *vtkMask;
+	VTKARRAY *vtkLmsk, *vtkScaf, *vtkVecf, *vtkColumn;
+	if (iscelld) {
+		vtkScaf = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray(this->scaFName) );
+		vtkVecf = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray(this->vecFName) );
+		vtkLmsk = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray("vortex mask") );
+		vtkMask = VTKMASK::SafeDownCast(  d->GetCellData()->GetArray(this->maskName) );
+	} else {
+		vtkScaf = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray(this->scaFName) );
+		vtkVecf = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray(this->vecFName) );
+		vtkLmsk = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray("vortex mask") );
+		vtkMask = VTKMASK::SafeDownCast(  d->GetPointData()->GetArray(this->maskName) );
+	}
+
+	if (vtkScaf == NULL) {
+		vtkErrorMacro("Cannot load field <"<<this->scaFName<<">! Aborting...");
+		return 0;
+	}
+	if (vtkVecf == NULL) {
+		vtkErrorMacro("Cannot load field <"<<this->vecFName<<">! Aborting...");
+		return 0;
+	}
+	if (vtkMask == NULL) {
+		vtkErrorMacro("Cannot load field <"<<this->maskName<<">! Aborting...");
+		return 0;
+	}
+
+	field::Field<FLDARRAY> scaf  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkScaf);
+	field::Field<FLDARRAY> vecf  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkVecf);
+	field::Field<FLDARRAY> lmask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkLmsk);
+	field::Field<FLDMASK>  mask  = VTK::createFieldfromVTK<VTKMASK,FLDMASK>(vtkMask);
+
+	if (vecf.get_m() != 3) {
+		vtkErrorMacro("Field <"<<this->vecFName<<"> is not vectorial! Aborting...");
+		return 0;
+	}
+
 	// Recover weights
 	VTKARRAY *vtke1, *vtke2, *vtke3;
 	if (iscelld) {
@@ -577,37 +669,22 @@ int vtkOGSVortexDetection::computeVortexProperties(bool iscelld, vortex::VortexL
 	}
 
 	// Convert to field arrays
-	field::Field<FLDARRAY> e1, e2, e3, w;
+	field::Field<FLDARRAY> e1, e2, e3;
 	if (vtke1) e1 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke1);
 	if (vtke2) e2 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke2);
 	if (vtke3) e3 = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtke3);
-	w  = e1*e2; // Weight for averages
 
-	this->dfact    = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : this->dfact;
-	this->projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
-	std::transform(this->projName.begin(), this->projName.end(), this->projName.begin(), ::tolower);
-		
-	if (vtkmetadata == NULL)
-		vtkWarningMacro("Field array Metadata not found! Using user input values.");
-
-	v3::V3v xyz = (iscelld) ? VTK::getVTKCellCenters(d,this->dfact) : 
-		VTK::getVTKCellPoints(d,this->dfact);
-
-	// Load Omega array
-	VTKARRAY *vtkLmsk, *vtkScaf, *vtkVecf, *vtkColumn;
-	if (iscelld) {
-		vtkScaf = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray(this->omegArrName) );
-		vtkVecf = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray(this->arrName) );
-		vtkLmsk = VTKARRAY::SafeDownCast( d->GetCellData()->GetArray("vortex mask") );
-	} else {
-		vtkScaf = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray(this->omegArrName) );
-		vtkVecf = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray(this->arrName) );
-		vtkLmsk = VTKARRAY::SafeDownCast( d->GetPointData()->GetArray("vortex mask") );
+	// Create the normals, here they are a vector on the z direction 
+	// as of e1t*e2t*[0,0,1]
+	field::Field<FLDARRAY> norm(xyz.len(),3,0.);
+	if (this->computeCirc) {
+		#pragma omp parallel
+		{
+		for(int ii=OMP_THREAD_NUM; ii<norm.get_n(); ii+=OMP_NUM_THREADS) {
+			norm[ii][2] = e1[ii][0]*e2[ii][0];
+		}
+		}
 	}
-
-	field::Field<FLDARRAY> scaf  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkScaf);
-	field::Field<FLDARRAY> vecf  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkVecf);
-	field::Field<FLDARRAY> lmask = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkLmsk);
 
 	// Loop the vortices
 	// For each vortex compute the properties and store them
@@ -617,52 +694,93 @@ int vtkOGSVortexDetection::computeVortexProperties(bool iscelld, vortex::VortexL
 
 	// Create a field for each column of the table and set its value
 	// per vortex
-	field::Field<FLDARRAY> lon(nvortices,1), lat(nvortices,1), depth(nvortices,1), 
-		size(nvortices,1), rot(nvortices,1), s_abs(nvortices,1), s_rel(nvortices,1);
+	field::Field<FLDARRAY> bcent(nvortices,3), pcent(nvortices,3), size(nvortices,1), rot(nvortices,3), 
+		s_abs(nvortices,1), s_rel(nvortices,1), gamma(nvortices,1);
 
 	for (int ivort=0; ivort<nvortices; ++ivort) {
+		// Baricenter
+		if (this->computeBCent) {
+			v3::V3 bxyz = vortexList[ivort].baricenter(xyz);
+			bcent[ivort][0] = bxyz[0];
+			bcent[ivort][1] = bxyz[1];
+			bcent[ivort][2] = bxyz[2];
+			// Transform the center to Lon, Lat
+			p.transform_point(this->projName,"degrees",bcent[ivort][0],bcent[ivort][1]);	
+		}
 		// Computation of the center
-		v3::V3 center   = vortexList[ivort].center<FLDARRAY>(xyz,scaf);
-		lon[ivort][0]   = center[0];
-		lat[ivort][0]   = center[1];
-		depth[ivort][0] = center[2];
-		// Transform the center to Lon, Lat
-		p.transform_point(this->projName,"degrees",lon[ivort][0],lat[ivort][0]);
+		if (this->computeCent) {
+			int ic = vortexList[ivort].icenter<FLDARRAY>(scaf);
+			pcent[ivort][0] = xyz[ic][0];
+			pcent[ivort][1] = xyz[ic][1];
+			pcent[ivort][2] = xyz[ic][2];
+			// Transform the center to Lon, Lat
+			p.transform_point(this->projName,"degrees",pcent[ivort][0],pcent[ivort][1]);
+		}
 		// Computation of the vortex size
-		size[ivort][0] = (FLDARRAY)(vortexList[ivort].size(xyz));
-		// Rotation
-		// 1: cyclonic, -1: anticyclonic
-		rot[ivort][0] = (vortexList[ivort].rotation<FLDARRAY>(vecf)[2] > 0) ? 1 : -1;
-		// Change the value of the mask to negative to those vortices that are
-		// anticyclonic
-		for (int ii=0; ii<vortexList[ivort].get_n() && rot[ivort][0] < 0 && this->changemask; ++ii)
-			lmask[vortexList[ivort][ii]][0] *= -1;
-		// Strength
-		s_abs[ivort][0] = vortexList[ivort].absolute_strength<FLDARRAY>(w,vecf);
-		s_rel[ivort][0] = vortexList[ivort].relative_strength<FLDARRAY>(w,scaf);
+		if (this->computeSize) {
+			size[ivort][0] = vortexList[ivort].size<FLDARRAY>(xyz,scaf);
+		}
+		// Rotation axis
+		if (this->computeRAxis) {
+			rot[ivort][0] = vortexList[ivort].rotation<FLDARRAY>(vecf)[0];
+			rot[ivort][1] = vortexList[ivort].rotation<FLDARRAY>(vecf)[1];
+			rot[ivort][2] = vortexList[ivort].rotation<FLDARRAY>(vecf)[2];
+			// Change the value of the mask to negative to those vortices that are
+			// anticyclonic
+			// 1: cyclonic, -1: anticyclonic
+			for (int ii=0; ii<vortexList[ivort].get_n() && rot[ivort][2] < 0 && this->changemask; ++ii)
+				lmask[vortexList[ivort][ii]][0] *= -1.;
+		}
+		// Vortex absolute strength
+		if (this->computeAStr) {
+			s_abs[ivort][0] = vortexList[ivort].absolute_strength<FLDARRAY>(vecf);
+		}
+		// Vortex absolute strength
+		if (this->computeRStr) {
+			s_rel[ivort][0] = vortexList[ivort].relative_strength<FLDARRAY>(scaf);
+		}
+		// Circulation
+		if (this->computeCirc) {
+			gamma[ivort][0] = vortexList[ivort].circulation<FLDARRAY>(norm,vecf);
+		}
 	}
 
 	// Set the columns to the table
-	// Longitude
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Longitude",lon);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
-	// Latitude
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Latitude",lat);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
-	// Depth
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Depth",depth);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
+	// Baricenter
+	if (this->computeBCent) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Baricenter",bcent);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();		
+	}
+	// Vortex center
+	if (this->computeCent) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Center",pcent);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
 	// Size
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Size (m)",size);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
+	if (this->computeSize) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Size",size);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
 	// Rotation
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Rotation",rot);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
-	// Strength
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Absolute S.",s_abs);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
-	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Relative S.",s_rel);
-	t->AddColumn(vtkColumn); vtkColumn->Delete();
+	if (this->computeRAxis) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Rotation",rot);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
+	// Absolute strength
+	if (this->computeAStr) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Abs Str.",s_abs);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
+	// Relative strength
+	if (this->computeRStr) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Rel Str.",s_rel);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
+	// Circulation
+	if (this->computeCirc) {
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Circulation",gamma);
+		t->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
 
 	// Set mask array
 	vtkLmsk = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("vortex mask",lmask);

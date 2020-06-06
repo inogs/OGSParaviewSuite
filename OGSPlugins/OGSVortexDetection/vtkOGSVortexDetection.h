@@ -1,4 +1,3 @@
-// -*- c++ -*-
 /*=========================================================================
 
   Program:   OGSVortexDetection
@@ -40,17 +39,11 @@ public:
   vtkTypeMacro(vtkOGSVortexDetection, vtkDataSetAlgorithm);
   
   // Description:
-  // Get the name of the mask field to operate
-  vtkSetStringMacro(arrName);
-
-  // Description:
-  // Get the name of the mask field to operate
-  vtkSetStringMacro(omegArrName);
-
-  // Description:
-  // Get the name of the mask field to operate
-  vtkSetStringMacro(maskArrName1);
-  vtkSetStringMacro(maskArrName2);
+  // Get the names of the scalar and vectorial fields to operate
+  vtkSetStringMacro(scaFName);
+  vtkGetStringMacro(scaFName);
+  vtkSetStringMacro(vecFName);
+  vtkGetStringMacro(vecFName);
 
   // Description:
   // If false, do not compute the mask array. False by default.
@@ -59,7 +52,17 @@ public:
   vtkBooleanMacro(computeMask, int);
 
   // Description:
-  // Get the coefficient for the Okubo-Weiss mask
+  // Get the name of the mask array
+  vtkSetStringMacro(maskName);
+  vtkGetStringMacro(maskName);
+
+  // Description:
+  // Get the name of the field to computate the mask from
+  vtkSetStringMacro(arr2Mask);
+  vtkGetStringMacro(arr2Mask);
+
+  // Description:
+  // Get the coefficient for the mask
   vtkSetMacro(coef, double);
   vtkGetMacro(coef, double);
 
@@ -80,15 +83,44 @@ public:
   vtkSetMacro(minres, int);
   vtkGetMacro(minres, int);
 
-  // Let the user select a multiplier factor for the depth
-  vtkGetMacro(dfact, double);
-  vtkSetMacro(dfact, double);
-
   // Description:
   // If true, set as negative the anticyclonic vortices on the mask
   vtkGetMacro(changemask, int);
   vtkSetMacro(changemask, int);
   vtkBooleanMacro(changemask, int);
+
+  // Description:
+  // Table settings
+  vtkGetMacro(computeBCent, int);
+  vtkSetMacro(computeBCent, int);
+  vtkBooleanMacro(computeBCent, int);
+  vtkGetMacro(computeCent, int);
+  vtkSetMacro(computeCent, int);
+  vtkBooleanMacro(computeCent, int);
+  vtkGetMacro(computeSize, int);
+  vtkSetMacro(computeSize, int);
+  vtkBooleanMacro(computeSize, int);
+  vtkGetMacro(computeRAxis, int);
+  vtkSetMacro(computeRAxis, int);
+  vtkBooleanMacro(computeRAxis, int);
+  vtkGetMacro(computeAStr, int);
+  vtkSetMacro(computeAStr, int);
+  vtkBooleanMacro(computeAStr, int);
+  vtkGetMacro(computeRStr, int);
+  vtkSetMacro(computeRStr, int);
+  vtkBooleanMacro(computeRStr, int);
+  vtkGetMacro(computeCirc, int);
+  vtkSetMacro(computeCirc, int);
+  vtkBooleanMacro(computeCirc, int);
+
+  // Description:
+  // Get the names of the normal array
+//  vtkSetStringMacro(normName);
+//  vtkGetStringMacro(normName);
+
+  // Let the user select a multiplier factor for the depth
+  vtkGetMacro(dfact, double);
+  vtkSetMacro(dfact, double);
 
   // Description:
   // Get the output data object for a port on this algorithm.
@@ -135,9 +167,10 @@ private:
   int computeVortexProperties(bool,vortex::VortexList&,vtkDataSet*,vtkTable*);
 
   int maxreps, maxiter, minres, computeMask, changemask;
+  int computeBCent, computeCent, computeSize, computeRAxis, computeAStr, computeRStr, computeCirc;
   int procId, nProcs;
 
-  char *arrName, *omegArrName, *maskArrName1, *maskArrName2;
+  char *scaFName, *vecFName, *arr2Mask, *maskName; //*normName;
 
   std::string projName;
 

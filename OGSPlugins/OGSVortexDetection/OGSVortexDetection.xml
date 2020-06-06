@@ -21,12 +21,13 @@
      </InputProperty>
 
      <!-- BEGIN EXPOSED PROPERTIES -->
+
      <!-- Vectorial array -->
-     <StringVectorProperty name="arrName"
+     <StringVectorProperty name="vecFName"
                            label="Vectorial array: "
-                           command="SetarrName"
+                           command="SetvecFName"
                            animateable="1"
-                           default_values="Rortex"
+                           default_values="Vorticity"
                            number_of_elements="1">
        <ArrayListDomain name="array_list"
                         attribute_type="Vectors"
@@ -37,17 +38,16 @@
        </ArrayListDomain>
        <Documentation>
          Name of the vectorial array to which compute the 
-         vortex properties. Expected Rortex, vorticity can
-         also work.
+         vortex properties (e.g., vorticity or rortex)
        </Documentation>
      </StringVectorProperty>
 
      <!-- Scalar array -->
-     <StringVectorProperty name="omegArrName"
+     <StringVectorProperty name="scaFName"
                            label="Scalar array: "
-                           command="SetomegArrName"
+                           command="SetscaFName"
                            animateable="1"
-                           default_values="Omega-R"
+                           default_values="Omega"
                            number_of_elements="1">
        <ArrayListDomain name="array_list"
                         attribute_type="Scalars"
@@ -58,10 +58,9 @@
        </ArrayListDomain>
        <Documentation>
          Name of the scalar array in which to compute the
-         vortex properties. Expected Omega-R, Omega or Q can
-         also work.
+         vortex properties (e.g.,Q-criterion, Omega, Omega-R)
        </Documentation>
-     </StringVectorProperty>
+     </StringVectorProperty>    
 
      <!-- Compute mask -->
      <IntVectorProperty name="computeMask"
@@ -75,10 +74,9 @@
        <BooleanDomain name="bool" />
      </IntVectorProperty>
 
-     <!-- Mask array -->
-     <StringVectorProperty name="maskArray2"
+     <StringVectorProperty name="maskName"
                            label="Mask array: "
-                           command="SetmaskArrName2"
+                           command="SetmaskName"
                            animateable="1"
                            default_values="mask"
                            number_of_elements="1">
@@ -95,15 +93,15 @@
          </PropertyWidgetDecorator>
        </Hints>
        <Documentation>
-         Name of the array from which to compute the mask or
-         name of the mask array.
+         Name of the mask array.
        </Documentation>
      </StringVectorProperty>
-     <StringVectorProperty name="maskArray1"
-                           label="Array for masking: "
-                           command="SetmaskArrName1"
+
+     <StringVectorProperty name="arr2Mask"
+                           label="Array to mask: "
+                           command="Setarr2Mask"
                            animateable="1"
-                           default_values="Rortex"
+                           default_values="Q-criterion"
                            number_of_elements="1">
        <ArrayListDomain name="array_list"
                         attribute_type="Scalars"
@@ -118,8 +116,7 @@
          </PropertyWidgetDecorator>
        </Hints>
        <Documentation>
-         Name of the array from which to compute the mask or
-         name of the mask array.
+         Name of the array from which to compute the mask.
        </Documentation>
      </StringVectorProperty>
 
@@ -131,14 +128,14 @@
                            default_values="0.2"
                            number_of_elements="1">
        <DoubleRangeDomain name="range" min="0.0" max="20.0" />
-       <Documentation>
-         Mask filter coefficient.
-       </Documentation>
        <Hints>
          <PropertyWidgetDecorator type="ShowWidgetDecorator">
            <Property name="computeMask" function="boolean" />
          </PropertyWidgetDecorator>
        </Hints>
+       <Documentation>
+         Mask filter coefficient.
+       </Documentation>
      </DoubleVectorProperty>
 
      <!-- Minimum resolution for a vortex -->
@@ -153,6 +150,7 @@
          for a vortex to be considered as such.
        </Documentation>
      </IntVectorProperty>
+
      <!-- Number of iterations of the detection algorithm -->
      <IntVectorProperty name="nIters"
                         label="Iterations: "
@@ -177,44 +175,116 @@
        </Documentation>
      </IntVectorProperty>
 
-     <!-- Selection of depth scale factor -->
-     <DoubleVectorProperty name="DepthScale"
-                           label="Scale factor for depth:"
-                           command="Setdfact"
-                           number_of_elements="1"
-                           default_values="1000."
-                           panel_visibility="advanced">
+     <!-- Compute baricenter -->
+     <IntVectorProperty name="computeBCent"
+                        label="Compute baricenter"
+                        command="SetcomputeBCent"
+                        default_values="0"
+                        number_of_elements="1">
        <Documentation>
-         Factor in which the depth is multiplied.
-       </Documentation>                            
-     </DoubleVectorProperty>
+         Compute vortex baricenter.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
 
-     <!-- Projection -->
-     <StringVectorProperty name="ProjInfo"
-                           command="GetProjections"
-                           information_only="1">
-       <StringArrayHelper />
-     </StringVectorProperty>
+     <!-- Compute center -->
+     <IntVectorProperty name="computeCent"
+                        label="Compute center"
+                        command="SetcomputeCent"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         Compute vortex center.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
 
-     <StringVectorProperty name="Projection"
-                           command="SetProjection"
-                           number_of_elements="1"
-                           label="Projection: "
-                           panel_visibility="advanced">
-        <StringListDomain name="array_list">
-            <RequiredProperties>
-                <Property name="ProjInfo" function="ArrayList" />
-            </RequiredProperties>
-        </StringListDomain>
+     <!-- Compute size -->
+     <IntVectorProperty name="computeSize"
+                        label="Compute size"
+                        command="SetcomputeSize"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         Compute vortex size.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- Compute rotation axis -->
+     <IntVectorProperty name="computeRAxis"
+                        label="Compute rotation axis"
+                        command="SetcomputeRAxis"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         Compute rotation axis.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- Compute absolute strength -->
+     <IntVectorProperty name="computeAStr"
+                        label="Compute abs strength"
+                        command="SetcomputeAStr"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         Compute absolute strength.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- Compute relative strength -->
+     <IntVectorProperty name="computeRStr"
+                        label="Compute relative strength"
+                        command="SetcomputeRStr"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         Compute relative strength.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- Compute circulation -->
+     <IntVectorProperty name="computeCirc"
+                        label="Compute circulation"
+                        command="SetcomputeCirc"
+                        default_values="1"
+                        number_of_elements="1">
+       <Documentation>
+         Compute circulation.
+       </Documentation>
+       <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <!-- Normal array -->
+<!--     <StringVectorProperty name="normName"
+                           label="Normal array: "
+                           command="SetnormName"
+                           animateable="1"
+                           default_values=""
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Vectors"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
         <Hints>
-          <NoDefault />
-        </Hints>
-        <Documentation>
-          Set the projection to use.
-        </Documentation>
-     </StringVectorProperty>
+            <PropertyWidgetDecorator type="ShowWidgetDecorator">
+                <Property name="computeCirc" function="boolean"/>
+            </PropertyWidgetDecorator>
+      </Hints>
+       <Documentation>
+         Name of the array containing the normals multiplied by the
+         area of the cell
+       </Documentation>
+     </StringVectorProperty>-->
 
-     <!-- Compute mask -->
+     <!-- Change mask -->
      <IntVectorProperty name="changemask"
                         label="Change mask sign"
                         command="Setchangemask"
@@ -227,27 +297,49 @@
        <BooleanDomain name="bool" />
      </IntVectorProperty>
 
+     <!-- Selection of depth scale factor -->
+     <DoubleVectorProperty name="DepthScale"
+                           label="Scale factor for depth:"
+                           command="Setdfact"
+                           number_of_elements="1"
+                           default_values="1000."
+                           panel_visibility="advanced">
+       <Documentation>
+         Factor in which the depth is multiplied.
+       </Documentation>                            
+     </DoubleVectorProperty>
+
      <!-- PROPERTY GROUPS -->
      <!-- ARRAYS -->
      <PropertyGroup label="Array selection">
-       <Property name="arrName"/>
-       <Property name="omegArrName"/>
+       <Property name="vecFName"/>
+       <Property name="scaFName"/>
      </PropertyGroup>
      <!-- MASK COMPUTATION -->
      <PropertyGroup label="Detection mask settings">
        <Property name="computeMask"/>
-       <Property name="maskArray1"/>
-       <Property name="maskArray2"/>
+       <Property name="maskName"/>
+       <Property name="arr2Mask"/>
        <Property name="coef"/>
        <Property name="minResolution"/>
        <Property name="nIters"/>
        <Property name="nReps"/>
      </PropertyGroup>
+     <!-- TABLE PARAMETERS -->
+     <PropertyGroup label="Vortex parameters settings">
+       <Property name="computeBCent"/>
+       <Property name="computeCent"/>
+       <Property name="computeSize"/>
+       <Property name="computeRAxis"/>
+       <Property name="computeAStr"/>
+       <Property name="computeRStr"/>
+       <Property name="computeCirc"/>
+<!--       <Property name="normName"/> -->
+     </PropertyGroup>
      <!-- PARAMETERS -->
      <PropertyGroup label="Other parameters">
-       <Property name="DepthScale"/>
-       <Property name="Projection"/>
        <Property name="changemask"/>
+       <Property name="DepthScale"/>
      </PropertyGroup>
 
      <!-- END EXPOSED PROPERTIES -->
