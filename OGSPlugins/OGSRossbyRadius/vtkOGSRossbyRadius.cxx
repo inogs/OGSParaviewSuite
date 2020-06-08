@@ -229,9 +229,10 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 	// Computation arrays
 	field::Field<FLDARRAY> r_ext(this->xyz.len(),1,0.);
 	field::Field<FLDARRAY> r_int(this->xyz.len(),1,0.);
-	field::Field<FLDARRAY> aux1(this->xyz.len(),1,0.);
-	field::Field<FLDARRAY> aux2(this->xyz.len(),1,0.);
-	field::Field<FLDARRAY> aux3(this->xyz.len(),1,0.);
+	field::Field<FLDARRAY> rho1_aux(this->xyz.len(),1,0.);
+	field::Field<FLDARRAY> rho2_aux(this->xyz.len(),1,0.);
+	field::Field<FLDARRAY> d1_aux(this->xyz.len(),1,0.);
+	field::Field<FLDARRAY> d2_aux(this->xyz.len(),1,0.);
 
 	this->UpdateProgress(0.25);
 
@@ -269,12 +270,13 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 			// LR = sqrt(g*D)/f_cor
 			r_ext[ind0][0] = sqrt(this->g*-zcoords[zId])/this->f_cor/1e3; // [km] zcoords is negative
 
-			// Store maximum depth
-			aux2[ind0][0] = -zcoords[zId]; // zcoords is negative
+			// Density average over all the water column
+			rho1_aux[ind0][0] += rho[ind][0]*e3[ind][0]; 
+			d1_aux[ind0][0]   += e3[ind][0];
 
-			// Compute density averages
-			aux3[ind0][0] += rho[ind][0]*e3[ind][0]; // Avg over all the water column
-			aux1[ind0][0] += (FLDARRAY)(mldmask[ind][0])*rho[ind][0]*e3[ind][0]; // Avg over MLD
+			// Density average over MLD
+			rho2_aux[ind0][0] += (FLDARRAY)(mldmask[ind][0])*rho[ind][0]*e3[ind][0]; 
+			d2_aux[ind0][0]   += (FLDARRAY)(mldmask[ind][0])*e3[ind][0];
 		}
 	}
 	this->UpdateProgress(0.65);
@@ -293,11 +295,11 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 
 			// Rossby radius of deformation (internal)
 			// LR = sqrt(g'*MLD)/f_cor, where g' = g*(rho2-rho1)/rho2
-			double rho2 = aux1[ind0][0]/mld[ind0][0];
-			double rho1 = aux3[ind0][0]/aux2[ind0][0];
-			double rhop = (rho2>rho1) ? (rho2-rho1)/rho2 : (rho1-rho2)/rho1;
+			double rho2 = rho2_aux[ind0][0]/d2_aux[ind0][0]; // Avg over MLD
+			double rho1 = rho1_aux[ind0][0]/d1_aux[ind0][0]; // Avg over all water column
+			double gp   = this->g*fabs(rho2-rho1)/(rho1);
 
-			r_int[ind][0] = sqrt(this->g*rhop*mld[ind][0])/this->f_cor/1e3; // km
+			r_int[ind][0] = sqrt(gp*mld[ind][0])/this->f_cor/1e3; // km
 		}
 	}
 	this->UpdateProgress(0.75);
