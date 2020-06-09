@@ -26,6 +26,14 @@
 
 namespace PROJ
 {
+	double rad2deg(const double a) {
+		return (180.0/3.14159265359)*a;
+	}
+	
+	double deg2rad(const double a) {
+		return (3.14159265359/180.0)*a;
+	}
+
 	class Projection {
 		/* PROJECTION
 

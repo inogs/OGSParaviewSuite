@@ -34,28 +34,23 @@ class VTK_EXPORT vtkOGSRossbyRadius : public vtkRectilinearGridAlgorithm
 public:
   static vtkOGSRossbyRadius* New();
   vtkTypeMacro(vtkOGSRossbyRadius, vtkRectilinearGridAlgorithm);
-/*  
+  
   // Description:
-  // Get the temperature difference
-  vtkSetMacro(dT, double);
-  vtkGetMacro(dT, double);
+  // Get the gravity acceleration
+  vtkSetMacro(g, double);
+  vtkGetMacro(g, double);
+
+  // Description:
+  // Get the gravity acceleration
+  vtkSetMacro(f_cor_ct, double);
+  vtkGetMacro(f_cor_ct, double);
  
   // Description:
   // Decide to use the volume for statistics
-  vtkGetMacro(useDensity, int);
-  vtkSetMacro(useDensity, int);
-  vtkBooleanMacro(useDensity, int);
+  vtkGetMacro(useCtFcor, int);
+  vtkSetMacro(useCtFcor, int);
+  vtkBooleanMacro(useCtFcor, int);
 
-  // Description:
-  // Get the density difference
-  vtkSetMacro(drho, double);
-  vtkGetMacro(drho, double);
-  
-  // Description:
-  // Get the reference depth
-  vtkSetMacro(zref, double);
-  vtkGetMacro(zref, double);
-*/
   // Description:
   // Get the epsilon
   vtkSetMacro(epsi, double);
@@ -91,9 +86,10 @@ private:
 
   // Depth levels and number of depth levels
   int procId, nProcs;
-  double g, f_cor, epsi;
+  double g, f_cor_ct, Omega, epsi;
   std::vector<double> zcoords;
   char *mask_field;
+  bool useCtFcor;
 
   // Auxiliar variables worth conserving
   // they are read once in the RequestInformation and used in the

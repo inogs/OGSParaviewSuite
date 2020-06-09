@@ -24,63 +24,45 @@
 
       <!-- BEGIN EXPOSED PROPERTIES -->
       
-      <!-- dT 
-      <DoubleVectorProperty name="dT"
-                            label="Temperature difference: "
-                            command="SetdT"
+      <!-- g -->
+      <DoubleVectorProperty name="g"
+                            label="Gravity acceleration (m/s2): "
+                            command="Setg"
                             animateable="1"
-                            default_values="0.2"
-                            number_of_elements="1">
-        <Documentation>
-          Temperature difference.
-        </Documentation>
-      </DoubleVectorProperty>
--->
-      <!-- Use Density 
-      <IntVectorProperty name="UseDensity"
-                        label="Use Density"
-                        command="SetuseDensity"
-                        number_of_elements="1"
-                        default_values="0">
-        <BooleanDomain name="bool"/>
-        <Documentation>
-          If this property is set to 1, the density will be used
-          to compute the MLD.
-        </Documentation>
-      </IntVectorProperty>
--->
-      <!-- drho 
-      <DoubleVectorProperty name="drho"
-                            label="Temperature difference: "
-                            command="Setdrho"
-                            animateable="1"
-                            default_values="0.03"
-                            number_of_elements="1">
-        <Documentation>
-          Density difference.
-        </Documentation>
-      </DoubleVectorProperty>
--->
-      <!-- Zref 
-      <DoubleVectorProperty name="zref"
-                            label="Reference depth: "
-                            command="Setzref"
-                            animateable="1"
-                            default_values="10."
+                            default_values="9.81"
                             number_of_elements="1"
                             panel_visibility="advanced">
         <Documentation>
-          Reference depth.
+          Gravity acceleration.
         </Documentation>
       </DoubleVectorProperty>
 
-      <PropertyGroup label="MLD parameters">
-        <Property name="dT"/>
-        <Property name="UseDensity"/>
-        <Property name="drho"/>
-        <Property name="zref"/>
-      </PropertyGroup>
--->
+      <!-- f_cor_ct -->
+      <DoubleVectorProperty name="f_cor_ct"
+                            label="Coriolis frequency (1/s): "
+                            command="Setf_cor_ct"
+                            animateable="1"
+                            default_values="1e-4"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Coriolis frequency.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <!-- Use Density -->
+      <IntVectorProperty name="useCtFcor"
+                        label="Use constant Corliolis frequency"
+                        command="SetuseCtFcor"
+                        number_of_elements="1"
+                        default_values="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is set to 1, the f_cor will be taken as constant.
+          Setting this property to 0 increases the computational time.
+        </Documentation>
+      </IntVectorProperty>
+
       <!-- Name of coast mask array -->
       <StringVectorProperty name="mask_field"
                            label="Coast mask: "

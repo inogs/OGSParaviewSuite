@@ -46,6 +46,7 @@ vtkStandardNewMacro(vtkOGSRossbyRadius);
 
 //----------------------------------------------------------------------------
 #include "macros.h"
+#include "projection.h"
 #include "fieldOperations.h"
 #include "vtkFields.h"
 #include "vtkOperations.h"
@@ -53,7 +54,9 @@ vtkStandardNewMacro(vtkOGSRossbyRadius);
 //----------------------------------------------------------------------------
 vtkOGSRossbyRadius::vtkOGSRossbyRadius() {
 	this->g          = 9.81;
-	this->f_cor      = 1.0e-4;
+	this->f_cor_ct   = 1.0e-4;
+	this->Omega      = 7.2921e-5;
+	this->useCtFcor  = false;
 
 	this->mask_field = NULL;
 	this->epsi       = 0.001;
@@ -134,13 +137,19 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 	// cId2zId arrays. Successive iterations should not execute.
 	// This section is included here since RequestInformation gives
 	// troubles when restarting.
+	std::string projName;
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		input->GetFieldData()->GetAbstractArray("Metadata"));
+	
+	projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
+	std::transform(projName.begin(), projName.end(), projName.begin(), ::tolower);
+
 	if (this->xyz.isempty() || this->isReqInfo) {
 
 		this->isReqInfo = false;
 		
 		// Recover Metadata array (depth factor)
-		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-			input->GetFieldData()->GetAbstractArray("Metadata"));
+
 		double dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
 		
 		if (vtkmetadata == NULL) 
@@ -233,6 +242,7 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 	field::Field<FLDARRAY> rho2_aux(this->xyz.len(),1,0.);
 	field::Field<FLDARRAY> d1_aux(this->xyz.len(),1,0.);
 	field::Field<FLDARRAY> d2_aux(this->xyz.len(),1,0.);
+	field::Field<FLDARRAY> f_cor(this->xyz.len(),1,0.);
 
 	this->UpdateProgress(0.25);
 
@@ -240,11 +250,22 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 	// Populate them by looping the mesh once.
 	std::map<int,std::vector<int>> mMeshPerLayer;
 
+	// Projection
+	PROJ::Projection p;
+
 	// Set up the different layers
 	#pragma omp parallel
 	{
 	// Set up the different layers
 	for (int ii=OMP_THREAD_NUM; ii < this->xyz.len(); ii+=OMP_NUM_THREADS) {
+		// Obtain f_cor
+		if (this->useCtFcor) {
+			f_cor[ii][0] = this->f_cor_ct;
+		} else {
+			double lon = this->xyz[ii][0], lat = this->xyz[ii][1];
+			p.transform_point(projName,"degrees",lon,lat);
+			f_cor[ii][0] = 2*this->Omega*sin(PROJ::deg2rad(lat));
+		}
 		// Set maps
 		int ind  = cId2zId[ii][0];
 		#pragma omp critical
@@ -261,14 +282,14 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
 		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
 			// Indices
-			int ind    = mMeshPerLayer[zId][ii];
-			int ind0   = mMeshPerLayer[0][ii];
+			int ind0 = mMeshPerLayer[0][ii];
+			int ind  = mMeshPerLayer[zId][ii];
 			
 			if (cmask[ind][0] == 0) continue; // Mask skip
 
 			// Barotropic Rossby radius of deformation (external)
 			// LR = sqrt(g*D)/f_cor
-			r_ext[ind0][0] = sqrt(this->g*-zcoords[zId])/this->f_cor/1e3; // [km] zcoords is negative
+			r_ext[ind0][0] = sqrt(this->g*-zcoords[zId])/f_cor[ind][0]/1e3; // [km] zcoords is negative
 
 			// Density average over all the water column
 			rho1_aux[ind0][0] += rho[ind][0]*e3[ind][0]; 
@@ -284,8 +305,8 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 	// Finish up computations
 	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
 		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
-			int ind0   = mMeshPerLayer[0][ii];
-			int ind    = mMeshPerLayer[zId][ii];
+			int ind0 = mMeshPerLayer[0][ii];
+			int ind  = mMeshPerLayer[zId][ii];
 
 			if (cmask[ind][0] == 0) continue;
 
@@ -299,7 +320,7 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 			double rho1 = rho1_aux[ind0][0]/d1_aux[ind0][0]; // Avg over all water column
 			double gp   = this->g*fabs(rho2-rho1)/(rho1);
 
-			r_int[ind][0] = sqrt(gp*mld[ind][0])/this->f_cor/1e3; // km
+			r_int[ind][0] = sqrt(gp*mld[ind][0])/f_cor[ind][0]/1e3; // km
 		}
 	}
 	this->UpdateProgress(0.75);

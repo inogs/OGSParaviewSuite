@@ -11,6 +11,7 @@ include(./../OGSPlugins.cmake)
 # Libraries
 #--------------------------------------------------
 include(${UTILS}) # UTILS detection
+include(${PROJ})  # PROJ detection
 
 #--------------------------------------------------
 # ParaView plugin
