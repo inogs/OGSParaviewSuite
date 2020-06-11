@@ -34,7 +34,7 @@ namespace Time {
 	typedef std::vector<Requestor *> REQ_LIST;
 	typedef std::vector< std::pair<TimeObject,std::vector<int>> > COUPLED_LIST;
 
-	TimeInterval computeTimeWindow(std::string &freqString, TimeObject &currentDate) {
+	inline TimeInterval computeTimeWindow(std::string &freqString, TimeObject &currentDate) {
 		int year, month, day;
 		TimeInterval TI;
 		if (freqString == std::string("daily")) {
@@ -68,7 +68,7 @@ namespace Time {
 		return TI;
 	}
 
-	void deallocList(REQ_LIST req_list) {
+	inline void deallocList(REQ_LIST req_list) {
 		for (Requestor *req : req_list)
 			delete req;
 		req_list.resize(0);

@@ -1,13 +1,12 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="filters">
-   <SourceProxy name="OGSTimeStatistics"
-                class="vtkOGSTimeStatistics" 
-                label="OGS Time Statistics">
+   <SourceProxy name="OGSTimeAverage"
+                class="vtkOGSTimeAverage" 
+                label="OGS Time Average">
      <Documentation
-        long_help="This plugin computes time statistics on a dataset."
-        short_help="Computes time statistics on a dataset.">
-        This filter computes time statistics given a section of the mesh,
-        basin, coast or the whole mediterranean sea.
+        long_help="This plugin computes time averages on a dataset given a requestor."
+        short_help="Computes time averages on a dataset.">
+        Given a time requestor, this filter computes the time average given a section of the mesh, basin, coast or the whole mediterranean sea.
      </Documentation>
 
      <InputProperty
@@ -18,9 +17,19 @@
              <Group name="filters"/>
            </ProxyGroupDomain>
            <DataTypeDomain name="input_type">
-             <DataType value="vtkRectilinearGrid"/>
+             <DataType value="vtkDataSet"/>
            </DataTypeDomain>
-      </InputProperty>
+     </InputProperty>
+
+     <!-- Time step information 
+     <DoubleVectorProperty name="TimestepValues"
+                           repeatable="1"
+                           information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>-->
 
      <!-- BEGIN EXPOSED PROPERTIES -->
 
@@ -32,7 +41,7 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="StartTime"
-                           command="SetStartTime"
+                           command="SetStartTI"
                            number_of_elements="1"
                            label="Start Time: ">
         <StringListDomain name="array_list">
@@ -41,12 +50,12 @@
           </RequiredProperties>
         </StringListDomain>
         <Documentation>
-          Set the initial timestep for the time statistics.
+          Set the initial timestep for the TimeInterval.
         </Documentation>
      </StringVectorProperty>
 
      <StringVectorProperty name="EndTime"
-                           command="SetEndTime"
+                           command="SetEndTI"
                            number_of_elements="1"
                            label="End Time: ">
         <StringListDomain name="array_list">
@@ -55,7 +64,7 @@
           </RequiredProperties>
         </StringListDomain>
         <Documentation>
-          Set the final timestep for the time statistics.
+          Set the final timestep for the TimeInterval.
         </Documentation>
      </StringVectorProperty>
 

@@ -17,6 +17,6 @@ include(${UTILS}) # UTILS detection
 #--------------------------------------------------
 add_paraview_plugin(OGSTimeStatistics "1.0"
   SERVER_MANAGER_XML     OGSTimeStatistics.xml
-  SERVER_MANAGER_SOURCES ${VTKFIELDS} ${OGS} vtkOGSTimeStatistics.cxx
+  SERVER_MANAGER_SOURCES ${VTKFIELDS} ${OGS} vtkOGSTimeAverage.cxx
   REQUIRED_ON_SERVER
 )
