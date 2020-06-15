@@ -3,7 +3,7 @@
   Program:   OGSTimeAverage
   Module:    vtkOGSTimeAverage.cxx
 
-  Copyright (c) 2018 Arnau Miro, OGS
+  Copyright (c) 2020 Arnau Miro, OGS
   All rights reserved.
 
 	 This software is distributed WITHOUT ANY WARRANTY; without even
@@ -46,8 +46,9 @@ vtkCxxSetObjectMacro(vtkOGSTimeAverage, Controller, vtkMultiProcessController);
 #include "TimeObject.h"
 #include "TimeInterval.h"
 #include "TimeList.h"
-//#include "netcdfio.h"
-//#include "OGS.hpp"
+#include "netcdfio.h"
+#include "OGS.hpp"
+#include "fieldOperations.h"
 #include "vtkFields.h"
 
 //----------------------------------------------------------------------------
@@ -84,49 +85,21 @@ void BuildTimeList(Time::TimeList &TL, vtkInformation *Info) {
 //	printf("Defined list of %d elements: %s ... %s\n",TL.len(),TL[0].as_string("%Y-%m-%d %H:%M:%S").c_str(),TL[-1].as_string("%Y-%m-%d %H:%M:%S").c_str());
 }
 
-////----------------------------------------------------------------------------
-//void InitializeStatistics(std::vector<std::string> &arrNames, std::vector<std::string> &arrNamesNotComputed,
-//	vtkRectilinearGrid *input, vtkRectilinearGrid *output) {
-//
-//	// We will now copy cell  arrays to the arrNames, excluding
-//	// these on arrNamesNotComputed. These not computed will be
-//	// added to the output
-//
-//	vtkDataArray *vtkDArray;
-//	arrNames.clear();
-//
-//	for (int varId = 0; varId < input->GetCellData()->GetNumberOfArrays(); ++varId) {
-//		// Recover the array and the array name
-//		vtkDArray = input->GetCellData()->GetArray(varId);
-//		std::string arrName = vtkDArray->GetName();
-//
-//		// Exclude arrNamesNotComputed and add them to output
-//		bool addArray = true;
-//		for (std::string arrNameNotComputed : arrNamesNotComputed) {
-//			if (arrNameNotComputed == arrName) {
-//				output->GetCellData()->AddArray(vtkDArray);
-//				addArray = false;
-//				break;
-//			}
-//		}
-//
-//		if (addArray) arrNames.push_back(arrName);
-//	}
-//}
-//
-////----------------------------------------------------------------------------
-//void RecoverMasterFileName(std::string &fname, vtkRectilinearGrid *input) {
-//
-//	// Recover the master file name from the metadata array
-//	// Return whether we need to stop executing or not
-//
-//	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-//		input->GetFieldData()->GetAbstractArray("Metadata"));
-//
-//	// If successful, recover the file name
-//	if (vtkmetadata)
-//		fname = vtkmetadata->GetValue(4);
-//}
+//----------------------------------------------------------------------------
+void RecoverMasterFileName(std::string &fname, vtkDataSet *input) {
+
+	// Recover the master file name from the metadata array
+	// Return whether we need to stop executing or not
+
+	vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+		input->GetFieldData()->GetAbstractArray("Metadata"));
+
+	// If successful, recover the file name
+	if (vtkmetadata)
+		fname = vtkmetadata->GetValue(4);
+	else
+		fname = std::string("NotFound");
+}
 
 //----------------------------------------------------------------------------
 vtkOGSTimeAverage::vtkOGSTimeAverage() {
@@ -241,6 +214,7 @@ int vtkOGSTimeAverage::RequestData(vtkInformation *request,
 			// We can now create a GenericRequestor with this TimeInterval.
 			// We will use it to obtain all the instants and average weights.
 			Time::Requestor req(this->TI,"%Y%m%d-%H:%M:%S");
+			this->instants.clear(); this->weights.clear(); // make sure vectors are empty
 
 			if (this->TL.select(&req,this->instants,this->weights) == TIME_ERR) {
 				vtkErrorMacro("Error selecting instants with Requestor! Cannot continue...");
@@ -263,274 +237,31 @@ int vtkOGSTimeAverage::RequestData(vtkInformation *request,
 			this->Controller->Broadcast(this->weights.data(),arr_len,0);
 		}
 
-		// Compute the sum of weights for the average
+		// Initialize sum of weights for the average
 		this->sum_weights = 0.;
-		for (int ii=0; ii<instants.size();++ii)
-			this->sum_weights += this->weights[ii];
 	}
 
+	int retval = 0;
 	if (this->use_files) { 
 		// Optimized algorithm based on parallel access of the data files
-
+		retval = this->FileIterationAlgorithm(request,input,output);
 	} else {
 		// Standard algorithm based on iterating the pipeline
-		this->PipelineIterationAlgorithm(request,input,output);
+		retval = this->PipelineIterationAlgorithm(request,input,output);
 	}
 
-
-//	/* INITIALIZATION PHASE
-//
-//		Obtain the names of the variables that need to be time-averaged by reading
-//		which variables have been loaded as cell arrays. Note that this filter cannot
-//		deal with point array variables.
-//
-//		Recover (and broadcast) the file name of the OGS master file.
-//
-//		Initialize arrays for accumulating.
-//
-//	*/
-//	// Define a vector containing the names of the arrays to compute and to exclude
-//	std::string FileName;
-//	std::vector<std::string> arrNames, arrNamesNotComputed{"e1","e2","e3",
-//		"basins mask","coast mask","land mask","Okubo-Weiss mask","Q-criterion mask"};
-//
-//	VTKARRAY *vtkArray;
-//	std::vector<field::Field<FLDARRAY>> arrFields;
-//	
-//	#ifdef PARAVIEW_USE_MPI
-//	
-//	// Thread 0 has all the information in input and output, therefore is the
-//	// only computing the array which will later be broadcasted to all ranks
-//	if (this->procId == 0) {
-//		InitializeStatistics(arrNames,arrNamesNotComputed,input,output);
-//		RecoverMasterFileName(FileName, input);
-//		// Initalize accumulating fields
-//		for (std::string arrName : arrNames) {
-//			vtkArray = VTKARRAY::SafeDownCast( input->GetCellData()->GetArray(arrName.c_str()) );
-//			arrFields.push_back( field::Field<FLDARRAY>(vtkArray->GetNumberOfTuples(),vtkArray->GetNumberOfComponents(),0.) );
-//		}
-//	}
-//	
-//	// Broadcast the information to all other threads if applicable
-//	if (this->nProcs > 1) {
-//		// Broadcast master file name
-//		int str_len = FileName.length();
-//		this->Controller->Broadcast(&str_len,1,0);
-//		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str());
-//		this->Controller->Broadcast(buff,str_len,0);
-//		FileName = std::string(buff);
-//		
-//		// Broadcast number of arrays to compute
-//		int n_arrays = arrNames.size();
-//		this->Controller->Broadcast(&n_arrays,1,0);
-//		
-//		// Allocate array on the other ranks
-//		if (this->procId > 0) arrNames.resize(n_arrays,std::string(""));
-//		for (int varId = 0; varId < arrNames.size(); ++varId) {
-//			// Array length
-//			str_len = arrNames[varId].length();
-//			this->Controller->Broadcast(&str_len,1,0);
-//			// Array name
-//			std::memset(buff,0,128*sizeof(char));
-//			sprintf(buff,"%s",arrNames[varId].c_str());
-//			this->Controller->Broadcast(buff,str_len,0);
-//			arrNames[varId] = std::string(buff);
-//			// Array field
-//			int n = 0, m = 0;
-//			vtkArray = VTKARRAY::SafeDownCast( input->GetCellData()->GetArray(arrNames[varId].c_str()) );
-//			if (vtkArray) {
-//				n = vtkArray->GetNumberOfTuples();
-//				m = vtkArray->GetNumberOfComponents();
-//			}
-//			this->Controller->Broadcast(&n,1,0);
-//			this->Controller->Broadcast(&m,1,0);
-//			if (this->procId > 0) 
-//				arrFields.push_back( field::Field<FLDARRAY>(n,m,0.) );
-//		}
-//	}
-//	
-//	#else
-//	
-//	// This is the normal non-parallel algorithm
-//	InitializeStatistics(arrNames,arrNamesNotComputed,input,output);
-//	RecoverMasterFileName(FileName, input);
-//
-//	// Initalize accumulating fields
-//	for (std::string arrName : arrNames) {
-//		vtkArray = VTKARRAY::SafeDownCast( input->GetCellData()->GetArray(arrName.c_str()) );
-//		arrFields.push_back( field::Field<FLDARRAY>(vtkArray->GetNumberOfTuples(),vtkArray->GetNumberOfComponents(),0.) );
-//	}
-//
-//	#endif
-//
-//	// Read the OGS file to be able to generate the paths to the variable files
-//	ogs::OGS ogsdata(FileName);
-//	if (ogsdata.readMainFile() == -1) { 
-//		vtkErrorMacro("Cannot read <"<<FileName<<">!\nAborting");
-//		return 0;
-//	}
-//
-//	this->UpdateProgress(0.1);
-//
-//	/* ACCUMULATE PHASE
-//
-//		Open and read the NetCDF files containing the variables that we previously
-//		defined. Accumulate in the arrays from ii_start to ii_end.
-//
-//	*/
-//	
-//	int time_interval[2] = {this->ii_start,this->ii_end};
-//
-//	// Parallel partition
-//	#ifdef PARAVIEW_USE_MPI
-//
-//	if (this->nProcs > 1) {
-//		// Main thread (0) contains values for ii_start and ii_end
-//		// They must be sent to the other processes
-//		this->Controller->Broadcast(time_interval,2,0);
-//
-//		// Now everyone should have the range of start and end times
-//		// We must split equally among the threads. We must also control
-//		// that the number of threads is less or equal than the intervals
-//		// requested.
-//		int range = time_interval[1] - time_interval[0];
-//		if (this->nProcs < range) {
-//			// We split normally among processes assuming no remainder
-//			int rangePerProcess = std::floor(range/this->nProcs);
-//			this->ii_start = time_interval[0] + this->procId*rangePerProcess;
-//			this->ii_end   = this->ii_start + rangePerProcess;
-//			// Handle the remainder
-//			int remainder = range - rangePerProcess*this->nProcs;
-//			if (remainder > this->procId){
-//				this->ii_start += this->procId;
-//				this->ii_end   += this->procId + 1;
-//			} else {
-//				this->ii_start += remainder;
-//				this->ii_end   += remainder;
-//			}
-//		} else {
-//			// Each process will forcefully conduct one instant.
-//			this->ii_start = (this->procId < time_interval[1]) ? this->procId     : time_interval[1];
-//			this->ii_end   = (this->procId < time_interval[1]) ? this->procId + 1 : time_interval[1];
-//		}
-//	}
-//
-//	#endif
-//
-//	// Ensure the validity of the time range
-//	if (time_interval[0] > time_interval[1]) {
-//		if (this->procId == 0) 
-//			vtkErrorMacro("End time is greater than initial time! Please select a valid time range.");
-//		return 0;
-//	}
-//
-//	// Loop the instants, prepare arrays and variables for the computation of the mean
-//	field::Field<FLDARRAY> arrayTemp;
-//	
-//	// For each timestep
-//	for(int ii = this->ii_start; ii < this->ii_end; ++ii) {
-//		FLDARRAY ii_range = (FLDARRAY)(ii + 1. - this->ii_start);
-//		// For each variable 
-//		for (int varId = 0; varId < arrNames.size(); ++varId) {
-//			if (arrNames[varId] == std::string("Velocity")) {
-//				// Load the variable on a temporal field
-//				arrayTemp.set_dim(arrFields[varId].get_n(),arrFields[varId].get_m());
-//
-//				std::vector<std::string> vel_vars(3);
-//				vel_vars[0] = std::string("vozocrtx");
-//				vel_vars[1] = std::string("vomecrty");
-//				vel_vars[2] = std::string("vovecrtz");
-//
-//				if ( NetCDF::readNetCDF(ogsdata.var_path(arrNames[varId],ii).c_str(), vel_vars.data(), arrayTemp) != NETCDF_OK ) {					    								  
-//					vtkErrorMacro("Cannot read variable <"<<arrNames[varId]<<"> in NetCDF! Aborting!"); return 0;
-//				}
-//				// Projecting the velocity field to the UVW grid is done a the end
-//			} else {
-//				// Load the variable on a temporal field
-//				arrayTemp.set_dim(arrFields[varId].get_n(),arrFields[varId].get_m());
-//
-//				if ( NetCDF::readNetCDF(ogsdata.var_path(arrNames[varId],ii).c_str(), 
-//					ogsdata.var_vname(arrNames[varId]), arrayTemp) != NETCDF_OK ) {
-//					vtkErrorMacro("Cannot read variable <"<<arrNames[varId]<<"> in NetCDF! Aborting!"); return 0;
-//				}
-//			}
-//			// Accumulate, implement 1 pass averaging algorithm
-//			#pragma omp parallel shared(arrFields,arrayTemp) firstprivate(ii_range)
-//			{
-//			for (int nId = OMP_THREAD_NUM; nId < arrFields[varId].get_n(); nId += OMP_NUM_THREADS) {
-//				for (int mId = 0; mId < arrFields[varId].get_m(); ++mId) { 
-//					arrFields[varId][nId][mId] += (1./ii_range)*(arrayTemp[nId][mId] - arrFields[varId][nId][mId]);
-//				}
-//			}
-//			}
-//			arrayTemp.clear();
-//		}
-//		this->UpdateProgress(0.1+0.7/(this->ii_end-this->ii_start)*(ii-this->ii_start));
-//	}
-//
-//	/* REDUCTION PHASE
-//
-//		If run in parallel with more than one rank, 
-//		the reduction of the fields is done here.
-//
-//	*/
-//	#ifdef PARAVIEW_USE_MPI
-//
-//	// Only reduce if we have more than 1 process
-//	if (this->nProcs > 1) {
-//		FLDARRAY n_range = (FLDARRAY)(this->ii_end-this->ii_start);
-//		// For each variable 
-//		for (int varId = 0; varId < arrNames.size(); ++varId) {
-//			arrayTemp.set_dim(arrFields[varId].get_n(),arrFields[varId].get_m());
-//
-//			// Reduce to arrayTemp on rank 0
-//			arrFields[varId] *= n_range;
-//			this->Controller->Reduce(arrFields[varId].data(),arrayTemp.data(),arrayTemp.get_sz(),
-//				vtkCommunicator::StandardOperations::SUM_OP,0);
-//
-//			// Average among processes
-//			if (this->procId == 0) {
-//				#pragma omp parallel shared(arrFields,arrayTemp) firstprivate(time_interval)
-//				{
-//				for (int nId = OMP_THREAD_NUM; nId < arrFields[varId].get_n(); nId += OMP_NUM_THREADS) {
-//					for (int mId = 0; mId < arrayTemp.get_m(); ++mId) { 
-//						arrFields[varId][nId][mId] = arrayTemp[nId][mId]/( (FLDARRAY)(time_interval[1] - time_interval[0]) );
-//					}
-//				}
-//				}
-//			}
-//
-//			arrayTemp.clear();
-//		}
-//	}
-//
-//	#endif
-//
-//	this->UpdateProgress(0.9);
-//
-//	/* FINALIZE
-//
-//		Finalization, the master process stores the arrays
-//		inside the output.
-//
-//	*/
-//
-//	// Add arrays to output
-//	if (this->procId == 0) {
-//		for (int varId = 0; varId < arrNames.size(); ++varId) {
-//			vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrNames[varId],arrFields[varId]);
-//			output->GetCellData()->AddArray(vtkArray);
-//			vtkArray->Delete();
-//		}
-//	}
-//
 	this->UpdateProgress(1.);
-	return 1;
+	return retval;
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSTimeAverage::PipelineIterationAlgorithm(vtkInformation *request, 
+int vtkOGSTimeAverage::PipelineIterationAlgorithm(vtkInformation *request, 
 	vtkDataSet *inData, vtkDataSet *outData) {
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Initialize.
 	if (this->CurrentTimeIndex == 0) {
@@ -542,7 +273,10 @@ void vtkOGSTimeAverage::PipelineIterationAlgorithm(vtkInformation *request,
 	this->UpdateProgress(.25);
 
 	// Accumulate new data.
+	int    itime  = this->instants[this->CurrentTimeIndex];
 	double weight = this->weights[this->CurrentTimeIndex];
+	this->sum_weights += weight;
+//	printf("Time: <%d,%d> %s\n",this->CurrentTimeIndex,itime,this->TL[itime].as_string("%Y-%m-%d %H:%M:%S").c_str());
 
 	// Accumulate CellData
 	for (int varId=0; varId < outData->GetCellData()->GetNumberOfArrays(); ++varId) {
@@ -565,30 +299,21 @@ void vtkOGSTimeAverage::PipelineIterationAlgorithm(vtkInformation *request,
 		field::Field<FLDARRAY> inArray, outArray;
 		inArray  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkInArray);
 		outArray = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkOutArray);
+		if (this->CurrentTimeIndex == 0) outArray.set_val(0.);
 
 		// Loop the mesh
-		#pragma omp parallel
+		#pragma omp parallel shared(inArray,outArray)
 		{
-		// Initialize to zero
-		if (this->CurrentTimeIndex == 0) {
-			for (int ii=OMP_THREAD_NUM; ii<outArray.get_n(); ii+=OMP_NUM_THREADS) {
-				for (int jj=0; jj<outArray.get_m(); ++jj)
-					outArray[ii][jj] = 0.;
-			}
-		}
-		// Synchronize
-		#pragma omp barrier 
-		// Accumulate
 		for (int ii=OMP_THREAD_NUM; ii<outArray.get_n(); ii+=OMP_NUM_THREADS)
 			for (int jj=0; jj<outArray.get_m(); ++jj)
 				outArray[ii][jj] += weight/this->sum_weights*(inArray[ii][jj] - outArray[ii][jj]);
-		
 		}
 
 		// Set array back on output
 		vtkOutArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName,outArray);
 		outData->GetCellData()->RemoveArray(arrName.c_str());
 		outData->GetCellData()->AddArray(vtkOutArray);
+		vtkOutArray->Delete();
 		
 		this->UpdateProgress(.25 + .25*varId/outData->GetCellData()->GetNumberOfArrays());
 	}
@@ -615,38 +340,28 @@ void vtkOGSTimeAverage::PipelineIterationAlgorithm(vtkInformation *request,
 		field::Field<FLDARRAY> inArray, outArray;
 		inArray  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkInArray);
 		outArray = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkOutArray);
+		if (this->CurrentTimeIndex == 0) outArray.set_val(0.);
 
 		// Loop the mesh
-		#pragma omp parallel
+		#pragma omp parallel shared(inArray,outArray)
 		{
-		// Initialize to zero
-		if (this->CurrentTimeIndex == 0) {
-			for (int ii=OMP_THREAD_NUM; ii<outArray.get_n(); ii+=OMP_NUM_THREADS) {
-				for (int jj=0; jj<outArray.get_m(); ++jj)
-					outArray[ii][jj] = 0.;
-			}
-		}
-		// Synchronize
-		#pragma omp barrier 
 		// Accumulate
 		for (int ii=OMP_THREAD_NUM; ii<outArray.get_n(); ii+=OMP_NUM_THREADS)
 			for (int jj=0; jj<outArray.get_m(); ++jj)
 				outArray[ii][jj] += weight/this->sum_weights*(inArray[ii][jj] - outArray[ii][jj]);
-		
 		}
 
 		// Set array back on output
 		vtkOutArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName,outArray);
 		outData->GetPointData()->RemoveArray(arrName.c_str());
 		outData->GetPointData()->AddArray(vtkOutArray);
+		vtkOutArray->Delete();
 
-		this->UpdateProgress(.5 + .25*varId/outData->GetCellData()->GetNumberOfArrays());
+		this->UpdateProgress(.5 + .25*varId/outData->GetPointData()->GetNumberOfArrays());
 	}
 	this->UpdateProgress(0.75);
 
 	// Increment the time-step
-//	printf("Time: <%d,%d> %s\n",this->CurrentTimeIndex,this->instants[this->CurrentTimeIndex],
-//		this->TL[this->instants[this->CurrentTimeIndex]].as_string("%Y-%m-%d %H:%M:%S").c_str());
 	this->CurrentTimeIndex++;
 
 	// Continue executing or finish
@@ -657,7 +372,286 @@ void vtkOGSTimeAverage::PipelineIterationAlgorithm(vtkInformation *request,
 		// We are done. Finish up.
 		request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
 		this->CurrentTimeIndex = 0;
-  }	
+		this->sum_weights = 0.;
+	}
+
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSTimeAverage::FileIterationAlgorithm(vtkInformation *request, 
+	vtkDataSet *inData, vtkDataSet *outData) {
+
+	// Check inputs
+	if (!inData->IsA("vtkRectilinearGrid")) {
+		vtkErrorMacro("A rectilinear grid is needed for this method! Cannot continue...");
+		return 0;		
+	}
+
+	if (inData->GetPointData()->GetNumberOfArrays() > 0) {
+		vtkErrorMacro("Data contains point arrays! Cannot continue...");
+		return 0;
+	}
+
+	/* INITIALIZATION PHASE
+
+		Obtain the names of the variables that need to be time-averaged by reading
+		which variables have been loaded as cell arrays. Note that this filter cannot
+		deal with point array variables.
+
+		Recover (and broadcast) the file name of the OGS master file.
+
+		Initialize arrays for accumulating.
+
+	*/
+	// Define a vector containing the names of the arrays to compute and to exclude
+	VTKARRAY *vtkOutArray;
+	std::string FileName;
+	
+	#ifdef PARAVIEW_USE_MPI
+	
+	// Thread 0 has all the information in input and output, therefore is the
+	// only computing the array which will later be broadcasted to all ranks
+	if (this->procId == 0) {
+		// Initialize statistics
+		outData->CopyStructure(inData);
+		outData->GetFieldData()->PassData(inData->GetFieldData());
+		outData->GetCellData()->PassData(inData->GetCellData());
+
+		RecoverMasterFileName(FileName, inData);
+	}
+	
+	// Broadcast the information to all other threads if applicable
+	if (this->nProcs > 1) {
+		// Broadcast master file name
+		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str());
+		this->Controller->Broadcast(buff,FileName.length(),0);
+		if (procId > 0) FileName = std::string(buff);
+
+		// Broadcast output data and its arrays
+		this->Controller->Broadcast(outData,0);
+	}
+	
+	#else
+	
+	// This is the normal non-parallel algorithm
+	outData->CopyStructure(inData);
+	outData->GetFieldData()->PassData(inData->GetFieldData());
+	outData->GetCellData()->PassData(inData->GetCellData());
+
+	RecoverMasterFileName(FileName, inData);
+
+	#endif
+
+	// Initialize arrays
+	for (int varId=0; varId < outData->GetCellData()->GetNumberOfArrays(); ++varId) {
+		// Recover the array and the array name
+		vtkDataArray *vtkDArray;
+		vtkDArray = outData->GetCellData()->GetArray(varId);
+		std::string arrName = vtkDArray->GetName();
+
+		// Do not work with the basins, coasts mask, e1, e2 or e3
+		if (std::string("e1")    == arrName)           continue;
+		if (std::string("e2")    == arrName)           continue;
+		if (std::string("e3")    == arrName)           continue;
+		if (arrName.find("mask") != std::string::npos) continue; // a mask has been found
+		
+		vtkOutArray = VTKARRAY::SafeDownCast(vtkDArray);
+
+		field::Field<FLDARRAY> outArray;
+		outArray = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkOutArray);
+		outArray.set_val(0.);
+
+		// Set array back on output
+		vtkOutArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName,outArray);
+		outData->GetCellData()->RemoveArray(arrName.c_str());
+		outData->GetCellData()->AddArray(vtkOutArray);
+		vtkOutArray->Delete();
+	}
+
+	this->UpdateProgress(0.1);
+
+	// Read the OGS file to be able to generate the paths to the variable files
+	ogs::OGS ogsdata(FileName);
+	if (ogsdata.readMainFile() == -1) { 
+		vtkErrorMacro("Cannot read <"<<FileName<<">!\nAborting");
+		return 0;
+	}
+
+	/* ACCUMULATE PHASE
+
+		Instants and weights have already been broadcasted
+		so at this point all the processors should be able
+		to move forward to the accumulation phase.
+
+		Open and read the NetCDF files containing the variables defined
+		in the outData structure.
+	*/
+
+	// Parallel partition, define starting and ending ranges for each worker
+	int ii_start = 0, ii_end = this->instants.size();
+
+	#ifdef PARAVIEW_USE_MPI
+	if (this->nProcs > 1) {
+		// Everyone should have the range of start and end times
+		// We must split equally among the threads. We must also control
+		// that the number of threads is less or equal than the intervals
+		// requested.
+		int range = ii_end - ii_start;
+		if (this->nProcs < range) {
+			// We split normally among processes assuming no remainder
+			int rangePerProcess = std::floor(range/this->nProcs);
+			ii_start = ii_start + this->procId*rangePerProcess;
+			ii_end   = ii_start + rangePerProcess;
+			// Handle the remainder
+			int remainder = range - rangePerProcess*this->nProcs;
+			if (remainder > this->procId){
+				ii_start += this->procId;
+				ii_end   += this->procId + 1;
+			} else {
+				ii_start += remainder;
+				ii_end   += remainder;
+			}
+		} else {
+			// Each process will forcefully conduct one instant.
+			ii_start = (this->procId < ii_end) ? this->procId     : ii_end;
+			ii_end   = (this->procId < ii_end) ? this->procId + 1 : ii_end;
+		}
+	}
+	#endif
+
+	// Loop the instants
+	double w_sum = 0.;
+	for(int inst = ii_start; inst < ii_end; ++inst) {
+		int itime     = this->instants[inst];
+		double weight = this->weights[inst];
+		w_sum += weight;
+//		printf("Time: <%d,%d> %s\n",inst,itime,this->TL[itime].as_string("%Y-%m-%d %H:%M:%S").c_str());
+		// Loop cell arrays
+		for (int varId=0; varId < outData->GetCellData()->GetNumberOfArrays(); ++varId) {
+			// Recover the array and the array name
+			vtkDataArray *vtkDArray;
+			vtkDArray = outData->GetCellData()->GetArray(varId);
+			std::string arrName = vtkDArray->GetName();
+
+			// Do not work with the basins, coasts mask, e1, e2 or e3
+			if (std::string("e1")    == arrName)           continue;
+			if (std::string("e2")    == arrName)           continue;
+			if (std::string("e3")    == arrName)           continue;
+			if (arrName.find("mask") != std::string::npos) continue; // a mask has been found
+
+			vtkOutArray = VTKARRAY::SafeDownCast(vtkDArray);
+
+			field::Field<FLDARRAY> outArray, inArray;
+			outArray = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkOutArray);
+			inArray.set_dim(outArray.get_n(),outArray.get_m());
+
+			// Deal with the velocity
+			if (arrName == std::string("Velocity")) {
+
+				field::Field<FLDARRAY> tmp(outArray.get_n(),outArray.get_m(),0.);
+
+				std::vector<std::string> vel_vars(3);
+				vel_vars[0] = std::string("vozocrtx");
+				vel_vars[1] = std::string("vomecrty");
+				vel_vars[2] = std::string("vovecrtz");
+
+				if ( NetCDF::readNetCDF(ogsdata.var_path(arrName,itime).c_str(), vel_vars.data(), tmp) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read variable <"<<arrName<<"> in NetCDF! Aborting!"); 
+					return 0;
+				}
+
+				// Projecting the velocity field to the UVW grid
+				inArray = field::UVW2T(tmp,ogsdata.e1(),ogsdata.e2(),ogsdata.e3(),ogsdata.nlon()-1,ogsdata.nlat()-1,ogsdata.nlev()-1);
+			} else {
+				if ( NetCDF::readNetCDF(ogsdata.var_path(arrName,itime).c_str(),ogsdata.var_vname(arrName), inArray) != NETCDF_OK ) {
+					vtkErrorMacro("Cannot read variable <"<<arrName<<" ("<<ogsdata.var_vname(arrName)<<")> in NetCDF! Aborting!"); 
+					return 0;
+				}
+			}
+			// Accumulate, implement 1 pass averaging algorithm
+			#pragma omp parallel shared(inArray,outArray)
+			{
+			for (int ii = OMP_THREAD_NUM; ii < outArray.get_n(); ii += OMP_NUM_THREADS)
+				for (int jj = 0; jj < outArray.get_m(); ++jj)
+					outArray[ii][jj] += weight*inArray[ii][jj];
+//					outArray[ii][jj] += (weight/w_sum)*(inArray[ii][jj] - outArray[ii][jj]);
+			}
+			// Set array back on output
+			vtkOutArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName,outArray);
+			outData->GetCellData()->RemoveArray(arrName.c_str());
+			outData->GetCellData()->AddArray(vtkOutArray);
+			vtkOutArray->Delete();
+
+		}
+		this->UpdateProgress(0.1+0.7/(ii_end-ii_start)*(inst-ii_start));
+	}
+
+	// At this point, outData contains the partial sums of the different arrays
+	// Now we need to loop the arrays in outData and reduce them to proc 0
+	// This operation needs to be done only for prodId > 0
+	if (this->nProcs > 1) {
+		// Loop cell arrays
+		for (int varId=0; varId < outData->GetCellData()->GetNumberOfArrays(); ++varId) {
+			// Recover the array and the array name
+			vtkDataArray *vtkDArray;
+			vtkDArray = outData->GetCellData()->GetArray(varId);
+			std::string arrName = vtkDArray->GetName();
+
+			// Do not work with the basins, coasts mask, e1, e2 or e3
+			if (std::string("e1")    == arrName)           continue;
+			if (std::string("e2")    == arrName)           continue;
+			if (std::string("e3")    == arrName)           continue;
+			if (arrName.find("mask") != std::string::npos) continue; // a mask has been found
+
+			this->Controller->AllReduce(vtkDArray,vtkDArray,vtkCommunicator::StandardOperations::SUM_OP);
+		
+			outData->GetCellData()->RemoveArray(arrName.c_str());
+			outData->GetCellData()->AddArray(vtkDArray);
+		}
+	}
+	this->UpdateProgress(0.9);
+
+	// Now proc 0 has all the information. We need to loop the mesh once more to finish
+	// the average.
+	if (this->procId == 0) {
+		// Loop cell arrays
+		for (int varId=0; varId < outData->GetCellData()->GetNumberOfArrays(); ++varId) {
+			// Recover the array and the array name
+			vtkDataArray *vtkDArray;
+			vtkDArray = outData->GetCellData()->GetArray(varId);
+			std::string arrName = vtkDArray->GetName();
+
+			// Do not work with the basins, coasts mask, e1, e2 or e3
+			if (std::string("e1")    == arrName)           continue;
+			if (std::string("e2")    == arrName)           continue;
+			if (std::string("e3")    == arrName)           continue;
+			if (arrName.find("mask") != std::string::npos) continue; // a mask has been found
+			
+			vtkOutArray = VTKARRAY::SafeDownCast(vtkDArray);
+
+			field::Field<FLDARRAY> outArray;
+			outArray = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkOutArray);
+
+			// Accumulate, implement 1 pass averaging algorithm
+			#pragma omp parallel shared(outArray)
+			{
+			for (int ii = OMP_THREAD_NUM; ii < outArray.get_n(); ii += OMP_NUM_THREADS)
+				for (int jj = 0; jj < outArray.get_m(); ++jj)
+					outArray[ii][jj] /= w_sum;
+			}
+
+			// Set array back on output
+			vtkOutArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(arrName,outArray);
+			outData->GetCellData()->RemoveArray(arrName.c_str());
+			outData->GetCellData()->AddArray(vtkOutArray);
+			vtkOutArray->Delete();
+		}
+	}
+	this->UpdateProgress(0.95);
+
+	// And we're done!
+	return 1;
 }
 
 //----------------------------------------------------------------------------

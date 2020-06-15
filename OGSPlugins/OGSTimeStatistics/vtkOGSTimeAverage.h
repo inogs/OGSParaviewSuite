@@ -37,6 +37,12 @@ public:
   static vtkOGSTimeAverage* New();
   vtkTypeMacro(vtkOGSTimeAverage, vtkDataSetAlgorithm);
 
+  // Description:
+  // Selection of the algorithm
+  vtkGetMacro(use_files, int);
+  vtkSetMacro(use_files, int);
+  vtkBooleanMacro(use_files, int);
+
   void SetStartTI(const char *tstep);
   void SetEndTI(const char *tstep);
 
@@ -63,7 +69,8 @@ private:
   vtkOGSTimeAverage(const vtkOGSTimeAverage&) = delete;
   void operator=(const vtkOGSTimeAverage&) = delete;
 
-  void PipelineIterationAlgorithm(vtkInformation *, vtkDataSet *, vtkDataSet *);
+  int PipelineIterationAlgorithm(vtkInformation *, vtkDataSet *, vtkDataSet *);
+  int FileIterationAlgorithm(vtkInformation *, vtkDataSet *, vtkDataSet *);
 
   Time::TimeInterval TI; // TimeInterval for the generic requestor
   Time::TimeList TL;     // TimeList containing all the instants

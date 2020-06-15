@@ -68,6 +68,19 @@
         </Documentation>
      </StringVectorProperty>
 
+     <!-- Algorithm selection -->
+     <IntVectorProperty name="use_files"
+                        label="Fast Algorithm"
+                        command="Setuse_files"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Read from files instead of iterating the pipeline. This
+          algorithm only works with rectilinear grids and cell data.
+        </Documentation>
+     </IntVectorProperty>
+
      <!-- END EXPOSED PROPERTIES -->
 
      <Hints>
