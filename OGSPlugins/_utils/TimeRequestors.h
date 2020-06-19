@@ -323,11 +323,12 @@ namespace Time {
 		Requestor object for - climatologic day -used in Timelist.select() method.
 		*/
 		public:
-			inline Clim_day(const int day) : Requestor() {
+			inline Clim_day(const int month, const int day) : Requestor() {
+				assert(month < 13 && month > 0);
 				assert(day < 31 && day > 0); 
 
 				char buff[256];
-				std:sprintf(buff,"200001d%02d-00:00:00",day);
+				std:sprintf(buff,"2000%02d%02d-00:00:00",month,day);
 				
 				TimeObject start_time(buff,"%Y%m%d-%H:%M%S"), end_time(buff,"%Y%m%d-%H:%M%S");
 				end_time.increment_day(1);
