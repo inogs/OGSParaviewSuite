@@ -194,5 +194,82 @@
          </WarnOnCreate>
      </Hints>
    </SourceProxy>
+
+   <SourceProxy name="OGSClimatology"
+                class="vtkOGSClimatology" 
+                label="OGS Climatology">
+     <Documentation
+        long_help="This plugin computes the climatology on a dataset from a requestor list."
+        short_help="Computes the climatology on a dataset.">
+        This filter uses a climatological requestor to compute the climatology of a dataset.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                           repeatable="1"
+                           information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Requestor list -->
+     <IntVectorProperty name="ReqType"
+                        label="Climatology: "
+                        command="SetReqType"
+                        animateable="1"
+                        default_values="1"
+                        number_of_elements="1">
+       <EnumerationDomain name="enum">
+         <Entry value="0" text="Seasonal"/>
+         <Entry value="1" text="Monthly"/>   
+         <Entry value="2" text="Daily"/> 
+       </EnumerationDomain>
+       <Documentation>
+         Selection of the climatology aggregation.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Algorithm selection -->
+     <IntVectorProperty name="use_files"
+                        label="Fast Algorithm"
+                        command="Setuse_files"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Read from files instead of iterating the pipeline. This
+          algorithm only works with rectilinear grids and cell data.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+         <WarnOnCreate title="WARNING Potentially slow operation!">
+          **OGS Time Statistics** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>
+     </Hints>
+   </SourceProxy>
+
  </ProxyGroup>
 </ServerManagerConfiguration>
