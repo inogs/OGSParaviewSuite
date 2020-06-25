@@ -140,6 +140,21 @@ int vtkOGSClimatology::RequestInformation(vtkInformation* vtkNotUsed(request),
 				outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 			}
 			break;
+		case 2: // Climatological day (365 days)
+			{
+				timeSteps = new double[365];
+				Time::TimeObject TO("20000101-00:00:00","%Y%m%d-%H:%M:%S");
+				for (int ii = 0; ii < 365; ii++) {
+					TO.increment_day(1);
+					struct tm tm  = TO.get_tm();
+					timeSteps[ii] = difftime(mktime(&tm),0);
+				}
+				outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timeSteps[0], 365);
+				// Set up the time range
+				double timeRange[2] = {timeSteps[0], timeSteps[364]};
+				outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+			}
+			break;
 	}
 
 	delete [] timeSteps;
@@ -228,6 +243,21 @@ int vtkOGSClimatology::RequestData(vtkInformation *request,
 						outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 					}
 					break;
+				case 2: // Climatological day (365 days)
+					{
+						timeSteps = new double[365];
+						Time::TimeObject TO("20000101-00:00:00","%Y%m%d-%H:%M:%S");
+						for (int ii = 0; ii < 365; ii++) {
+							TO.increment_day(1);
+							struct tm tm  = TO.get_tm();
+							timeSteps[ii] = difftime(mktime(&tm),0);
+						}
+						outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timeSteps[0], 365);
+						// Set up the time range
+						double timeRange[2] = {timeSteps[0], timeSteps[364]};
+						outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+					}
+					break;
 			}
 
 			delete [] timeSteps;
@@ -276,6 +306,24 @@ int vtkOGSClimatology::RequestData(vtkInformation *request,
 						}
 					}
 					break;
+				case 2: // Climatological day (365 days)
+					{
+						ii_tstep = std::distance(timeSteps,std::find(timeSteps,timeSteps+12,requestedTimeValue));
+						if (ii_tstep >= 365) ii_tstep = 0;
+						
+						Time::TimeObject TO("20000101-00:00:00","%Y%m%d-%H:%M:%S");
+						TO.increment_day(ii_tstep);
+
+						int day   = std::stoi(TO.as_string("%d"));
+						int month = std::stoi(TO.as_string("%m"));
+
+						Time::Clim_day  clim_req(month,day);
+						if (this->TL.select(&clim_req,this->instants,this->weights) == TIME_ERR) {
+							vtkErrorMacro("Error selecting instants with Requestor! Cannot continue...");
+							return 0;
+						}
+					}
+					break;				
 			}
 //			for (int ii=0; ii<instants.size();++ii)
 //				printf("ii %d ind: %d, weight: %f, %s\n",ii_tstep,this->instants[ii],this->weights[ii],
