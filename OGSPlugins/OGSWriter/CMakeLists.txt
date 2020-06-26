@@ -1,49 +1,24 @@
 # create a plugin that adds a reader to the ParaView GUI
 # it is added in the file dialog when doing opens/saves.
-
 cmake_minimum_required(VERSION 3.3)
 
 #--------------------------------------------------
-# Find and Use ParaView
+# Main CMAKE file detection
 #--------------------------------------------------
-INCLUDE_DIRECTORIES(${VTK_INCLUDE_DIRS})
+include(./../OGSPlugins.cmake)
 
-IF(NOT ParaView_BINARY_DIR)
-  FIND_PACKAGE(ParaView REQUIRED)
-  INCLUDE(${PARAVIEW_USE_FILE})
-ENDIF()
+#--------------------------------------------------
+# Libraries
+#--------------------------------------------------
+include(${UTILS}) # UTILS detection
+include(${PROJ})  # PROJ detection
+include(${CNPY})  # CNPY detection
 
-# Set a consistent MACOSX_RPATH default across all CMake versions.
-# When CMake 2.8.12 is required, change this default to 1.
-# When CMake 3.0.0 is required, remove this block (see CMP0042).
-if(NOT DEFINED CMAKE_MACOSX_RPATH)
-  set(CMAKE_MACOSX_RPATH 0)
-endif()
-
-if(PARAVIEW_USE_MPI)
-  include(vtkMPI)
-endif()
-
-# UTILS detection
-include(../_utils/utils.cmake)
-# CNPY detection
-include(../_utils/cnpy/cnpy.cmake)
-# PROJ detection
-include(../_utils/proj/proj.cmake)
-
-if(NOT APPLE)
-# OpenMP does not work with Apple's clang so we deactivate it.
-  set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
-  set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-endif()
-
-set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -lz")
-set ( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -lz")
-# Fix for ParaView-5.6.3 and OSPRAY
-find_package(ospray REQUIRED)
-
-ADD_PARAVIEW_PLUGIN(OGSWriter "1.0"
-  SERVER_MANAGER_XML OGSWriter.xml
+#--------------------------------------------------
+# ParaView plugin
+#--------------------------------------------------
+add_paraview_plugin(OGSWriter "1.0"
+  SERVER_MANAGER_XML     OGSWriter.xml
   SERVER_MANAGER_SOURCES ${OGS} ${VTKFIELDS} ${VTKOPS} ${CNPY} vtkOGSNPZWriter.cxx vtkOGSNPZTableWriter.cxx vtkOGSFieldWriter.cxx vtkOGSNetCDFWriter.cxx
   REQUIRED_ON_SERVER
-  )
+)

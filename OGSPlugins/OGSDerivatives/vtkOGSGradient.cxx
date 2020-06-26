@@ -45,16 +45,8 @@
 #include <vector>
 #include <algorithm>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#define OMP_NUM_THREADS omp_get_num_threads()
-#define OMP_THREAD_NUM  omp_get_thread_num()
-#else
-#define OMP_NUM_THREADS 1
-#define OMP_THREAD_NUM  0
-#endif
-
+//-----------------------------------------------------------------------------
+#include "macros.h"
 #include "matrixMN.h"
 
 lapack_logical sortfun(const double *ER, const double *EI) { return(*EI != 0); }

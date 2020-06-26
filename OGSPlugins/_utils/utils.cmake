@@ -3,7 +3,7 @@
 ##############################################
 
 # List the folder where all the headers are
-set( UTILS_FOLDER "${CMAKE_CURRENT_LIST_DIR}")
+set( UTILS_FOLDER     "${CMAKE_CURRENT_LIST_DIR}")
 set( UTILS_INC_FOLDER "${CMAKE_CURRENT_LIST_DIR}")
 
 # Add the folders in the include path
@@ -27,6 +27,7 @@ set( FIELDOPS
 set( VTKOPS
 	${UTILS_FOLDER}/vtkOperations.cpp
 	)
+
 # Field and VTK operations combined
 set( OPS
 	${UTILS_FOLDER}/fieldOperations.cpp
@@ -43,5 +44,3 @@ set( OGS
 	${UTILS_FOLDER}/netcdfio.cpp
 	${UTILS_FOLDER}/OGS.cpp
 	)
-
-

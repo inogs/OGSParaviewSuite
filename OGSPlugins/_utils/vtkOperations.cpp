@@ -23,8 +23,7 @@
 #include "vtkFieldData.h"
 #include "vtkSmartPointer.h"
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
+#ifdef USE_OMP
 #include <omp.h>
 #define OMP_NUM_THREADS omp_get_num_threads()
 #define OMP_THREAD_NUM  omp_get_thread_num()

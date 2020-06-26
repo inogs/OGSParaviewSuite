@@ -126,7 +126,7 @@ namespace v3
 	inline void    V3::operator+=(const V3 &v)            { val[0]+=v[0]; val[1]+=v[1]; val[2]+=v[2]; }
 	inline void    V3::operator-=(const V3 &v)            { val[0]-=v[0]; val[1]-=v[1]; val[2]-=v[2]; }
 	inline void    V3::operator*=(const V3 &v)            { val[0]*=v[0]; val[1]*=v[1]; val[2]*=v[2]; }
-	inline bool    V3::operator==(const V3 &v) const      { V3 d = (*this) - v; return( (d.norm2() < 1e-10) ? true : false ); }
+	inline bool    V3::operator==(const V3 &v) const      { return( ((*this- v).norm2() < 1e-10) ? true : false ); }
 	inline bool    V3::operator<(const V3 &v)const        { return(this->norm2() < v.norm2()); }
 	inline double  V3::operator[](int i) const            { return val[i]; }
 	inline double &V3::operator[](int i)                  { return val[i]; }

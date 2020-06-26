@@ -35,7 +35,6 @@
 vtkStandardNewMacro(vtkOGSNPZTableWriter);
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 #include "V3.h"
 #include "field.h"

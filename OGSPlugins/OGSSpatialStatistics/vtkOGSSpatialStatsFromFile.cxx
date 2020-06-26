@@ -33,11 +33,6 @@
 #include <cstdint>
 #include <string>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#endif
-
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
 vtkCxxSetObjectMacro(vtkOGSSpatialStatsFromFile, Controller, vtkMultiProcessController);
@@ -46,13 +41,12 @@ vtkCxxSetObjectMacro(vtkOGSSpatialStatsFromFile, Controller, vtkMultiProcessCont
 vtkStandardNewMacro(vtkOGSSpatialStatsFromFile);
 
 //----------------------------------------------------------------------------
-
-#define STTIND(bId,cId,kk,sId,ns,nz,nc) ( (ns)*(nz)*(nc)*(bId) + (ns)*(nz)*(cId) + (ns)*(kk) + (sId) )
-
 #include "macros.h"
 #include "field.h"
 #include "netcdfio.h"
 #include "vtkFields.h"
+
+#define STTIND(bId,cId,kk,sId,ns,nz,nc) ( (ns)*(nz)*(nc)*(bId) + (ns)*(nz)*(cId) + (ns)*(kk) + (sId) )
 
 //----------------------------------------------------------------------------
 vtkOGSSpatialStatsFromFile::vtkOGSSpatialStatsFromFile(){

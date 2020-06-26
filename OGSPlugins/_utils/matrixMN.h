@@ -49,6 +49,8 @@
 // basic algebra operations
 #ifdef USE_LAPACK
 	#include "lapacke.h"
+
+	#define LAPACK_MAJOR LAPACK_COL_MAJOR
 #endif
 
 #define BLK_LIM 5000
@@ -318,7 +320,7 @@ namespace matMN
 		matrixMN<double> A(*this);
 		double *dummy = new double[this->n];
 		// Call lapacke routine
-		LAPACKE_dgeev(LAPACK_ROW_MAJOR,'N','V',A.get_n(), A.data(), A.get_m(), 
+		LAPACKE_dgeev(LAPACK_MAJOR,'N','V',A.get_n(), A.data(), A.get_m(), 
 			&wr[0], &wi[0],dummy,this->n,V.data(),this->n);
 		// Deallocate memory
 		delete [] dummy;
@@ -332,7 +334,7 @@ namespace matMN
 		matrixMN<float> A(*this);
 		float *dummy = new float[this->n];
 		// Call lapacke routine
-		LAPACKE_sgeev(LAPACK_ROW_MAJOR,'N','V',A.get_n(), A.data(), A.get_m(), 
+		LAPACKE_sgeev(LAPACK_MAJOR,'N','V',A.get_n(), A.data(), A.get_m(), 
 			&wr[0], &wi[0],dummy,this->n,V.data(),this->n);
 		// Deallocate memory
 		delete [] dummy;
@@ -399,7 +401,7 @@ namespace matMN
 		int sdim = 0; matrixMN<double> A(*this);
 		// wr, wi and Z should already be allocated at this point
 		// Call lapacke routine
-		LAPACKE_dgees(LAPACK_ROW_MAJOR, 'V', sort, select, A.get_n(), A.data(), 
+		LAPACKE_dgees(LAPACK_MAJOR, 'V', sort, select, A.get_n(), A.data(), 
 			A.get_n(), &sdim, &wr[0], &wi[0], Z.data(), A.get_n());
 		// Return A as the real Schur form
 		return A;		
@@ -427,7 +429,7 @@ namespace matMN
 		matrixMN<double> A_aux = A.convert<double>(), Z_aux = Z.convert<double>();
 		double *wr_aux = new double[this->n], *wi_aux = new double[this->n];
 		// Call lapacke routine
-		LAPACKE_dgees(LAPACK_ROW_MAJOR, 'V', sort, select, A_aux.get_n(), A_aux.data(), 
+		LAPACKE_dgees(LAPACK_MAJOR, 'V', sort, select, A_aux.get_n(), A_aux.data(), 
 			A_aux.get_n(), &sdim, &wr_aux[0], &wi_aux[0], Z_aux.data(), A_aux.get_n());
 		// Copy outputs
 		std::copy(wr_aux,wr_aux+this->n,wr); std::copy(wi_aux,wi_aux+this->n,wi);

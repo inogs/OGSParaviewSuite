@@ -1,7 +1,7 @@
 /*=========================================================================
 
-  Program:   OGSComputeLambda2Criterion
-  Module:    vtkOGSComputeLambda2Criterion.cxx
+  Program:   OGSComputeRortexCriterion
+  Module:    vtkOGSComputeRortexCriterion.cxx
 
   Copyright (c) 2018 Arnau Miro, OGS
   All rights reserved.
@@ -26,26 +26,18 @@
 #include "vtkInformationVector.h"
 #include "vtkRectilinearGrid.h"
 
-#include "vtkOGSComputeLambda2Criterion.h"
+#include "vtkOGSComputeRortexCriterion.h"
 
 #include "vtkObjectFactory.h"
 
-#include <algorithm>
-
-#ifdef __linux__
-// Include OpenMP when working with GCC
-#include <omp.h>
-#endif
-
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
-vtkCxxSetObjectMacro(vtkOGSComputeLambda2Criterion, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkOGSComputeRortexCriterion, Controller, vtkMultiProcessController);
 #endif
 
-vtkStandardNewMacro(vtkOGSComputeLambda2Criterion);
+vtkStandardNewMacro(vtkOGSComputeRortexCriterion);
 
 //----------------------------------------------------------------------------
-
 // V3.h and field.h defined in vtkOGSDerivatives.h
 #include "macros.h"
 #include "matrixMN.h"
@@ -53,10 +45,14 @@ vtkStandardNewMacro(vtkOGSComputeLambda2Criterion);
 #include "vtkFields.h"
 #include "vtkOperations.h"
 
+lapack_logical sortfun(const double *ER, const double *EI) { return(*EI != 0); }
+
 //----------------------------------------------------------------------------
-vtkOGSComputeLambda2Criterion::vtkOGSComputeLambda2Criterion() {
+vtkOGSComputeRortexCriterion::vtkOGSComputeRortexCriterion() {
 	this->field     = NULL;
 	this->grad_type = 0;
+	this->coef      = 0.2;
+	this->epsi      = 1.e-3;
 	this->nProcs    = 0;
 	this->procId    = 0;
 
@@ -67,16 +63,16 @@ vtkOGSComputeLambda2Criterion::vtkOGSComputeLambda2Criterion() {
 }
 
 //----------------------------------------------------------------------------
-vtkOGSComputeLambda2Criterion::~vtkOGSComputeLambda2Criterion() {
+vtkOGSComputeRortexCriterion::~vtkOGSComputeRortexCriterion() {
 	this->Setfield(NULL);
-	
+
 	#ifdef PARAVIEW_USE_MPI
 		this->SetController(NULL);	
 	#endif
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeLambda2Criterion::RequestInformation(vtkInformation* vtkNotUsed(request),
+int vtkOGSComputeRortexCriterion::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector) {
 
 	/* SET UP THE PARALLEL CONTROLLER
@@ -95,27 +91,27 @@ int vtkOGSComputeLambda2Criterion::RequestInformation(vtkInformation* vtkNotUsed
 	if (this->procId > 0) return 1;
 	#endif
 
-	this->isReqInfo = true;
-	return 1;
+  	this->isReqInfo = true;
+  	return 1;
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(request),
+int vtkOGSComputeRortexCriterion::RequestData(vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,vtkInformationVector *outputVector) {
 	// Get the info objects
 	vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
 
 	// Get the input and output
 	vtkRectilinearGrid *input = vtkRectilinearGrid::SafeDownCast(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
 	vtkRectilinearGrid *output = vtkRectilinearGrid::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
-
-	// Stop all threads except from the master to execute
-	#ifdef PARAVIEW_USE_MPI
-	if (this->procId > 0) return 1;
-	#endif
 
 	output->ShallowCopy(input);
 
@@ -185,11 +181,12 @@ int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(reques
 
 	// Loop on the 3D mesh and compute the Q criterion also new scalar arrays 
 	// to store the values for the weights and the mean
-	field::Field<FLDARRAY> Lambda2(array.get_n(),1,0.);
+	field::Field<FLDARRAY> Rortex(array.get_n(),3,0.), Omega(array.get_n(),1,0.), aux(array.get_n(),1,0.),  stats(3,OMP_MAX_THREADS,0.);
+	FLDARRAY eps = 0.;
 
 	this->UpdateProgress(0.1);
 
-	#pragma omp parallel for collapse(3)
+	#pragma omp parallel for collapse(3) reduction(max:eps)
 	for (int kk = 0; kk < nz-1; ++kk) {
 		for (int jj = 0; jj < ny-1; ++jj) {
 			for (int ii = 0; ii < nx-1; ++ii) {
@@ -232,30 +229,146 @@ int vtkOGSComputeLambda2Criterion::RequestData(vtkInformation *vtkNotUsed(reques
 						break;
 				}
 
-				// Compute S, O and R matrices
-				matMN::matrixMN<FLDARRAY> A = 0.5*(deri + deri.t()); // A /= std::sqrt(A.norm2());
-				matMN::matrixMN<FLDARRAY> B = 0.5*(deri - deri.t()); // B /= std::sqrt(B.norm2());
-				matMN::matrixMN<FLDARRAY> C = (A^A) + (B^B);         // Dot product
+				// Rortex computation
+				matMN::matrixMN<FLDARRAY> A(3,0.), S(3,0.), Q(3,0.);
 
-				// Compute the eigenvalues and eigenvectors of R
-				FLDARRAY wr[3] = {0.,0.,0.}, wi[3] = {0.,0.,0.};
-				C.eigen(wr,wi);
-				// Sort in ascending order (l2 will always be in the middle)
-				std::sort(wr,wr+3);
+				A = deri.t();
+				S = A.schur('S',sortfun,Q); // schur sorting eigenvalues
 
-				// Store Lambda2
-				Lambda2[ind][0] = wr[1];
+				// det(Q) can only be 1 or -1
+				A = S.t(); // Rewrite A as grad(V)
+				if (Q.det() > 0) {
+					Q = Q.t(); // Rewrite Q
+				} else { // Q.det() < 0
+					FLDARRAY Rval[] = {1,0,0,0,1,0,0,0,-1};
+					matMN::matrixMN<FLDARRAY> Rmat(3,Rval);
+					Q = Rmat^Q.t();               // Rewrite Q
+					A[2][0] *= -1; A[2][1] *= -1; // Rewrite A as grad(V)
+				}
+
+				// alpha and beta
+				FLDARRAY alpha = 0.5*std::sqrt( 
+					(A[1][1]-A[0][0])*(A[1][1]-A[0][0]) + (A[1][0]+A[0][1])*(A[1][0]+A[0][1]) );
+				FLDARRAY beta  = 0.5*(A[1][0]-A[0][1]);
+
+				// Rortex magnitude
+				FLDARRAY Rm = 0.;
+				if ( (beta*beta - alpha*alpha) > 0. )
+					Rm = (beta > 0.) ? 2*(beta-alpha) : 2*(beta+alpha);
+				Rortex[ind][0] = Rm*Q[2][0];
+				Rortex[ind][1] = Rm*Q[2][1];
+				Rortex[ind][2] = Rm*Q[2][2];
+
+				// Omega Rortex
+				aux[ind][0]   = alpha*alpha;
+				Omega[ind][0] = beta*beta; 
+
+				// Store the maximum of (beta - alpha)
+				FLDARRAY ba_aux = Omega[ind][0] - aux[ind][0];
+				eps = (ba_aux > eps) ? ba_aux : eps;
+
+				// Compute the statistics
+				int        tId = OMP_THREAD_NUM;        // Which thread are we
+				FLDARRAY     w = e1[ind][0]*e2[ind][0]; // Weight
+				FLDARRAY m_old = stats[1][tId];         // Mean Old
+
+				stats[0][tId] += w;                                    // sum(weight)
+				stats[1][tId] += w/stats[0][tId]*(Rm - stats[1][tId]); // accumulate mean
+				stats[2][tId] += w*(Rm - m_old)*(Rm - stats[1][tId]);  // accumulate std deviation
 			}
 		}
 	}
+	eps *= this->epsi;
+
+	// stats is a shared array containing the statistics per each thread. We must now
+	// reduce to obtain the mean and standard deviation
+	FLDARRAY sum_weights = 0., R_mean = 0., R_std = 0.;
+	for (int ii = 0; ii < OMP_MAX_THREADS; ++ii) {
+		FLDARRAY sum_weights_old = sum_weights;
+		// Weights
+		sum_weights += stats[0][ii];
+		// Mean
+		R_mean = (sum_weights_old*R_mean + stats[0][ii]*stats[1][ii])/sum_weights;
+		// Standard deviation
+		FLDARRAY delta = stats[1][ii] - R_mean;
+		R_std += stats[2][ii] + delta*delta*sum_weights_old*stats[0][ii]/sum_weights;
+	}
+	R_std = this->coef*sqrt(R_std/sum_weights);
+
+	this->UpdateProgress(0.5);
+
+	// Now that we have the standard deviation, we can work out the OmegaR
+	// and the Rortex mask
+	field::Field<FLDMASK> Rmask(array.get_n(),1,(FLDMASK)(0));
+
+
+	if (this->use_modified_Omega) {
+		// Set the value of Omega
+		#pragma omp parallel for collapse(3)
+		for (int kk = 0; kk < nz-1; kk++) {
+			for(int jj = 0; jj < ny-1; jj++){
+				for (int ii = 0; ii < nx-1; ii++) {
+					// Compute current point
+					int ind = CLLIND(ii,jj,kk,nx,ny);
+
+					// Use the mask to determine whether we are in the sea or not
+					// to improve the averaging
+					if (!mask.isempty()) {
+						bool skip_ind = true;
+						for (int ii = 0; ii < mask.get_m(); ++ii) {
+							if (mask[ind][ii] > 0) {skip_ind = false; break;}
+						}
+						if (skip_ind) continue;
+					}
+					// Modified Omega = (b + eps)/(a+b+2eps)
+					Omega[ind][0] += eps;
+					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + 2.*eps);
+					// Set the values of the mask
+					FLDARRAY Rmod = sqrt(Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2]);
+					if (Rmod > R_std) Rmask[ind][0] = (FLDMASK)(1); // Vorticity-dominated flow
+				}
+			}
+		}
+	} else {
+		// Set the value of Omega
+		#pragma omp parallel for collapse(3)
+		for (int kk = 0; kk < nz-1; kk++) {
+			for(int jj = 0; jj < ny-1; jj++){
+				for (int ii = 0; ii < nx-1; ii++) {
+					// Compute current point
+					int ind = CLLIND(ii,jj,kk,nx,ny);
+
+					// Use the mask to determine whether we are in the sea or not
+					// to improve the averaging
+					if (!mask.isempty()) {
+						bool skip_ind = true;
+						for (int ii = 0; ii < mask.get_m(); ++ii) {
+							if (mask[ind][ii] > 0) {skip_ind = false; break;}
+						}
+						if (skip_ind) continue;
+					}
+					// Omega = (b)/(a+b+eps)
+					Omega[ind][0] /= (aux[ind][0] + Omega[ind][0] + eps);
+					// Set the values of the mask
+					FLDARRAY Rmod = sqrt(Rortex[ind][0]*Rortex[ind][0] + Rortex[ind][1]*Rortex[ind][1] + Rortex[ind][2]*Rortex[ind][2]);
+					if (Rmod > R_std) Rmask[ind][0] = (FLDMASK)(1); // Vorticity-dominated flow
+				}
+			}
+		}
+	}
+
 	this->UpdateProgress(0.9);
 		
 	// Generate VTK arrays and add them to the output
-	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Lambda2_criterion",Lambda2);
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("Rortex",Rortex);
 	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
+	vtkArray = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("OmegaR_criterion",Omega);
+	output->GetCellData()->AddArray(vtkArray);  vtkArray->Delete();
+	vtkMask  = VTK::createVTKfromField<VTKMASK,FLDMASK>("Rortex mask",Rmask);
+	output->GetCellData()->AddArray(vtkMask);  vtkMask->Delete();
 
-	// Make "Lambda2_criterion" as the active scalar
-	output->GetCellData()->SetActiveScalars("Lambda2_criterion");
+	// Make "Omega_criterion" as the active scalar
+	output->GetCellData()->SetActiveScalars("OmegaR_criterion");
 
 	// Copy the input grid
 	this->UpdateProgress(1.);

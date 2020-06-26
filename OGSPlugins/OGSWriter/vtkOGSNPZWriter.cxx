@@ -41,7 +41,6 @@
 vtkStandardNewMacro(vtkOGSNPZWriter);
 
 //----------------------------------------------------------------------------
-
 #include "macros.h"
 
 #include "V3.h"

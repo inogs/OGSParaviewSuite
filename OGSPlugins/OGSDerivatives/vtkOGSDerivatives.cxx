@@ -39,7 +39,6 @@ vtkCxxSetObjectMacro(vtkOGSDerivatives, Controller, vtkMultiProcessController);
 vtkStandardNewMacro(vtkOGSDerivatives);
 
 //----------------------------------------------------------------------------
-
 // V3.h and field.h defined in vtkOGSDerivatives.h
 #include "macros.h"
 #include "fieldOperations.h"

@@ -1,0 +1,145 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+   <SourceProxy name="OGSDensity"
+                class="vtkOGSDensity" 
+                label="OGS Water Density">
+     <Documentation
+        long_help="This plugin enables to compute the sea water density according to different methods."
+        short_help="Computes water density according to different methods.">
+        This plugin enables to compute the sea water density according to different methods.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- In-situ -->
+     <IntVectorProperty name="UseDepth"
+                        label="Use In-situ"
+                        command="SetuseDepth"
+                        number_of_elements="1"
+                        default_values="1">
+       <BooleanDomain name="bool"/>
+       <Documentation>
+         If this property is set to 1, use in-situ density.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Mode of operation -->
+     <IntVectorProperty name="method"
+                        label="Method"
+                        command="Setmethod"
+                        number_of_elements="1"
+                        default_values="2">
+        <EnumerationDomain name="enum">
+          <Entry text="Linear with temperature"              value="0" />
+          <Entry text="Linear with temperature and salinity" value="1" />
+          <Entry text="JMD 94"                               value="2" />
+          <Entry text="JAOT 12"                              value="3" />
+          <Entry text="JAOT 20"                              value="4" />
+          <Entry text="TEOS 10"                              value="5" />
+        </EnumerationDomain>
+        <Documentation>
+          Set the method used to compute water density.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- Temperature field -->
+     <StringVectorProperty name="Tarrname"
+                           label="Temperature: "
+                           command="SetTarrname"
+                           animateable="1"
+                           default_values="Temperature"
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Scalars"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <Documentation>
+         Name of the temperature field.
+       </Documentation>
+     </StringVectorProperty>
+
+     <!-- Salinity field -->
+     <StringVectorProperty name="Sarrname"
+                           label="Salinity: "
+                           command="SetSarrname"
+                           animateable="1"
+                           default_values="Salinity"
+                           number_of_elements="1">
+       <ArrayListDomain name="array_list"
+                        attribute_type="Scalars"
+                        input_domain_name="inputs_array">
+         <RequiredProperties>
+           <Property name="Input" function="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <Documentation>
+         Name of the salinity field.
+       </Documentation>
+     </StringVectorProperty>
+
+     <!-- Density base value -->
+     <DoubleVectorProperty name="rau0"
+                           label="Density base value: "
+                           command="Setrau0"
+                           number_of_elements="1"
+                           default_values="1020."
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the density base value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- Temperature diffusivity -->
+     <DoubleVectorProperty name="ralpha"
+                           label="Alpha: "
+                           command="Setralpha"
+                           number_of_elements="1"
+                           default_values="2e-4."
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the temperature diffusivity value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- Salinity diffusivity -->
+     <DoubleVectorProperty name="rbeta"
+                           label="Beta: "
+                           command="Setrbeta"
+                           number_of_elements="1"
+                           default_values="0.001"
+                           panel_visibility="advanced">
+        <Documentation>
+          Set the salinity diffusivity value
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <PropertyGroup label="Linear method parameters">
+       <Property name="rau0"/>
+       <Property name="ralpha"/>
+       <Property name="rbeta"/>
+     </PropertyGroup>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+     </Hints>
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>

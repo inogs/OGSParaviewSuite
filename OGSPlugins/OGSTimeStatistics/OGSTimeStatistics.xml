@@ -1,13 +1,12 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="filters">
-   <SourceProxy name="OGSTimeStatistics"
-                class="vtkOGSTimeStatistics" 
-                label="OGS Time Statistics">
+   <SourceProxy name="OGSTimeAverage"
+                class="vtkOGSTimeAverage" 
+                label="OGS Time Average">
      <Documentation
-        long_help="This plugin computes time statistics on a dataset."
-        short_help="Computes time statistics on a dataset.">
-        This filter computes time statistics given a section of the mesh,
-        basin, coast or the whole mediterranean sea.
+        long_help="This plugin computes time averages on a dataset given a requestor."
+        short_help="Computes time averages on a dataset.">
+        Given a time requestor, this filter computes the time average given a section of the mesh, basin, coast or the whole mediterranean sea.
      </Documentation>
 
      <InputProperty
@@ -18,9 +17,19 @@
              <Group name="filters"/>
            </ProxyGroupDomain>
            <DataTypeDomain name="input_type">
-             <DataType value="vtkRectilinearGrid"/>
+             <DataType value="vtkDataSet"/>
            </DataTypeDomain>
-      </InputProperty>
+     </InputProperty>
+
+     <!-- Time step information 
+     <DoubleVectorProperty name="TimestepValues"
+                           repeatable="1"
+                           information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>-->
 
      <!-- BEGIN EXPOSED PROPERTIES -->
 
@@ -32,7 +41,7 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="StartTime"
-                           command="SetStartTime"
+                           command="SetStartTI"
                            number_of_elements="1"
                            label="Start Time: ">
         <StringListDomain name="array_list">
@@ -41,12 +50,12 @@
           </RequiredProperties>
         </StringListDomain>
         <Documentation>
-          Set the initial timestep for the time statistics.
+          Set the initial timestep for the TimeInterval.
         </Documentation>
      </StringVectorProperty>
 
      <StringVectorProperty name="EndTime"
-                           command="SetEndTime"
+                           command="SetEndTI"
                            number_of_elements="1"
                            label="End Time: ">
         <StringListDomain name="array_list">
@@ -55,9 +64,22 @@
           </RequiredProperties>
         </StringListDomain>
         <Documentation>
-          Set the final timestep for the time statistics.
+          Set the final timestep for the TimeInterval.
         </Documentation>
      </StringVectorProperty>
+
+     <!-- Algorithm selection -->
+     <IntVectorProperty name="use_files"
+                        label="Fast Algorithm"
+                        command="Setuse_files"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Read from files instead of iterating the pipeline. This
+          algorithm only works with rectilinear grids and cell data.
+        </Documentation>
+     </IntVectorProperty>
 
      <!-- END EXPOSED PROPERTIES -->
 
@@ -71,5 +93,183 @@
          </WarnOnCreate>
      </Hints>
    </SourceProxy>
+
+   <SourceProxy name="OGSTimeAggregator"
+                class="vtkOGSTimeAggregator" 
+                label="OGS Time Aggregator">
+     <Documentation
+        long_help="This plugin computes time aggregation on a dataset from a requestor list."
+        short_help="Computes time aggregation on a dataset.">
+        This filter uses the getXXXList method from the TimeList to generate a list of
+        requestors and compute time aggregation from them.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                           repeatable="1"
+                           information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Requestor list -->
+     <IntVectorProperty name="ReqType"
+                        label="Time Aggregation: "
+                        command="SetReqType"
+                        animateable="1"
+                        default_values="2"
+                        number_of_elements="1">
+       <EnumerationDomain name="enum">
+         <Entry value="0" text="Daily"/>
+         <Entry value="1" text="Weekly"/>
+         <Entry value="2" text="Monthly"/>   
+         <Entry value="3" text="Seasonally"/>  
+         <Entry value="4" text="Yearly"/>  
+         <Entry value="5" text="Decadal"/>  
+       </EnumerationDomain>
+       <Documentation>
+         Selection of the kind of time aggregation.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Weekday selector -->
+     <IntVectorProperty name="weekday"
+                        label="Weekday: "
+                        command="Setweekday"
+                        animateable="1"
+                        default_values="1"
+                        number_of_elements="1">
+       <EnumerationDomain name="enum">
+         <Entry value="1" text="Monday"/>
+         <Entry value="2" text="Tuesday"/>   
+         <Entry value="3" text="Wednesday"/>  
+         <Entry value="4" text="Thursday"/>  
+         <Entry value="5" text="Friday"/>  
+         <Entry value="6" text="Saturday"/>  
+         <Entry value="7" text="Sunday"/>  
+       </EnumerationDomain>
+       <Documentation>
+         Selection of the day of the week for the weekly requestor.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Algorithm selection -->
+     <IntVectorProperty name="use_files"
+                        label="Fast Algorithm"
+                        command="Setuse_files"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Read from files instead of iterating the pipeline. This
+          algorithm only works with rectilinear grids and cell data.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+         <WarnOnCreate title="WARNING Potentially slow operation!">
+          **OGS Time Statistics** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>
+     </Hints>
+   </SourceProxy>
+
+   <SourceProxy name="OGSClimatology"
+                class="vtkOGSClimatology" 
+                label="OGS Climatology">
+     <Documentation
+        long_help="This plugin computes the climatology on a dataset from a requestor list."
+        short_help="Computes the climatology on a dataset.">
+        This filter uses a climatological requestor to compute the climatology of a dataset.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                           repeatable="1"
+                           information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Requestor list -->
+     <IntVectorProperty name="ReqType"
+                        label="Climatology: "
+                        command="SetReqType"
+                        animateable="1"
+                        default_values="1"
+                        number_of_elements="1">
+       <EnumerationDomain name="enum">
+         <Entry value="0" text="Seasonal"/>
+         <Entry value="1" text="Monthly"/>   
+         <Entry value="2" text="Daily"/> 
+       </EnumerationDomain>
+       <Documentation>
+         Selection of the climatology aggregation.
+       </Documentation>
+     </IntVectorProperty>
+
+     <!-- Algorithm selection -->
+     <IntVectorProperty name="use_files"
+                        label="Fast Algorithm"
+                        command="Setuse_files"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Read from files instead of iterating the pipeline. This
+          algorithm only works with rectilinear grids and cell data.
+        </Documentation>
+     </IntVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+         <WarnOnCreate title="WARNING Potentially slow operation!">
+          **OGS Time Statistics** filter needs to process most of the timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+         </WarnOnCreate>
+     </Hints>
+   </SourceProxy>
+
  </ProxyGroup>
 </ServerManagerConfiguration>

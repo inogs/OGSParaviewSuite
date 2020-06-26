@@ -21,8 +21,7 @@
 #include <vector>
 #include <string>
 
-#ifdef __linux__
-// Include OpenMP when working with GCC
+#ifdef USE_OMP
 #include <omp.h>
 #endif
 
