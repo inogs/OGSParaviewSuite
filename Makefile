@@ -37,6 +37,7 @@ PVPL_PATH = OGSPlugins
 LAPACK_VERS = 3.9.0
 PROJ_VERS   = 5.2.0
 PROJ_DATV   = 1.8
+GEOS_VERS   = 3.7.0
 QT5_VERS    = 5.10
 
 # Path to ParaView
@@ -237,6 +238,8 @@ lapack: $(PVPL_PATH)/_utils/lapack/
 	@bash $</install_lapack.sh "${LAPACK_VERS}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${FC}" "${FFLAGS}"
 proj: $(PVPL_PATH)/_utils/proj/
 	@bash $</install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+geos: $(PVPL_PATH)/_utils/geos/
+	@bash $</install_geos.sh "${GEOS_VERS}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
 
 # ParaView Plugins
 #

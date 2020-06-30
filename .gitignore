@@ -17,6 +17,9 @@ OGSPlugins/_utils/proj/bin
 OGSPlugins/_utils/proj/lib
 OGSPlugins/_utils/proj/include
 OGSPlugins/_utils/proj/share
+OGSPlugins/_utils/geos/bin
+OGSPlugins/_utils/geos/lib
+OGSPlugins/_utils/geos/include
 
 # We ignore all the build directories inside OGSPlugins
 OGSPlugins/*/build
