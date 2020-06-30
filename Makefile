@@ -10,8 +10,6 @@
 #
 # Arnau Miro - OGS (2020)
 
-# TODO: PROJ compilation
-# TODO: LAPACK compilation
 # TODO: Deploy superbuild
 # TODO: Tests
 
@@ -20,6 +18,10 @@
 OPTL = 2
 HOST = Host
 TUNE = skylake
+
+LAPACK_VERS = 3.9.0
+PROJ_VERS   = 5.2.0
+PROJ_DATV   = 1.8
 
 # Options
 #
@@ -221,9 +223,21 @@ MapPlotter: $(BPS_PATH)/MapPlotter
 	@rm -rf $(PV_PYT_PATH)/$@
 	@cp -r $(PWD)/$< $(PV_PYT_PATH)/$@
 
+# Prerequisites
+#
+prereq: lapack proj
+	@echo ""
+	@echo "   Thanks for waiting! Prerequisites have been "
+	@echo "   successfully installed."
+	@echo ""
+lapack: $(PVPL_PATH)/_utils/lapack/
+	@bash $</install_lapack.sh "${LAPACK_VERS}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${FC}" "${FFLAGS}"
+proj: $(PVPL_PATH)/_utils/proj/
+	@bash $</install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+
 # ParaView Plugins
 #
-plugins: plugindir MapPlotterView OGSReader OGSWriter OGSAnnotateDateTime OGSSelectTools OGSUtils OGSVariableAggregator OGSDerivatives OGSVortexIdentification OGSVortexDetection OGSSpatialStatistics OGSTimeStatistics OGSPlotViews OGSDepthProfile OGSHovmoeller OGSSpaghetti OGSCompareVariables OGSDensity OGSMixingLayerDepth OGSRossbyRadius
+plugins: plugindir prereq MapPlotterView OGSReader OGSWriter OGSAnnotateDateTime OGSSelectTools OGSUtils OGSVariableAggregator OGSDerivatives OGSVortexIdentification OGSVortexDetection OGSSpatialStatistics OGSTimeStatistics OGSPlotViews OGSDepthProfile OGSHovmoeller OGSSpaghetti OGSCompareVariables OGSDensity OGSMixingLayerDepth OGSRossbyRadius
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView plugins have been "
 	@echo "   successfully installed."
@@ -437,6 +451,10 @@ clean_bit.sea:
 clean_plugins:
 	-@rm -rf $(PV_PLG_PATH)/libMapPlotterView.so
 	-@rm -rf $(PV_PLG_PATH)/libOGS*
+
+.PHONY: clean		
+clean: clean_tools clean_bit.sea clean_plugins
+	@echo "OGS ParaView Suite successfully cleaned!"
 
 .PHONY: uninstall		
 uninstall: clean_launchers clean_tools clean_bit.sea clean_plugins

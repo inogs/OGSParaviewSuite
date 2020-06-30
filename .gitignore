@@ -10,6 +10,14 @@
 **/*.dylib
 **/*.dll
 
+# We ingore the output directories of the external libraries
+OGSPlugins/_utils/lapack/include
+OGSPlugins/_utils/lapack/lib
+OGSPlugins/_utils/proj/bin
+OGSPlugins/_utils/proj/lib
+OGSPlugins/_utils/proj/include
+OGSPlugins/_utils/proj/share
+
 # We ignore all the build directories inside OGSPlugins
 OGSPlugins/*/build
 
