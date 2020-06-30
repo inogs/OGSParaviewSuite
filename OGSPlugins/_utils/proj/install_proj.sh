@@ -37,9 +37,10 @@ else
 	unzip $PROJ_DATG -d data/
 	cd ../
 
-	# Configure 
 	mkdir build
 	cd build
+
+	# Configure 
 	cmake ../$PROJ_DIR \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
@@ -47,7 +48,18 @@ else
 		-DBUILD_LIBPROJ_SHARED=OFF -DBUILD_LIBPROJ_STATIC=ON \
 		-DCMAKE_C_COMPILER="${CCOMPILER}" -DCMAKE_C_FLAGS="${CFLAGS}" \
 		-DCMAKE_CXX_COMPILER="${CXXCOMPILER}" -DCMAKE_CXX_FLAGS="${CXXFLAGS}" 
+	# Build
+	make -j $(getconf _NPROCESSORS_ONLN)
+	make install
 
+	# Configure 
+	cmake ../$PROJ_DIR \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+		-DPROJ_TESTS=OFF \
+		-DBUILD_LIBPROJ_SHARED=ON -DBUILD_LIBPROJ_STATIC=OFF \
+		-DCMAKE_C_COMPILER="${CCOMPILER}" -DCMAKE_C_FLAGS="${CFLAGS}" \
+		-DCMAKE_CXX_COMPILER="${CXXCOMPILER}" -DCMAKE_CXX_FLAGS="${CXXFLAGS}"
 	# Build
 	make -j $(getconf _NPROCESSORS_ONLN)
 	make install
