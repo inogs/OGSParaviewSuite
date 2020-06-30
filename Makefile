@@ -19,10 +19,6 @@ OPTL = 2
 HOST = Host
 TUNE = skylake
 
-LAPACK_VERS = 3.9.0
-PROJ_VERS   = 5.2.0
-PROJ_DATV   = 1.8
-
 # Options
 #
 VECTORIZATION  = ON
@@ -35,6 +31,13 @@ DEBUGGING      = OFF
 BIN_PATH  = bin
 BPS_PATH  = bit.sea
 PVPL_PATH = OGSPlugins
+
+# Versions of the libraries
+#
+LAPACK_VERS = 3.9.0
+PROJ_VERS   = 5.2.0
+PROJ_DATV   = 1.8
+QT5_VERS    = 5.10
 
 # Path to ParaView
 #
