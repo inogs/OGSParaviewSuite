@@ -272,7 +272,7 @@ void vtkOGSVariableAggregator::SetAggrVarsText() {
 	// Define an XML doc
 	xml::xml_document doc;
 	// If reading has been done correctly
-	if ( doc.load_string(this->XMLText) ) {
+	if ( doc.load(this->XMLText) ) {
 		// Define our main node
 		xml::xml_node aggregate = doc.child("aggregate");
 		// Loop the node
