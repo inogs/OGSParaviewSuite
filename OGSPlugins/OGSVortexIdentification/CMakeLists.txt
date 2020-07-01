@@ -16,8 +16,8 @@ include(${LAPACK}) # LAPACK detection
 #--------------------------------------------------
 # ParaView plugin
 #--------------------------------------------------
-add_paraview_plugin(OGSVortexIndentification "1.0"
-  SERVER_MANAGER_XML     OGSVortexIndentification.xml
+add_paraview_plugin(OGSVortexIdentification "1.0"
+  SERVER_MANAGER_XML     OGSVortexIdentification.xml
   SERVER_MANAGER_SOURCES ${VTKOPS} vtkOGSComputeOkuboWeiss.cxx vtkOGSComputeQCriterion.cxx vtkOGSComputeLambda2Criterion.cxx vtkOGSComputeOmegaCriterion.cxx vtkOGSComputeRortexCriterion.cxx
   REQUIRED_ON_SERVER
 )
