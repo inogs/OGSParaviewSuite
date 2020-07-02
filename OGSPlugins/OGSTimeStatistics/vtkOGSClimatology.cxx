@@ -143,7 +143,7 @@ int vtkOGSClimatology::RequestInformation(vtkInformation* vtkNotUsed(request),
 		case 2: // Climatological day (365 days)
 			{
 				timeSteps = new double[365];
-				Time::TimeObject TO("20000101-00:00:00","%Y%m%d-%H:%M:%S");
+				Time::TimeObject TO("20010101-00:00:00","%Y%m%d-%H:%M:%S");
 				for (int ii = 0; ii < 365; ii++) {
 					TO.increment_day(1);
 					struct tm tm  = TO.get_tm();
@@ -246,7 +246,7 @@ int vtkOGSClimatology::RequestData(vtkInformation *request,
 				case 2: // Climatological day (365 days)
 					{
 						timeSteps = new double[365];
-						Time::TimeObject TO("20000101-00:00:00","%Y%m%d-%H:%M:%S");
+						Time::TimeObject TO("20010101-00:00:00","%Y%m%d-%H:%M:%S");
 						for (int ii = 0; ii < 365; ii++) {
 							TO.increment_day(1);
 							struct tm tm  = TO.get_tm();
@@ -311,7 +311,7 @@ int vtkOGSClimatology::RequestData(vtkInformation *request,
 						ii_tstep = std::distance(timeSteps,std::find(timeSteps,timeSteps+12,requestedTimeValue));
 						if (ii_tstep >= 365) ii_tstep = 0;
 						
-						Time::TimeObject TO("20000101-00:00:00","%Y%m%d-%H:%M:%S");
+						Time::TimeObject TO("20010101-00:00:00","%Y%m%d-%H:%M:%S");
 						TO.increment_day(ii_tstep);
 
 						int day   = std::stoi(TO.as_string("%d"));

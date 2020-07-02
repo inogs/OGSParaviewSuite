@@ -353,7 +353,7 @@ namespace Time {
 				assert(day < 31 && day > 0); 
 
 				char buff[256];
-				std:sprintf(buff,"2000%02d%02d-00:00:00",month,day);
+				std:sprintf(buff,"2001%02d%02d-00:00:00",month,day);
 				
 				TimeObject start_time(buff,"%Y%m%d-%H:%M%S"), end_time(buff,"%Y%m%d-%H:%M%S");
 				end_time.increment_day(1);
