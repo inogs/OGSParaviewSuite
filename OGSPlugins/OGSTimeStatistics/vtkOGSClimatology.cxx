@@ -718,10 +718,8 @@ int vtkOGSClimatology::FileIterationAlgorithm(vtkInformation *request,
 
 				field::Field<FLDARRAY> tmp(outArray.get_n(),outArray.get_m(),0.);
 
-				std::vector<std::string> vel_vars(3);
-				vel_vars[0] = std::string("vozocrtx");
-				vel_vars[1] = std::string("vomecrty");
-				vel_vars[2] = std::string("vovecrtz");
+				std::vector<std::string> vel_vars;
+				strsplit(ogsdata.var_vname(arrName),",",vel_vars);
 
 				if ( NetCDF::readNetCDF(ogsdata.var_path(arrName,itime).c_str(), vel_vars.data(), tmp) != NETCDF_OK ) {
 					vtkErrorMacro("Cannot read variable <"<<arrName<<"> in NetCDF! Aborting!"); 
