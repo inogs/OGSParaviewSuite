@@ -27,43 +27,56 @@
 #
 # Arnau Miro, OGS 2019
 
-# Paraview version
-PV_VERS=$1
-INSTALL_PREFIX=$PWD/paraview-$PV_VERS
-SUITEDIR='OGSParaviewSuite'
-NPROCS=$(getconf _NPROCESSORS_ONLN)
+PV_VERS=${1}
+QT5_VERS=${2}
+PROJ_VERS=${3}
+PROJ_DATV=${4}
+GEOS_VERS=${5}
+CCOMPILER=${6}
+CFLAGS=${7}
+CXXCOMPILER=${8}
+CXXFLAGS=${9}
 
-# Load modules
-# provide a basic building environment
-module purge
-module load gcc openmpi cmake
+NPROCS=$(getconf _NPROCESSORS_ONLN)
+INSTALL_PREFIX="${PWD}/../paraview-${PV_VERS}"
+SUITEDIR="${PWD}"
+SUPERBUILD_DIR="${PWD}/../paraview-superbuild"
+BUILD_DIR="${PWD}/../paraview-build"
+
+VERSIONSDIR="${SUITEDIR}/superbuild/versions"
+MAPPLOTLIBDIR="${SUITEDIR}/superbuild/matplotlib_py27"
+PLUGINDIR="${SUITEDIR}/OGSPlugins/"
+BINDIR="${SUITEDIR}/bin"
+BITSEADIR="${SUITEDIR}/bit.sea"
+
+# Load modules - provide a basic building environment
+if [ $(command -v module) ]; then
+   module purge
+   module load gcc openmpi cmake
+fi
 
 # Obtain superbuild
-git clone --recursive https://gitlab.kitware.com/paraview/paraview-superbuild.git
-cd paraview-superbuild
+git clone --recursive https://gitlab.kitware.com/paraview/paraview-superbuild.git $SUPERBUILD_DIR
+cd $SUPERBUILD_DIR
 git fetch origin
 git checkout "v$PV_VERS"
 git submodule update
-
-# Clone the OGS ParaView suite
-git clone https://github.com/inogs/OGSParaviewSuite.git
-cd $SUITEDIR
-git submodule update --init --recursive
-cd bit.sea
-git pull origin master
-cd ../..
-
 # FIX: versions
-cp $SUITEDIR/superbuild/versions/versions_new.cmake versions.cmake
-cp $SUITEDIR/superbuild/versions/versions_superbuild_py27.cmake superbuild/versions.cmake
+cp $VERSIONSDIR/versions_new.cmake versions.cmake
+cp $VERSIONSDIR/versions_superbuild_py27.cmake superbuild/versions.cmake
+# FIX: matplotlib
+cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
+cp $MAPPLOTLIBDIR/matplotlib-kiwisolver.patch superbuild/projects/patches
+# Return to main folder
+cd $SUITEDIR
 
 # Build
-cd ../ && mkdir -p paraview-build && cd paraview-build
-cmake ../paraview-superbuild/ \
+mkdir -p $BUILD_DIR && cd $BUILD_DIR
+cmake $SUPERBUILD_DIR \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
    -DBUILD_TESTING=OFF \
    -Dparaview_SOURCE_SELECTION=$PV_VERS \
-   -Dqt5_SOURCE_SELECTION=5.10 \
+   -Dqt5_SOURCE_SELECTION=$QT5_VERS \
    -DCMAKE_BUILD_TYPE_paraview=Release \
    -DENABLE_mpi=ON \
    -DUSE_SYSTEM_mpi=OFF \
@@ -91,37 +104,42 @@ cmake ../paraview-superbuild/ \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
-   -Dparaview_PLUGINS_EXTERNAL="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSHovmoeller;OGSVortexIdentification;OGSPlotViews;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStatistics;OGSTimeStatistics;OGSVariableAggregator;OGSUtils;OGSWriter;OGSCompareVariables" \
-   -Dparaview_PLUGINS_AUTOLOAD="OGSAnnotateDateTime;OGSDepthProfile;OGSDerivatives;OGSHovmoeller;OGSVortexIdentification;OGSPlotViews;OGSReader;OGSSelectTools;OGSSpaghetti;OGSSpatialStatistics;OGSTimeStatistics;OGSVariableAggregator;OGSUtils;OGSWriter;OGSCompareVariables" \
-   -Dparaview_PLUGIN_OGSAnnotateDateTime_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSAnnotateDateTime \
-   -Dparaview_PLUGIN_OGSDepthProfile_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDepthProfile \
-   -Dparaview_PLUGIN_OGSDerivatives_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSDerivatives \
-   -Dparaview_PLUGIN_OGSHovmoeller_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSHovmoeller \
-   -Dparaview_PLUGIN_OGSPlotViews_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSPlotViews \
-   -Dparaview_PLUGIN_OGSVortexIdentification_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVortexIndentification \
-   -Dparaview_PLUGIN_OGSReader_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSReader \
-   -Dparaview_PLUGIN_OGSSelectTools_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSSelectTools \
-   -Dparaview_PLUGIN_OGSSpaghetti_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSSpaghetti \
-   -Dparaview_PLUGIN_OGSSpatialStatistics_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSSpatialStatistics \
-   -Dparaview_PLUGIN_OGSTimeStatistics_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSTimeStatistics \
-   -Dparaview_PLUGIN_OGSVariableAggregator_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSVariableAggregator \
-   -Dparaview_PLUGIN_OGSUtils_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSUtils \
-   -Dparaview_PLUGIN_OGSWriter_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSWriter \
-   -Dparaview_PLUGIN_OGSCompareVariables_PATH=../paraview-superbuild/$SUITEDIR/OGSPlugins/OGSCompareVariables 
+   -Dparaview_PLUGINS_EXTERNAL="MapPlotterView;OGSAnnotateDateTime;OGSCompareVariables;OGSDensity;OGSDepthProfile;OGSDerivatives;OGSHovmoeller;OGSMixingLayerDepth;OGSPlotViews;OGSReader;OGSRossbyRadius;OGSSelectTools;OGSSpaghetti;OGSSpatialStatistics;OGSTimeStatistics;OGSUtils;OGSVariableAggregator;OGSVortexDetection;OGSVortexIdentification;OGSWriter" \
+   -Dparaview_PLUGINS_AUTOLOAD="MapPlotterView;OGSAnnotateDateTime;OGSCompareVariables;OGSDensity;OGSDepthProfile;OGSDerivatives;OGSHovmoeller;OGSMixingLayerDepth;OGSPlotViews;OGSReader;OGSRossbyRadius;OGSSelectTools;OGSSpaghetti;OGSSpatialStatistics;OGSTimeStatistics;OGSUtils;OGSVariableAggregator;OGSVortexDetection;OGSVortexIdentification;OGSWriter" \
+   -Dparaview_PLUGIN_MapPlotterView_PATH=$PLUGINDIR/MapPlotterView \
+   -Dparaview_PLUGIN_OGSAnnotateDateTime_PATH=$PLUGINDIR/OGSAnnotateDateTime \
+   -Dparaview_PLUGIN_OGSCompareVariables_PATH=$PLUGINDIR/OGSCompareVariables \
+   -Dparaview_PLUGIN_OGSDensity_PATH=$PLUGINDIR/OGSDensity \
+   -Dparaview_PLUGIN_OGSDepthProfile_PATH=$PLUGINDIR/OGSDepthProfile \
+   -Dparaview_PLUGIN_OGSDerivatives_PATH=$PLUGINDIR/OGSDerivatives \
+   -Dparaview_PLUGIN_OGSHovmoeller_PATH=$PLUGINDIR/OGSHovmoeller \
+   -Dparaview_PLUGIN_OGSMixingLayerDepth_PATH=$PLUGINDIR/OGSMixingLayerDepth \
+   -Dparaview_PLUGIN_OGSPlotViews_PATH=$PLUGINDIR/OGSPlotViews \
+   -Dparaview_PLUGIN_OGSReader_PATH=$PLUGINDIR/OGSReader \
+   -Dparaview_PLUGIN_OGSRossbyRadius_PATH=$PLUGINDIR/OGSRossbyRadius \
+   -Dparaview_PLUGIN_OGSSelectTools_PATH=$PLUGINDIR/OGSSelectTools \
+   -Dparaview_PLUGIN_OGSSpaghetti_PATH=$PLUGINDIR/OGSSpaghetti \
+   -Dparaview_PLUGIN_OGSSpatialStatistics_PATH=$PLUGINDIR/OGSSpatialStatistics \
+   -Dparaview_PLUGIN_OGSTimeStatistics_PATH=$PLUGINDIR/OGSTimeStatistics \
+   -Dparaview_PLUGIN_OGSUtils_PATH=$PLUGINDIR/OGSUtils \
+   -Dparaview_PLUGIN_OGSVariableAggregator_PATH=$PLUGINDIR/OGSVariableAggregator \
+   -Dparaview_PLUGIN_OGSVortexDetection_PATH=$PLUGINDIR/OGSVortexDetection \
+   -Dparaview_PLUGIN_OGSVortexIdentification_PATH=$PLUGINDIR/OGSVortexIdentification \
+   -Dparaview_PLUGIN_OGSWriter_PATH=$PLUGINDIR/OGSWriter 
 
 # Prompt user to check configuration
-printf "Deploying ParaView $PV_VERS in $INSTALL_PREFIX.\n"
-read -s -p "Please check install configuration and press [enter]..."
+printf "Deploying ParaView ${PV_VERS} in ${INSTALL_PREFIX}.\n"
+#read -s -p "Please check install configuration and press [enter]..."
 
 # Make
 make -j $NPROCS
 # Do some fixing...
-ln -s $PWD/install/lib/python2.7/site-packages/matplotlib-2.2.3-py2.7-linux-x86_64.egg/matplotlib/ $PWD/install/lib/python2.7/site-packages
+ln -s $BUILD_DIR/install/lib/python2.7/site-packages/matplotlib-2.2.3-py2.7-linux-x86_64.egg/matplotlib/ $BUILD_DIR/install/lib/python2.7/site-packages
 # Install
 make -j $NPROCS install
 # FIX: matplotlib depends on backports and kiwisolver
-cp -r install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp install/lib/python2.7/site-packages/kiwisolver-1.1.0-py2.7-linux-x86_64.egg/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
 
 # Load environment
 export PATH=$PATH:$INSTALL_PREFIX/bin
@@ -129,92 +147,61 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_PREFIX/lib:$INSTALL_PREFIX/lib/
 export C_INCLUDE_PATH=$C_INCLUDE_PATH:$INSTALL_PREFIX/include
 export PYTHONPATH=$PYTHONPATH:$INSTALL_PREFIX/lib/python2.7/site-packages
 
+# Deploy GEOS library
+bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${BUILD_DIR}/install" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+
+# Deploy PROJ library
+bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+
 # Install netCDF4, configparser, cython
-./install/bin/pip install netcdf4 configparser cython
-cp -r install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/configparser.* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $INSTALL_PREFIX/lib/python2.7/site-packages/backports/
-cp -r install/lib/python2.7/site-packages/cython.* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/lib-dynload $INSTALL_PREFIX/lib/python2.7/
-cp -r install/lib/python2.7/lib-tk $INSTALL_PREFIX/lib/python2.7/
-
-# Install geos
-GEOS_VERS=3.7.0
-GEOS_DIR=geos-$GEOS_VERS
-GEOS_TAR=$GEOS_DIR.tar.bz2
-
-wget http://download.osgeo.org/geos/$GEOS_TAR
-tar xf $GEOS_TAR && cd $GEOS_DIR
-
-./configure --prefix=$INSTALL_PREFIX
-make -j $NPROCS && make -j $NPROCS install
-./configure --prefix=$PWD/../install
-make -j $NPROCS && make -j $NPROCS install
-cd ../ && rm -rf $GEOS_TAR
-
-# Install proj libraries
-PROJ_VERS=5.2.0
-PROJ_DATV=1.8
-PROJ_DIR=proj-$PROJ_VERS
-PROJ_TAR=$PROJ_DIR.tar.gz
-PROJ_DATG=proj-datumgrid-$PROJ_DATV.zip
-
-wget https://download.osgeo.org/proj/$PROJ_TAR
-tar xvf $PROJ_TAR && cd $PROJ_DIR
-
-wget https://download.osgeo.org/proj/$PROJ_DATG
-unzip $PROJ_DATG -d data/
-
-./configure --prefix=$INSTALL_PREFIX
-make -j $NPROCS && make -j $NPROCS install
-./configure --prefix=$PWD/../install
-make -j $NPROCS && make -j $NPROCS install
-cd ../ && rm -rf $PROJ_TAR
-
-# Install cartopy and pyepsg
-#https://github.com/SciTools/cartopy/archive/v0.17.0.tar.gz
-./install/bin/pip install cartopy pyepsg
-cp -r install/lib/python2.7/site-packages/cartopy $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/shape* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/pyepsg.* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/requests $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/urllib3 $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
+$BUILD_DIR/install/bin/pip install --upgrade pip
+$BUILD_DIR/install/bin/pip install netcdf4 configparser cython cartopy pyepsg
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $INSTALL_PREFIX/lib/python2.7/site-packages/backports/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $INSTALL_PREFIX/lib/python2.7/
+cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $INSTALL_PREFIX/lib/python2.7/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/shape* $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/pyepsg.* $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/requests $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
 
 # Copy ffmpeg
-cp install/bin/ffmpeg $INSTALL_PREFIX/bin
+cp $BUILD_DIR/install/bin/ffmpeg $INSTALL_PREFIX/bin
 cd ..
 printf "Install done successfully!\n"
 
 # Deploy img2video
 printf "Deploying img2video... "
-cp paraview-superbuild/$SUITEDIR/bin/img2video paraview-$PV_VERS/bin
+cp $BINDIR/img2video $INSTALL_PREFIX/bin
 printf "OK\n"
 
 # Deploy bit.sea inside the ParaView installation
 printf "Deploying bit.sea... "
-cp -r paraview-superbuild/$SUITEDIR/bit.sea/commons paraview-$PV_VERS/lib/python*/site-packages
-cp -r paraview-superbuild/$SUITEDIR/bit.sea/basins  paraview-$PV_VERS/lib/python*/site-packages
-printf "OK\n"
-
-# Compile OGSMesh
-printf "Compiling OGSMesh... "
-cd paraview-superbuild/$SUITEDIR/OGSPlugins/_utils
-g++ -shared -Wl,-soname,libOGS -o libOGS.so -fPIC -fopenmp -std=c++11 OGS.cpp -DOGS_NO_NETCDF
-cd ../../../../
+cp -r $BITSEADIR/commons $INSTALL_PREFIX/lib/python*/site-packages
+cp -r $BITSEADIR/basins  $INSTALL_PREFIX/lib/python*/site-packages
 printf "OK\n"
 
 # Deploy OGSMesh and OGS2Paraview inside the installation
 printf "Deploying OGSMesh and OGS2Paraview... "
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/libOGS.so $INSTALL_PREFIX/lib
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSmesh.py $INSTALL_PREFIX/lib/python*/site-packages
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/bin
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/bin
-cp paraview-superbuild/$SUITEDIR/OGSPlugins/_utils/python/default.ini $INSTALL_PREFIX/bin
-
-cd ..
+mv $SUITEDIR/libOGS.so $INSTALL_PREFIX/lib
+cp $SUPERBUILD_DIR/env-linux.sh $INSTALL_PREFIX/env.sh
+cp $PLUGINDIR/_utils/python/OGSmesh.py $INSTALL_PREFIX/lib/python*/site-packages
+cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/bin
+cp $PLUGINDIR/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/bin
+cp $PLUGINDIR/_utils/python/default.ini $INSTALL_PREFIX/bin
 printf "OK\n"
+
+# Clean-up
+cd $SUITEDIR
+rm -rf $BUILD_DIR $SUPERBUILD_DIR
+tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX
