@@ -217,6 +217,7 @@ namespace Time {
 
 	class Hourly_req : public Requestor {
 		/*
+		Requestor object - for a specific hour interval
 		*/
 		public:
 			inline Hourly_req(const int year, const int month, const int day, const int hour, 
@@ -236,6 +237,30 @@ namespace Time {
 
 			inline std::string as_string() const override { return( std::string("Hourly_req: ") + this->str ); }
 			inline std::string type() const override      { return std::string("hourly"); }
+	};
+
+	class Seconds_req : public Requestor {
+		/*
+		Requestor object - for a specific seconds interval
+		*/
+		public:
+			inline Seconds_req(const int year, const int month, const int day, const int hour, 
+				const int minute, const int delta_seconds) : Requestor() {
+				char buff[256];
+				std:sprintf(buff,"%d%02d%02d-%02d:%02d:00",year,month,day,hour,minute);
+
+				TimeObject centertime(buff,"%Y%m%d-%H:%M:%S");
+				
+				int delta = delta_seconds/2.;
+				TimeObject start_time = TimeObject(centertime); start_time.increment_sec(-delta);
+				TimeObject end_time   = TimeObject(centertime); end_time.increment_sec(delta);
+				
+				this->TI  = TimeInterval(start_time,end_time);				
+				this->str = centertime.as_string("%Y%m%d-%H:%M:%S") + std::string(" Delta: ") + std::to_string(delta_seconds) + std::string(" seconds");
+			}
+
+			inline std::string as_string() const override { return( std::string("Seconds_req: ") + this->str ); }
+			inline std::string type() const override      { return std::string("seconds"); }
 	};
 
 	class Clim_season : public Requestor {

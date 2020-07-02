@@ -35,7 +35,7 @@ namespace Time {
 	typedef std::vector< std::pair<TimeObject,std::vector<int>> > COUPLED_LIST;
 
 	inline TimeInterval computeTimeWindow(std::string &freqString, TimeObject &currentDate) {
-		int year, month, day;
+		int year, month, day, hour, minute;
 		TimeInterval TI;
 		if (freqString == std::string("daily")) {
 			day   = std::stoi(currentDate.as_string("%d"));
@@ -64,6 +64,15 @@ namespace Time {
 			year  = std::stoi(currentDate.as_string("%Y"));
 			int ndays = std::stoi(freqString.substr(5));
 			TI    = Interval_req(year,month,day,12,ndays).interval();
+		}
+		if (freqString.substr(0,8) == std::string("seconds=")) {
+			minute = std::stoi(currentDate.as_string("%M"));
+			hour   = std::stoi(currentDate.as_string("%H"));
+			day    = std::stoi(currentDate.as_string("%d"));
+			month  = std::stoi(currentDate.as_string("%m"));
+			year   = std::stoi(currentDate.as_string("%Y"));
+			int nsec = std::stoi(freqString.substr(8));
+			TI     = Seconds_req(year,month,day,hour,minute,nsec).interval();
 		}
 		return TI;
 	}
@@ -165,6 +174,7 @@ namespace Time {
 
 			inline std::string searchFrequency();
 			inline int generaltimeselector(Requestor *req, std::vector<int> &selection, std::vector<double> &weights);
+			inline int generalsecondsselector(Requestor *req, std::vector<int> &selection, std::vector<double> &weights);
 			inline int generalhourselector(Requestor *req, std::vector<int> &selection, std::vector<double> &weights);
 			inline int generaldayselector(Requestor *req, std::vector<int> &selection, std::vector<double> &weights);
 			inline int generalweekselector(Requestor *req, std::vector<int> &selection, std::vector<double> &weights);
@@ -242,6 +252,8 @@ namespace Time {
 				- a list of indexes (integers) indicating to access selected times (or files)
 				- an array of weights
 		*/
+		if (req->type() == std::string("seconds"))
+			return this->generalsecondsselector(req,selection,weights);
 		if (req->type() == std::string("hourly")  || req->type() == std::string("clim_hour"))
 			return this->generalhourselector(req,selection,weights);
 		if (req->type() == std::string("daily")   || req->type() == std::string("clim_day"))
@@ -429,6 +441,35 @@ namespace Time {
 		*/
 		REQ_LIST req_list;
 
+		if (this->inputFrequency == std::string("seconds=900")) {
+			for(int ii = 0; ii <this->nTimes; ++ii) {
+				int year  = std::stoi( this->TOL[ii].as_string("%Y") );
+				int month = std::stoi( this->TOL[ii].as_string("%m") );
+				int day   = std::stoi( this->TOL[ii].as_string("%d") );
+				int hour  = std::stoi( this->TOL[ii].as_string("%H") );
+				int min   = std::stoi( this->TOL[ii].as_string("%M") );
+				req_list.push_back( new Seconds_req(year,month,day,hour,min,900) );
+			}
+		}
+		if (this->inputFrequency == std::string("seconds=1800")) {
+			for(int ii = 0; ii <this->nTimes; ++ii) {
+				int year  = std::stoi( this->TOL[ii].as_string("%Y") );
+				int month = std::stoi( this->TOL[ii].as_string("%m") );
+				int day   = std::stoi( this->TOL[ii].as_string("%d") );
+				int hour  = std::stoi( this->TOL[ii].as_string("%H") );
+				int min   = std::stoi( this->TOL[ii].as_string("%M") );
+				req_list.push_back( new Seconds_req(year,month,day,hour,min,1800) );
+			}
+		}
+		if (this->inputFrequency == std::string("hourly")) {
+			for(int ii = 0; ii <this->nTimes; ++ii) {
+				int year  = std::stoi( this->TOL[ii].as_string("%Y") );
+				int month = std::stoi( this->TOL[ii].as_string("%m") );
+				int day   = std::stoi( this->TOL[ii].as_string("%d") );
+				int hour  = std::stoi( this->TOL[ii].as_string("%H") );
+				req_list.push_back( new Hourly_req(year,month,day,hour,1) );
+			}
+		}
 		if (this->inputFrequency == std::string("daily")) {
 			for(int ii = 0; ii <this->nTimes; ++ii) {
 				int year  = std::stoi( this->TOL[ii].as_string("%Y") );
@@ -537,7 +578,8 @@ namespace Time {
 		if (days == 1.)                          return std::string("daily");
 		if (days > 6.   && days < 8.)            return std::string("weekly");
 		if (days > 26.  && days < 32.)           return std::string("monthly");
-		if (days < 1.)                           return std::string("hourly");
+		if (days < 1. && days > 1./24.)          return std::string("hourly");
+		if (days < 1./24.)                       return std::string("seconds=")+std::to_string((int)(days*24.*3600.));
 		if (days > 364. && days < 367.)          return std::string("yearly");
 		if (std::fabs((int)(days) - days) < 0.1) return std::string("days=")+std::to_string((int)(days)); 
 		if (days == 10.)                         return std::string("10days");
@@ -577,6 +619,29 @@ namespace Time {
 		return TIME_ERR;
 	}
 
+	inline int TimeList::generalsecondsselector(Requestor *req, std::vector<int> &selection, 
+		std::vector<double> &weights) {
+		/*
+			Method for time aggregation
+			indexes, weights = select(requestor)
+			Returned values:
+				- a list of indexes (integers) indicating to access selected times (or files)
+				- an array of weights
+		*/
+		if ( !(this->inputFrequency == std::string("seconds=900") || 
+			   this->inputFrequency == std::string("seconds=1800")) )  
+			return TIME_ERR;
+
+		for (int ii=0; ii<this->nTimes; ++ii) {
+			if (req->contains(this->TOL[ii])) {
+				selection.push_back(ii);
+				weights.push_back(1.);
+			}
+		}
+
+		return TIME_OK;
+	}
+
 	inline int TimeList::generalhourselector(Requestor *req, std::vector<int> &selection, 
 		std::vector<double> &weights) {
 		/*
@@ -586,7 +651,9 @@ namespace Time {
 				- a list of indexes (integers) indicating to access selected times (or files)
 				- an array of weights
 		*/
-		if ( this->inputFrequency != std::string("hourly") ) 
+		if ( !(this->inputFrequency == std::string("seconds=900")  || 
+			   this->inputFrequency == std::string("seconds=1800") ||
+			   this->inputFrequency != std::string("hourly")) )
 			return TIME_ERR;
 
 		for (int ii=0; ii<this->nTimes; ++ii) {
@@ -609,7 +676,9 @@ namespace Time {
 				- an array of weights
 		*/
 		// hourly values are treated as instantaneous values, not time averages
-		if ( !(this->inputFrequency == std::string("hourly") ||
+		if ( !(this->inputFrequency == std::string("seconds=900")  || 
+			   this->inputFrequency == std::string("seconds=1800") ||
+			   this->inputFrequency == std::string("hourly")       ||
 		       this->inputFrequency == std::string("daily")) ) // it does not matter how many hours
 			return TIME_ERR;
 
@@ -655,7 +724,9 @@ namespace Time {
 				- a list of indexes (integers) indicating to access selected times (or files)
 				- an array of weights
 		*/
-		if (this->inputFrequency == std::string("daily") ||
+		if (this->inputFrequency == std::string("seconds=900")  || 
+			this->inputFrequency == std::string("seconds=1800") ||
+			this->inputFrequency == std::string("daily")        ||
 			this->inputFrequency == std::string("hourly")) {
 			for (int ii=0; ii<this->nTimes; ++ii) {
 				if (req->contains(this->TOL[ii])) {
