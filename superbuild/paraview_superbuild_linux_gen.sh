@@ -134,11 +134,11 @@ printf "Deploying ParaView ${PV_VERS} in ${INSTALL_PREFIX}.\n"
 # Make
 make -j $NPROCS
 # Do some fixing...
-ln -s $BUILD_DIR/install/lib/python2.7/site-packages/matplotlib-2.2.3-py2.7-linux-x86_64.egg/matplotlib/ $BUILD_DIR/install/lib/python2.7/site-packages
+ln -s $BUILD_DIR/install/lib/python2.7/site-packages/matplotlib-*/matplotlib/ $BUILD_DIR/install/lib/python2.7/site-packages
 # Install
 make -j $NPROCS install
 # FIX: matplotlib depends on backports and kiwisolver
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.5-py2.7.egg/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
 
 # Load environment
@@ -203,5 +203,5 @@ printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
-#rm -rf $BUILD_DIR $SUPERBUILD_DIR
-#tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX
+rm -rf $BUILD_DIR $SUPERBUILD_DIR
+tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX
