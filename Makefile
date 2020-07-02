@@ -31,14 +31,16 @@ DEBUGGING      = OFF
 BIN_PATH  = bin
 BPS_PATH  = bit.sea
 PVPL_PATH = OGSPlugins
+SPB_PATH  = superbuild
 
 # Versions of the libraries
 #
-LAPACK_VERS = 3.9.0
-PROJ_VERS   = 5.2.0
-PROJ_DATV   = 1.8
-GEOS_VERS   = 3.7.0
-QT5_VERS    = 5.10
+PARAVIEW_VERS = 5.6.3
+LAPACK_VERS   = 3.9.0
+PROJ_VERS     = 5.2.0
+PROJ_DATV     = 1.8
+GEOS_VERS     = 3.7.0
+QT5_VERS      = 5.10
 
 # Path to ParaView
 #
@@ -174,8 +176,10 @@ tools: OGS2Paraview OGSlonlat2m OGSmesh ParaViewBlender
 	@echo ""	
 
 libOGS.so: $(PVPL_PATH)/_utils/OGS.cpp
-	$(CXX) $(CXXFLAGS) -shared -Wl,-soname,$@ -o $@ -DOGS_NO_NETCDF
-	@mv $@ $(PV_LIB_PATH)
+	$(CXX) -shared -Wl,-soname,$@ $(CXXFLAGS) $< -o $@ -DOGS_NO_NETCDF
+
+libOGS_install: libOGS.so
+	@mv $< $(PV_LIB_PATH)
 
 OGS2Paraview: $(PVPL_PATH)/_utils/python/OGS2Paraview.py
 	@echo "$< -> $(PV_PYT_PATH)/$@.py"
@@ -194,7 +198,7 @@ OGSlonlat2m: $(PVPL_PATH)/_utils/python/OGSlonlat2m.py
 	@ln -s $(PV_PYT_PATH)/$@.py $(PV_BIN_PATH)/$@.py
 	@chmod +x $(PV_BIN_PATH)/$@.py
 
-OGSmesh: $(PVPL_PATH)/_utils/python/OGSmesh.py libOGS.so
+OGSmesh: $(PVPL_PATH)/_utils/python/OGSmesh.py libOGS_install
 	@echo "$< -> $(PV_PYT_PATH)/$@.py"
 	@rm -f $(PV_PYT_PATH)/$@.py
 	@cp $(PWD)/$< $(PV_PYT_PATH)/$@.py
@@ -419,6 +423,25 @@ OGSRossbyRadius: $(PVPL_PATH)/OGSRossbyRadius
 	@(cd $</build && make )
 	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
 	-@(cd $< && rm -rf build)
+
+# Superbuild compilations
+#
+superbuild-linux: $(SPB_PATH)/paraview_superbuild_linux_gen.sh prereq libOGS.so 
+	@echo ""
+	@echo "   OGS ParaView v${PARAVIEW_VERS} Superbuild"
+	@echo "   _________________________________________"
+	@echo ""
+	@echo "   The process will take some time."
+	@echo "   You can go grab a coffee or two meanwhile..."
+	@echo ""
+
+	@bash $< "${PARAVIEW_VERS}" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+	
+	@echo ""
+	@echo "   Thanks for waiting! OGS ParaView superbuild has been "
+	@echo "   successfully compiled with the OGS plugins."
+	@echo ""
+
 
 
 # Generic object makers
