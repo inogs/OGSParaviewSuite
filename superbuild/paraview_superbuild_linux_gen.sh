@@ -187,8 +187,9 @@ printf "OK\n"
 
 # Deploy bit.sea inside the ParaView installation
 printf "Deploying bit.sea... "
-cp -r $BITSEADIR/commons $INSTALL_PREFIX/lib/python*/site-packages
-cp -r $BITSEADIR/basins  $INSTALL_PREFIX/lib/python*/site-packages
+cp -r $BITSEADIR/commons    $INSTALL_PREFIX/lib/python*/site-packages
+cp -r $BITSEADIR/basins     $INSTALL_PREFIX/lib/python*/site-packages
+cp -r $BITSEADIR/MapPlotter $INSTALL_PREFIX/lib/python*/site-packages
 printf "OK\n"
 
 # Deploy OGSMesh and OGS2Paraview inside the installation
