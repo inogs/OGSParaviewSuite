@@ -25,7 +25,7 @@
 #
 #  - under these circumstances VTKm fails.
 #
-# Arnau Miro, OGS 2019
+# Arnau Miro, OGS 2020
 
 PV_VERS=${1}
 QT5_VERS=${2}
@@ -94,6 +94,7 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_embree=ON \
    -DENABLE_ospray=ON \
    -DENABLE_python=ON \
+   -Dpython_USE_UNICODE=UCS2 \
    -DUSE_SYSTEM_python=OFF \
    -DENABLE_numpy=ON \
    -DENABLE_scipy=ON \
@@ -101,6 +102,7 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_vtkm=OFF \
    -DENABLE_netcdf=OFF \
    -DENABLE_vrpn=ON \
+   -DENABLE_pvNVIDIAIndeX=ON \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
@@ -164,6 +166,7 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $INSTALL_PRE
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $INSTALL_PREFIX/lib/python2.7/site-packages/backports/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/Cython $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $INSTALL_PREFIX/lib/python2.7/
 cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $INSTALL_PREFIX/lib/python2.7/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $INSTALL_PREFIX/lib/python2.7/site-packages/
@@ -196,6 +199,7 @@ printf "OK\n"
 printf "Deploying OGSMesh and OGS2Paraview... "
 mv $SUITEDIR/libOGS.so $INSTALL_PREFIX/lib
 cp $SUITEDIR/superbuild/env-linux.sh $INSTALL_PREFIX/env.sh
+cp $SUITEDIR/superbuild/fix_cartopy.sh $INSTALL_PREFIX/
 cp $PLUGINDIR/_utils/python/OGSmesh.py $INSTALL_PREFIX/lib/python*/site-packages
 cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/bin
 cp $PLUGINDIR/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/bin
