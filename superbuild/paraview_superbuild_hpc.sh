@@ -25,7 +25,7 @@
 #
 #  - under these circumstances VTKm fails.
 #
-# Arnau Miro, OGS 2019
+# Arnau Miro, OGS 2020
 
 PV_VERS=${1}
 MACHINE=${2}
@@ -51,10 +51,15 @@ BINDIR="${SUITEDIR}/bin"
 BITSEADIR="${SUITEDIR}/bit.sea"
 
 # Load modules - provide a basic building environment
+module purge
 if [ "$MACHINE" = "GALILEO" ]; then
-   module purge
    module load gnu
    module load openmpi/3.1.1--gnu--6.1.0
+   module load cmake git
+fi
+if [ "$MACHINE" = "MARCONI" ]; then
+   module load gnu/7.3.0 
+   module load openmpi/3.0.0--gnu--7.3.0
    module load cmake git
 fi
 
@@ -97,6 +102,7 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_embree=ON \
    -DENABLE_ospray=ON \
    -DENABLE_python=ON \
+   -Dpython_USE_UNICODE=UCS2 \
    -DUSE_SYSTEM_python=OFF \
    -DENABLE_numpy=ON \
    -DENABLE_scipy=OFF \
@@ -104,6 +110,7 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_vtkm=OFF \
    -DENABLE_netcdf=OFF \
    -DENABLE_vrpn=OFF \
+   -DENABLE_pvNVIDIAIndeX=ON \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
@@ -167,6 +174,7 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $INSTALL_PRE
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $INSTALL_PREFIX/lib/python2.7/site-packages/backports/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/Cython $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $INSTALL_PREFIX/lib/python2.7/
 cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $INSTALL_PREFIX/lib/python2.7/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $INSTALL_PREFIX/lib/python2.7/site-packages/
@@ -207,9 +215,12 @@ printf "OK\n"
 if [ "$MACHINE" = "GALILEO" ]; then
    cp $SUITEDIR/superbuild/env-galileo.sh $INSTALL_PREFIX/env.sh
 fi
+if [ "$MACHINE" = "MARCONI" ]; then
+   cp $SUITEDIR/superbuild/env-marconi.sh $INSTALL_PREFIX/env.sh
+fi
 
 # Clean-up
 cd $SUITEDIR
-rm -rf $BUILD_DIR $SUPERBUILD_DIR
+#rm -rf $BUILD_DIR $SUPERBUILD_DIR
 tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX
 

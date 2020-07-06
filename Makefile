@@ -458,6 +458,22 @@ superbuild-galileo: $(SPB_PATH)/paraview_superbuild_hpc.sh prereq libOGS.so
 	@echo "   successfully compiled with the OGS plugins."
 	@echo ""
 
+superbuild-marconi: $(SPB_PATH)/paraview_superbuild_hpc.sh prereq libOGS.so 
+	@echo ""
+	@echo "   OGS ParaView v${PARAVIEW_VERS} Superbuild"
+	@echo "   _________________________________________"
+	@echo ""
+	@echo "   The process will take some time."
+	@echo "   You can go grab a coffee or two meanwhile..."
+	@echo ""
+
+	@bash $< "${PARAVIEW_VERS}" "MARCONI" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+	
+	@echo ""
+	@echo "   Thanks for waiting! OGS ParaView superbuild has been "
+	@echo "   successfully compiled with the OGS plugins."
+	@echo ""
+
 
 # Generic object makers
 #
