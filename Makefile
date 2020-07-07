@@ -37,7 +37,7 @@ SPB_PATH  = superbuild
 #
 PARAVIEW_VERS = 5.6.3
 LAPACK_VERS   = 3.9.0
-PROJ_VERS     = 5.2.0
+PROJ_VERS     = 5.0.1
 PROJ_DATV     = 1.8
 GEOS_VERS     = 3.7.0
 QT5_VERS      = 5.10
@@ -87,9 +87,9 @@ ifeq ($(CC),gcc)
 		CXXFLAGS += -O0 -g -rdynamic -fPIC
 		FFLAGS   += -O0 -g -rdynamic -fPIC
 	else
-		CFLAGS   += -O$(OPTL) -fPIC
-		CXXFLAGS += -O$(OPTL) -fPIC
-		FFLAGS   += -O$(OPTL) -fPIC
+		CFLAGS   += -O$(OPTL) -ffast-math -fPIC
+		CXXFLAGS += -O$(OPTL) -ffast-math -fPIC
+		FFLAGS   += -O$(OPTL) -ffast-math -fPIC
 	endif
 	# Vectorization flags
 	ifeq ($(VECTORIZATION),ON)
