@@ -13,7 +13,7 @@ source env.sh
 git clone -b $VERS https://github.com/SciTools/cartopy.git cartopy
 cd cartopy
 # Compile
-python setup.py build
+LDFLAGS=-L$PWD/../lib pvpython setup.py build
 # Copy it to the destination
 rm -rf ../lib/python2.7/site-packages/cartopy
 cp -r build/lib.*/cartopy ../lib/python2.7/site-packages/

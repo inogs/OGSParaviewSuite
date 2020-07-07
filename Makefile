@@ -87,9 +87,9 @@ ifeq ($(CC),gcc)
 		CXXFLAGS += -O0 -g -rdynamic -fPIC
 		FFLAGS   += -O0 -g -rdynamic -fPIC
 	else
-		CFLAGS   += -O$(OPTL) -ffast-math -fPIC
-		CXXFLAGS += -O$(OPTL) -ffast-math -fPIC
-		FFLAGS   += -O$(OPTL) -ffast-math -fPIC
+		CFLAGS   += -O$(OPTL) -fPIC
+		CXXFLAGS += -O$(OPTL) -fPIC
+		FFLAGS   += -O$(OPTL) -fPIC
 	endif
 	# Vectorization flags
 	ifeq ($(VECTORIZATION),ON)
@@ -241,7 +241,7 @@ prereq: lapack proj
 lapack: $(PVPL_PATH)/_utils/lapack/
 	@bash $</install_lapack.sh "${LAPACK_VERS}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${FC}" "${FFLAGS}"
 proj: $(PVPL_PATH)/_utils/proj/
-	@bash $</install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+	@bash $</install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "STATIC" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
 geos: $(PVPL_PATH)/_utils/geos/
 	@bash $</install_geos.sh "${GEOS_VERS}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
 

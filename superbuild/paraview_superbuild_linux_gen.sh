@@ -154,14 +154,18 @@ bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "
 bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${BUILD_DIR}/install" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
 
 # Deploy PROJ library
-bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
 
 # Install netCDF4, configparser, cython
 $BUILD_DIR/install/bin/pip install --upgrade pip
 $BUILD_DIR/install/bin/pip install netcdf4 configparser cython cartopy pyepsg
+cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
+cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools.pth $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $INSTALL_PREFIX/lib/python2.7/site-packages/backports/
@@ -177,6 +181,7 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $INSTALL_PREFIX/lib
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $INSTALL_PREFIX/lib/python2.7/site-packages/numpy/core
 
 # Copy ffmpeg
 cp $BUILD_DIR/install/bin/ffmpeg $INSTALL_PREFIX/bin
@@ -208,5 +213,5 @@ printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
-rm -rf $BUILD_DIR $SUPERBUILD_DIR
+#rm -rf $BUILD_DIR $SUPERBUILD_DIR
 tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX
