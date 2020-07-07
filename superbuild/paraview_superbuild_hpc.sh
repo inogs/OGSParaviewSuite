@@ -75,6 +75,8 @@ cp $VERSIONSDIR/versions_superbuild_py27.cmake superbuild/versions.cmake
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
 cp $MAPPLOTLIBDIR/matplotlib-kiwisolver.patch superbuild/projects/patches
+# FIX: libpng
+cp $SUITEDIR/superbuild/projects/png.cmake superbuild/projects
 # FIX: freetype marconi
 if [ "$MACHINE" = "MARCONI" ]; then
    cp $SUITEDIR/superbuild/projects/freetype.cmake superbuild/projects/apple-unix
