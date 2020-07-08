@@ -5,8 +5,10 @@
 OGSSUITEDIR=$PWD
 
 module purge
-module load gnu
-module load openmpi/3.1.1--gnu--6.1.0
+module load profile/advanced
+module load gnu/7.3.0
+module load openmpi/3.1.4--gnu--7.3.0
+module load blas/3.8.0--gnu--7.3.0
 
 export PATH=$PATH:$OGSSUITEDIR/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$OGSSUITEDIR/lib:$OGSSUITEDIR/lib/paraview-5.6
