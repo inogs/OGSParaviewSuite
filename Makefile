@@ -87,15 +87,15 @@ ifeq ($(CC),gcc)
 		CXXFLAGS += -O0 -g -rdynamic -fPIC
 		FFLAGS   += -O0 -g -rdynamic -fPIC
 	else
-		CFLAGS   += -O$(OPTL) -ffast-math -fPIC
-		CXXFLAGS += -O$(OPTL) -ffast-math -fPIC
-		FFLAGS   += -O$(OPTL) -ffast-math -fPIC
+		CFLAGS   += -O$(OPTL) -fPIC
+		CXXFLAGS += -O$(OPTL) -fPIC
+		FFLAGS   += -O$(OPTL) -fPIC
 	endif
 	# Vectorization flags
 	ifeq ($(VECTORIZATION),ON)
-		CFLAGS   += -march=native -ftree-vectorize
-		CXXFLAGS += -march=native -ftree-vectorize
-		FFLAGS   += -march=native -ftree-vectorize
+		CFLAGS   += -ffast-math -march=native -ftree-vectorize
+		CXXFLAGS += -ffast-math -march=native -ftree-vectorize
+		FFLAGS   += -ffast-math -march=native -ftree-vectorize
 	endif
 	# OpenMP flag
 	ifeq ($(OPENMP_PARALL),ON)
