@@ -60,8 +60,10 @@ if [ "$MACHINE" = "GALILEO" ]; then
    module load cmake git
 fi
 if [ "$MACHINE" = "MARCONI" ]; then
-   module load gnu/7.3.0 
-   module load openmpi/3.0.0--gnu--7.3.0
+   module load profile/advanced
+   module load gnu/6.1.0 
+   module load openmpi/3.0.0--gnu--6.1.0
+   module load blas/3.6.0--gnu--6.1.0
    module load cmake git
 fi
 
