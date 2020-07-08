@@ -53,8 +53,10 @@ BITSEADIR="${SUITEDIR}/bit.sea"
 # Load modules - provide a basic building environment
 module purge
 if [ "$MACHINE" = "GALILEO" ]; then
-   module load gnu
-   module load openmpi/3.1.1--gnu--6.1.0
+   module load profile/advanced
+   module load gnu/7.3.0
+   module load openmpi/3.1.4--gnu--7.3.0
+   module load blas/3.8.0--gnu--7.3.0
    module load cmake git
 fi
 if [ "$MACHINE" = "MARCONI" ]; then
@@ -111,7 +113,7 @@ cmake $SUPERBUILD_DIR \
    -Dpython_USE_UNICODE=UCS2 \
    -DUSE_SYSTEM_python=OFF \
    -DENABLE_numpy=ON \
-   -DENABLE_scipy=OFF \
+   -DENABLE_scipy=ON \
    -DENABLE_matplotlib=ON \
    -DENABLE_vtkm=OFF \
    -DENABLE_netcdf=OFF \
