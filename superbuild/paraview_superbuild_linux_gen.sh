@@ -213,5 +213,5 @@ printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
-#rm -rf $BUILD_DIR $SUPERBUILD_DIR
+rm -rf $BUILD_DIR $SUPERBUILD_DIR
 tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX

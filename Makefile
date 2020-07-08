@@ -37,7 +37,7 @@ SPB_PATH  = superbuild
 #
 PARAVIEW_VERS = 5.6.3
 LAPACK_VERS   = 3.9.0
-PROJ_VERS     = 5.0.1
+PROJ_VERS     = 5.2.0
 PROJ_DATV     = 1.8
 GEOS_VERS     = 3.7.0
 QT5_VERS      = 5.10
