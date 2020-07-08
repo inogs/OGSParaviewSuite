@@ -204,7 +204,6 @@ printf "OK\n"
 printf "Deploying OGSMesh and OGS2Paraview... "
 mv $SUITEDIR/libOGS.so $INSTALL_PREFIX/lib
 cp $SUITEDIR/superbuild/env-linux.sh $INSTALL_PREFIX/env.sh
-cp $SUITEDIR/superbuild/fix_cartopy.sh $INSTALL_PREFIX/
 cp $PLUGINDIR/_utils/python/OGSmesh.py $INSTALL_PREFIX/lib/python*/site-packages
 cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/bin
 cp $PLUGINDIR/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/bin
