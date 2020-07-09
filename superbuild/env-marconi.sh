@@ -8,7 +8,6 @@ module purge
 module load profile/advanced
 module load gnu/6.1.0 
 module load openmpi/3.0.0--gnu--6.1.0
-module load blas/3.6.0--gnu--6.1.0
 
 export PATH=$PATH:$OGSSUITEDIR/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$OGSSUITEDIR/lib:$OGSSUITEDIR/lib/paraview-5.6

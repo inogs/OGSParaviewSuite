@@ -33,13 +33,10 @@ QT5_VERS=${3}
 PROJ_VERS=${4}
 PROJ_DATV=${5}
 GEOS_VERS=${6}
-LAPACK_VERS=${7}
-CCOMPILER=${8}
-CFLAGS=${9}
-CXXCOMPILER=${10}
-CXXFLAGS=${11}
-FCOMPILER=${12}
-FFLAGS=${13}
+CCOMPILER=${7}
+CFLAGS=${8}
+CXXCOMPILER=${9}
+CXXFLAGS=${10}
 
 NPROCS=8
 INSTALL_PREFIX="${PWD}/../paraview-${PV_VERS}"
@@ -59,14 +56,12 @@ if [ "$MACHINE" = "GALILEO" ]; then
    module load profile/advanced
    module load gnu/7.3.0
    module load openmpi/3.1.4--gnu--7.3.0
-   module load blas/3.8.0--gnu--7.3.0
    module load cmake git
 fi
 if [ "$MACHINE" = "MARCONI" ]; then
    module load profile/advanced
    module load gnu/6.1.0 
    module load openmpi/3.0.0--gnu--6.1.0
-   module load blas/3.6.0--gnu--6.1.0
    module load cmake git
 fi
 
@@ -84,6 +79,8 @@ cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
 cp $MAPPLOTLIBDIR/matplotlib-kiwisolver.patch superbuild/projects/patches
 # FIX: libpng
 cp $SUITEDIR/superbuild/projects/png.cmake superbuild/projects
+# FIX: lapack
+cp $SUITEDIR/superbuild/projects/lapack.cmake superbuild/projects
 # FIX: freetype marconi
 if [ "$MACHINE" = "MARCONI" ]; then
    cp $SUITEDIR/superbuild/projects/freetype.cmake superbuild/projects/apple-unix
@@ -103,7 +100,7 @@ cmake $SUPERBUILD_DIR \
    -DUSE_SYSTEM_mpi=OFF \
    -DENABLE_cuda=OFF \
    -DENABLE_boost=OFF \
-   -DENABLE_lapack=OFF \
+   -DENABLE_lapack=ON \
    -DENABLE_ffmpeg=ON \
    -DENABLE_bzip2=ON \
    -DENABLE_libxml2=ON \
@@ -153,8 +150,6 @@ cmake $SUPERBUILD_DIR \
 # Prompt user to check configuration
 printf "Deploying ParaView $PV_VERS in $INSTALL_PREFIX.\n"
 #read -s -p "Please check install configuration and press [enter]..."
-
-bash $PLUGINDIR/_utils/geos/install_geos.sh "${LAPACK_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${FCOMPILER}" "${FFLAGS}"
 
 # Make
 make -j $NPROCS
