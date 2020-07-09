@@ -212,7 +212,7 @@ printf "OK\n"
 
 # Deploy OGSMesh and OGS2Paraview inside the installation
 printf "Deploying OGSMesh and OGS2Paraview... "
-mv $SUITEDIR/libOGS.so $APP_DIR/Libraries
+mv $SUITEDIR/libOGS.dylib $APP_DIR/Libraries
 cp $SUITEDIR/superbuild/env-linux.sh $APP_DIR/env.sh
 cp $PLUGINDIR/_utils/python/OGSmesh.py $APP_DIR/Python
 cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $APP_DIR/bin

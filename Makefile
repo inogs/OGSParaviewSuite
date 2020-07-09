@@ -21,9 +21,9 @@ TUNE = skylake
 
 # Options
 #
-VECTORIZATION  = ON
-OPENMP_PARALL  = ON
-FORCE_GCC      = OFF
+VECTORIZATION  = OFF
+OPENMP_PARALL  = OFF
+FORCE_GCC      = ON
 DEBUGGING      = OFF
 
 # Paths to the plugins
@@ -40,8 +40,8 @@ LAPACK_VERS   = 3.9.0
 PROJ_VERS     = 5.2.0
 PROJ_DATV     = 1.8
 GEOS_VERS     = 3.7.0
-QT5_VERS      = 5.10
-OSX_SDK       = macosx10.14
+QT5_VERS      = 5.12
+OSX_SDK       = macosx10.15
 
 # Path to ParaView
 #
@@ -178,6 +178,9 @@ tools: OGS2Paraview OGSlonlat2m OGSmesh ParaViewBlender
 
 libOGS.so: $(PVPL_PATH)/_utils/OGS.cpp
 	$(CXX) -shared -Wl,-soname,$@ $(CXXFLAGS) $< -o $@ -DOGS_NO_NETCDF
+
+libOGS.dylib: $(PVPL_PATH)/_utils/OGS.cpp
+	$(CXX) -shared $(CXXFLAGS) $< -o $@ -DOGS_NO_NETCDF
 
 libOGS_install: libOGS.so
 	@mv $< $(PV_LIB_PATH)
@@ -443,7 +446,7 @@ superbuild-linux: $(SPB_PATH)/paraview_superbuild_linux_gen.sh prereq libOGS.so
 	@echo "   successfully compiled with the OGS plugins."
 	@echo ""
 
-superbuild-osx: $(SPB_PATH)/paraview_superbuild_osx.sh prereq libOGS.so 
+superbuild-osx: $(SPB_PATH)/paraview_superbuild_osx.sh prereq libOGS.dylib
 	@echo ""
 	@echo "   OGS ParaView v${PARAVIEW_VERS} Superbuild"
 	@echo "   _________________________________________"
