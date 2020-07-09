@@ -451,7 +451,7 @@ superbuild-galileo: $(SPB_PATH)/paraview_superbuild_hpc.sh prereq libOGS.so
 	@echo "   You can go grab a coffee or two meanwhile..."
 	@echo ""
 
-	@bash $< "${PARAVIEW_VERS}" "GALILEO" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+	@bash $< "${PARAVIEW_VERS}" "GALILEO" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${LAPACK_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}" "${FC}" "${FFLAGS}"
 	
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView superbuild has been "
@@ -467,7 +467,7 @@ superbuild-marconi: $(SPB_PATH)/paraview_superbuild_hpc.sh prereq libOGS.so
 	@echo "   You can go grab a coffee or two meanwhile..."
 	@echo ""
 
-	@bash $< "${PARAVIEW_VERS}" "MARCONI" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+	@bash $< "${PARAVIEW_VERS}" "MARCONI" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${LAPACK_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}" "${FC}" "${FFLAGS}"
 	
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView superbuild has been "

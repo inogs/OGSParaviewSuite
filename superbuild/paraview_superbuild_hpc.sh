@@ -33,10 +33,13 @@ QT5_VERS=${3}
 PROJ_VERS=${4}
 PROJ_DATV=${5}
 GEOS_VERS=${6}
-CCOMPILER=${7}
-CFLAGS=${8}
-CXXCOMPILER=${9}
-CXXFLAGS=${10}
+LAPACK_VERS=${7}
+CCOMPILER=${8}
+CFLAGS=${9}
+CXXCOMPILER=${10}
+CXXFLAGS=${11}
+FCOMPILER=${12}
+FFLAGS=${13}
 
 NPROCS=8
 INSTALL_PREFIX="${PWD}/../paraview-${PV_VERS}"
@@ -151,6 +154,8 @@ cmake $SUPERBUILD_DIR \
 printf "Deploying ParaView $PV_VERS in $INSTALL_PREFIX.\n"
 #read -s -p "Please check install configuration and press [enter]..."
 
+bash $PLUGINDIR/_utils/geos/install_geos.sh "${LAPACK_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${FCOMPILER}" "${FFLAGS}"
+
 # Make
 make -j $NPROCS
 # Do some fixing...
@@ -169,7 +174,7 @@ export PYTHONPATH=$PYTHONPATH:$INSTALL_PREFIX/lib/python2.7/site-packages
 
 # Deploy GEOS library
 bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${BUILD_DIR}/install" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
 
 # Deploy PROJ library
 bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
