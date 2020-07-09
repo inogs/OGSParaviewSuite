@@ -55,7 +55,7 @@ module purge
 if [ "$MACHINE" = "GALILEO" ]; then
    module load profile/advanced
    module load gnu/6.1.0
-   module load openmpi/3.1.0--gnu--6.1.0
+   module load openmpi/3.1.1--gnu--6.1.0
    module load cmake git
 fi
 if [ "$MACHINE" = "MARCONI" ]; then
@@ -177,7 +177,7 @@ bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARE
 
 # Install netCDF4, configparser, cython
 $BUILD_DIR/install/bin/pip install --upgrade pip
-$BUILD_DIR/install/bin/pip install netcdf4 configparser cython cartopy pyepsg
+$BUILD_DIR/install/bin/pip install requests netcdf4 configparser cython cartopy pyepsg
 cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
 cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
