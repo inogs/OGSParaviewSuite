@@ -54,8 +54,8 @@ BITSEADIR="${SUITEDIR}/bit.sea"
 module purge
 if [ "$MACHINE" = "GALILEO" ]; then
    module load profile/advanced
-   module load gnu/7.3.0
-   module load openmpi/3.1.4--gnu--7.3.0
+   module load gnu/6.1.0
+   module load openmpi/3.1.0--gnu--6.1.0
    module load cmake git
 fi
 if [ "$MACHINE" = "MARCONI" ]; then
