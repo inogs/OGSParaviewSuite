@@ -41,6 +41,7 @@ PROJ_VERS     = 5.2.0
 PROJ_DATV     = 1.8
 GEOS_VERS     = 3.7.0
 QT5_VERS      = 5.10
+OSX_SDK       = macosx10.14
 
 # Path to ParaView
 #
@@ -436,6 +437,22 @@ superbuild-linux: $(SPB_PATH)/paraview_superbuild_linux_gen.sh prereq libOGS.so
 	@echo ""
 
 	@bash $< "${PARAVIEW_VERS}" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+	
+	@echo ""
+	@echo "   Thanks for waiting! OGS ParaView superbuild has been "
+	@echo "   successfully compiled with the OGS plugins."
+	@echo ""
+
+superbuild-osx: $(SPB_PATH)/paraview_superbuild_osx.sh prereq libOGS.so 
+	@echo ""
+	@echo "   OGS ParaView v${PARAVIEW_VERS} Superbuild"
+	@echo "   _________________________________________"
+	@echo ""
+	@echo "   The process will take some time."
+	@echo "   You can go grab a coffee or two meanwhile..."
+	@echo ""
+
+	@bash $< "${PARAVIEW_VERS}" "${OSX_SDK}" "${QT5_VERS}" "${PROJ_VERS}" "${PROJ_DATV}" "${GEOS_VERS}" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}" "${FC}" "${FFLAGS}"
 	
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView superbuild has been "

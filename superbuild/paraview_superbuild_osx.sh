@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Automated script to configure and install redistributable 
-# PARAVIEW binaries using the superbuild.
+# PARAVIEW binaries using the superbuild (for OSX).
 #
 # Issues:
 #  - PYTHONPATH must be unset, otherwise python dependent libraries
@@ -21,24 +21,28 @@
 #
 #  - netcdf must be OFF since the OGS plugins are built on top of VTK NetCDF
 #
-#  - mesa version interferes with QT5 > 5.10
+#  - qt5 (5.8, 5.9 and 5.10) will fail with the new SDK. Solution is to use qt vers 5.12
 #
-#  - under these circumstances VTKm fails.
+#  - vrpn cannot find pthread.h in OS Mojave. Solved using the newest version.
 #
 # Arnau Miro, OGS 2020
 
 PV_VERS=${1}
-QT5_VERS=${2}
-PROJ_VERS=${3}
-PROJ_DATV=${4}
-GEOS_VERS=${5}
-CCOMPILER=${6}
-CFLAGS=${7}
-CXXCOMPILER=${8}
-CXXFLAGS=${9}
+OSX_SDK=${2}
+QT5_VERS=${3}
+PROJ_VERS=${4}
+PROJ_DATV=${5}
+GEOS_VERS=${6}
+CCOMPILER=${7}
+CFLAGS=${8}
+CXXCOMPILER=${9}
+CXXFLAGS=${10}
+FCOMPILER=${11}
+FFLAGS=${12}
 
 NPROCS=$(getconf _NPROCESSORS_ONLN)
 INSTALL_PREFIX="${PWD}/../paraview-${PV_VERS}"
+APP_DIR="${INSTALL_PREFIX}/ParaView-${PV_VERS}.app/Contents/"
 SUITEDIR="${PWD}"
 SUPERBUILD_DIR="${PWD}/../paraview-superbuild"
 BUILD_DIR="${PWD}/../paraview-build"
@@ -66,6 +70,7 @@ cp $VERSIONSDIR/versions_new.cmake versions.cmake
 cp $VERSIONSDIR/versions_superbuild_py27.cmake superbuild/versions.cmake
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
+cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
 cp $MAPPLOTLIBDIR/matplotlib-kiwisolver.patch superbuild/projects/patches
 # Return to main folder
 cd $SUITEDIR
@@ -78,6 +83,7 @@ cmake $SUPERBUILD_DIR \
    -Dparaview_SOURCE_SELECTION=$PV_VERS \
    -Dqt5_SOURCE_SELECTION=$QT5_VERS \
    -DCMAKE_BUILD_TYPE_paraview=Release \
+   -DCMAKE_OSX_SDK=$OSX_SDK \
    -DENABLE_mpi=ON \
    -DUSE_SYSTEM_mpi=OFF \
    -DENABLE_cuda=OFF \
@@ -106,6 +112,9 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
+   -DCMAKE_C_COMPILER=${CCOMPILER} \
+   -DCMAKE_CXX_COMPILER=${CXXCOMPILER} \
+   -DCMAKE_Fortran_COMPILER=${FCOMPILER} \
    -Dparaview_PLUGINS_EXTERNAL="MapPlotterView;OGSAnnotateDateTime;OGSCompareVariables;OGSDensity;OGSDepthProfile;OGSDerivatives;OGSHovmoeller;OGSMixingLayerDepth;OGSPlotViews;OGSReader;OGSRossbyRadius;OGSSelectTools;OGSSpaghetti;OGSSpatialStatistics;OGSTimeStatistics;OGSUtils;OGSVariableAggregator;OGSVortexDetection;OGSVortexIdentification;OGSWriter" \
    -Dparaview_PLUGINS_AUTOLOAD="MapPlotterView;OGSAnnotateDateTime;OGSCompareVariables;OGSDensity;OGSDepthProfile;OGSDerivatives;OGSHovmoeller;OGSMixingLayerDepth;OGSPlotViews;OGSReader;OGSRossbyRadius;OGSSelectTools;OGSSpaghetti;OGSSpatialStatistics;OGSTimeStatistics;OGSUtils;OGSVariableAggregator;OGSVortexDetection;OGSVortexIdentification;OGSWriter" \
    -Dparaview_PLUGIN_MapPlotterView_PATH=$PLUGINDIR/MapPlotterView \
@@ -140,77 +149,78 @@ ln -s $BUILD_DIR/install/lib/python2.7/site-packages/matplotlib-*/matplotlib/ $B
 # Install
 make -j $NPROCS install
 # FIX: matplotlib depends on backports and kiwisolver
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $APP_DIR/Python/
+cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $APP_DIR/Python/
 
 # Load environment
-export PATH=$PATH:$INSTALL_PREFIX/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_PREFIX/lib:$INSTALL_PREFIX/lib/paraview-5.6
-export C_INCLUDE_PATH=$C_INCLUDE_PATH:$INSTALL_PREFIX/include
-export PYTHONPATH=$PYTHONPATH:$INSTALL_PREFIX/lib/python2.7/site-packages
+export PATH=$PATH:$APP_DIR/bin
+export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$APP_DIR/Libraries:$APP_DIR/Libraries/paraview-5.6
+#export C_INCLUDE_PATH=$C_INCLUDE_PATH:$APP_DIR/include
+export PYTHONPATH=$PYTHONPATH:$APP_DIR/Python
 
 # Deploy GEOS library
-bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
 bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+cp -r $BUILD_DIR/install/lib/libgeos* $APP_DIR/Libraries/
 
 # Deploy PROJ library
-bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
 bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+cp -r $BUILD_DIR/install/lib/libproj* $APP_DIR/Libraries/
 
 # Install netCDF4, configparser, cython
 $BUILD_DIR/install/bin/pip install --upgrade pip
-$BUILD_DIR/install/bin/pip install requests netcdf4 configparser cython cartopy pyepsg
-cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
-cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools.pth $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $INSTALL_PREFIX/lib/python2.7/site-packages/backports/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/Cython $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $INSTALL_PREFIX/lib/python2.7/
-cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $INSTALL_PREFIX/lib/python2.7/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/shape* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/pyepsg.* $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/requests $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $INSTALL_PREFIX/lib/python2.7/site-packages/numpy/core
+$BUILD_DIR/install/bin/pip install kiwisolver requests netcdf4 configparser cython cartopy pyepsg
+#cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
+#cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools.pth $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $APP_DIR/Python/backports/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/Cython $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $APP_DIR/Libraries/
+cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $APP_DIR/Libraries/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/shape* $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/pyepsg.* $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/requests $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $APP_DIR/Python/
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $APP_DIR/Python/numpy/core
 
 # Copy ffmpeg
-cp $BUILD_DIR/install/bin/ffmpeg $INSTALL_PREFIX/bin
+cp $BUILD_DIR/install/bin/ffmpeg $APP_DIR/bin
 cd ..
 printf "Install done successfully!\n"
 
 # Deploy img2video
 printf "Deploying img2video... "
-cp $BINDIR/img2video $INSTALL_PREFIX/bin
+cp $BINDIR/img2video $APP_DIR/bin/
 printf "OK\n"
 
 # Deploy bit.sea inside the ParaView installation
 printf "Deploying bit.sea... "
-cp -r $BITSEADIR/commons    $INSTALL_PREFIX/lib/python*/site-packages
-cp -r $BITSEADIR/basins     $INSTALL_PREFIX/lib/python*/site-packages
-cp -r $BITSEADIR/MapPlotter $INSTALL_PREFIX/lib/python*/site-packages
+cp -r $BITSEADIR/commons    $APP_DIR/Python
+cp -r $BITSEADIR/basins     $APP_DIR/Python
+cp -r $BITSEADIR/MapPlotter $APP_DIR/Python
 printf "OK\n"
 
 # Deploy OGSMesh and OGS2Paraview inside the installation
 printf "Deploying OGSMesh and OGS2Paraview... "
-mv $SUITEDIR/libOGS.so $INSTALL_PREFIX/lib
-cp $SUITEDIR/superbuild/env-linux.sh $INSTALL_PREFIX/env.sh
-cp $PLUGINDIR/_utils/python/OGSmesh.py $INSTALL_PREFIX/lib/python*/site-packages
-cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $INSTALL_PREFIX/bin
-cp $PLUGINDIR/_utils/python/OGS2Paraview.py $INSTALL_PREFIX/bin
-cp $PLUGINDIR/_utils/python/default.ini $INSTALL_PREFIX/bin
+mv $SUITEDIR/libOGS.so $APP_DIR/Libraries
+cp $SUITEDIR/superbuild/env-linux.sh $APP_DIR/env.sh
+cp $PLUGINDIR/_utils/python/OGSmesh.py $APP_DIR/Python
+cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $APP_DIR/bin
+cp $PLUGINDIR/_utils/python/OGS2Paraview.py $APP_DIR/bin
+cp $PLUGINDIR/_utils/python/default.ini $APP_DIR/bin
 printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
 rm -rf $BUILD_DIR $SUPERBUILD_DIR
-tar cvzf "${INSTALL_PREFIX}.tar.gz" $INSTALL_PREFIX
+tar cvzf "${INSTALL_PREFIX}/ParaView-${PV_VERS}.tar.gz" ${INSTALL_PREFIX}/ParaView-${PV_VERS}.app

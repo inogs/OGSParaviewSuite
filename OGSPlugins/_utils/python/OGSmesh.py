@@ -56,7 +56,8 @@ class OGSmesh(object):
 		self._land_mask   = []
 
 		# Interface with the C functions
-		lib += '.dylib' if sys.platform == 'darwin' else '.so'
+#		lib += '.dylib' if sys.platform == 'darwin' else '.so'
+		lib += '.so'
 		self._OGSlib   = ct.cdll.LoadLibrary(lib)
 
 	@property
