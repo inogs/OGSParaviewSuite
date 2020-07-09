@@ -84,7 +84,7 @@ cmake $SUPERBUILD_DIR \
    -Dqt5_SOURCE_SELECTION=$QT5_VERS \
    -DCMAKE_BUILD_TYPE_paraview=Release \
    -DCMAKE_OSX_SDK=$OSX_SDK \
-   -DENABLE_mpi=ON \
+   -DENABLE_mpi=OFF \
    -DUSE_SYSTEM_mpi=OFF \
    -DENABLE_cuda=OFF \
    -DENABLE_boost=ON \
