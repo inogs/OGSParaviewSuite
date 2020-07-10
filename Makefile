@@ -40,8 +40,8 @@ LAPACK_VERS   = 3.9.0
 PROJ_VERS     = 5.2.0
 PROJ_DATV     = 1.8
 GEOS_VERS     = 3.7.0
-QT5_VERS      = 5.12
-OSX_SDK       = macosx10.15
+QT5_VERS      = 5.10
+OSX_SDK       = macosx10.14
 
 # Path to ParaView
 #
