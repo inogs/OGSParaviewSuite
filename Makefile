@@ -21,9 +21,9 @@ TUNE = skylake
 
 # Options
 #
-VECTORIZATION  = OFF
-OPENMP_PARALL  = OFF
-FORCE_GCC      = ON
+VECTORIZATION  = ON
+OPENMP_PARALL  = ON
+FORCE_GCC      = OFF
 DEBUGGING      = OFF
 
 # Paths to the plugins

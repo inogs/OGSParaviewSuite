@@ -3,8 +3,8 @@
 ##############################################
 
 # Variables
-set( VECTORIZATION OFF)
-set( OPENMP_PARALL OFF)
+set( VECTORIZATION ON)
+set( OPENMP_PARALL ON)
 set( COMPILER      "GCC") # Either GCC or INTEL
 set( DEBUGGING     OFF)
 set( DOUBLEARRAYS  ON) # Use double arrays instead of float arrays
