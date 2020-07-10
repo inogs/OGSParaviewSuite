@@ -162,10 +162,10 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $INST
 cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
 
 # Load environment
-export PATH=$PATH:$INSTALL_PREFIX/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_PREFIX/lib:$INSTALL_PREFIX/lib/paraview-5.6
-export C_INCLUDE_PATH=$C_INCLUDE_PATH:$INSTALL_PREFIX/include
-export PYTHONPATH=$PYTHONPATH:$INSTALL_PREFIX/lib/python2.7/site-packages
+export PATH=$INSTALL_PREFIX/bin:$PATH
+export LD_LIBRARY_PATH=$INSTALL_PREFIX/lib:$INSTALL_PREFIX/lib/paraview-5.6:$LD_LIBRARY_PATH
+export C_INCLUDE_PATH=$INSTALL_PREFIX/include:$C_INCLUDE_PATH
+export PYTHONPATH=$INSTALL_PREFIX/lib/python2.7/site-packages:$PYTHONPATH
 
 # Deploy GEOS library
 bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${INSTALL_PREFIX}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
