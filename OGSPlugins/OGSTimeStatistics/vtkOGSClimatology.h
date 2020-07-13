@@ -48,8 +48,6 @@ public:
   vtkSetMacro(use_files, int);
   vtkBooleanMacro(use_files, int);
 
-  vtkStringArray *GetTimeValues();
-
   #ifdef PARAVIEW_USE_MPI
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   virtual void SetController(vtkMultiProcessController*);
