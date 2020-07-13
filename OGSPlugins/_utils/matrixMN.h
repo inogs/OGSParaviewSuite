@@ -51,6 +51,9 @@
 	#include "lapacke.h"
 
 	#define LAPACK_MAJOR LAPACK_COL_MAJOR
+#else
+	#define lapack_logical   int 
+	typedef lapack_logical(* LAPACK_D_SELECT2) (const double *, const double *);
 #endif
 
 #define BLK_LIM 5000
@@ -104,18 +107,15 @@ namespace matMN
 			inline T            det();   // Determinant
 //			inline matrixMN<T>  inv();   // Inverse     (to do)
 
-			// Operations allowed by the LAPACK library 
-			#ifdef USE_LAPACK
-			// Eigenvalues and eigenvectors
+			// Eigenvalues and eigenvectors (only available through LAPACK)
 			inline matrixMN<T>      eigen(T wr[], T wi[]);
 			inline matrixMN<double> eigen(double wr[], double wi[], matrixMN<double> &V);
 			inline matrixMN<float>  eigen(float wr[], float wi[], matrixMN<float> &V);
-			// Schur factorization
-			inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select);
-			inline matrixMN<T> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z);
+			// Schur factorization (only available through LAPACK)
+			inline matrixMN<T>      schur(char sort, LAPACK_D_SELECT2 select);
+			inline matrixMN<T>      schur(char sort, LAPACK_D_SELECT2 select, matrixMN<T> &Z);
 			inline matrixMN<double> schur(char sort, LAPACK_D_SELECT2 select, matrixMN<double> &Z, double wr[], double wi[]);
 			inline matrixMN<float>  schur(char sort, LAPACK_D_SELECT2 select, matrixMN<float> &Z, float wr[], float wi[]);
-			#endif
 
 			// Operators
 			inline matrixMN<T> &operator=(const matrixMN<T> &mn)        { clear(); size(mn.m,mn.n); fill(mn.mat); return (*this);}                                                            // Equality of matrix sizes
@@ -445,6 +445,5 @@ namespace matMN
 		// Return A as the real Schur form
 		return A;		
 	}
-	#endif
 }
 #endif
