@@ -120,7 +120,7 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_vtkm=OFF \
    -DENABLE_netcdf=OFF \
    -DENABLE_vrpn=OFF \
-   -DENABLE_pvNVIDIAIndeX=ON \
+   -DENABLE_nvidiaindex=ON \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
