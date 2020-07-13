@@ -302,7 +302,6 @@ namespace matMN
 		return out;
 	}
 
-	#ifdef USE_LAPACK
 	template<class T>
 	inline matrixMN<T> matrixMN<T>::eigen(T wr[], T wi[]) {
 		// Matrix to store the eigenvectors
@@ -320,8 +319,10 @@ namespace matMN
 		matrixMN<double> A(*this);
 		double *dummy = new double[this->n];
 		// Call lapacke routine
+		#ifdef USE_LAPACK
 		LAPACKE_dgeev(LAPACK_MAJOR,'N','V',A.get_n(), A.data(), A.get_m(), 
 			&wr[0], &wi[0],dummy,this->n,V.data(),this->n);
+		#endif
 		// Deallocate memory
 		delete [] dummy;
 		return A; // Returns the factorized matrix
@@ -334,8 +335,10 @@ namespace matMN
 		matrixMN<float> A(*this);
 		float *dummy = new float[this->n];
 		// Call lapacke routine
+		#ifdef USE_LAPACK
 		LAPACKE_sgeev(LAPACK_MAJOR,'N','V',A.get_n(), A.data(), A.get_m(), 
 			&wr[0], &wi[0],dummy,this->n,V.data(),this->n);
+		#endif
 		// Deallocate memory
 		delete [] dummy;
 		return A; // Returns the factorized matrix
@@ -401,8 +404,10 @@ namespace matMN
 		int sdim = 0; matrixMN<double> A(*this);
 		// wr, wi and Z should already be allocated at this point
 		// Call lapacke routine
+		#ifdef USE_LAPACK
 		LAPACKE_dgees(LAPACK_MAJOR, 'V', sort, select, A.get_n(), A.data(), 
 			A.get_n(), &sdim, &wr[0], &wi[0], Z.data(), A.get_n());
+		#endif
 		// Return A as the real Schur form
 		return A;		
 	}
@@ -424,6 +429,7 @@ namespace matMN
 		// Schur algorithm overwrites the input matrix, we will copy and return it
 		// as the schur transformation
 		int sdim = 0; matrixMN<float> A(*this);
+		#ifdef USE_LAPACK
 		// wr, wi and Z should already be allocated at this point
 		// Lapack works in doubles
 		matrixMN<double> A_aux = A.convert<double>(), Z_aux = Z.convert<double>();
@@ -435,6 +441,7 @@ namespace matMN
 		std::copy(wr_aux,wr_aux+this->n,wr); std::copy(wi_aux,wi_aux+this->n,wi);
 		A = A_aux.convert<float>(); Z = Z_aux.convert<float>();
 		delete [] wr_aux; delete [] wi_aux;
+		#endif
 		// Return A as the real Schur form
 		return A;		
 	}
