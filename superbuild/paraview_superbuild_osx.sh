@@ -68,6 +68,11 @@ git submodule update
 # FIX: versions
 cp $VERSIONSDIR/versions_new.cmake versions.cmake
 cp $VERSIONSDIR/versions_superbuild_py27.cmake superbuild/versions.cmake
+# FIX: python
+cp superbuild/projects/zlib.cmake superbuild/projects/apple/zlib.cmake
+cp superbuild/projects/patches/zlib* superbuild/projects/apple/patches
+cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/python.cmake
+cp $SUITEDIR/superbuild/projects_apple/python-ssl.patch superbuild/projects/apple/patches
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
 cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
@@ -108,7 +113,7 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_vtkm=OFF \
    -DENABLE_netcdf=OFF \
    -DENABLE_vrpn=ON \
-   -DENABLE_pvNVIDIAIndeX=ON \
+   -DENABLE_nvidiaindex=OFF \
    -DENABLE_vortexfinder2=OFF \
    -DENABLE_paraview=ON \
    -DENABLE_paraviewsdk=OFF \
@@ -222,5 +227,5 @@ printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
-rm -rf $BUILD_DIR $SUPERBUILD_DIR
+#rm -rf $BUILD_DIR $SUPERBUILD_DIR
 tar cvzf "${INSTALL_PREFIX}/ParaView-${PV_VERS}.tar.gz" ${INSTALL_PREFIX}/ParaView-${PV_VERS}.app
