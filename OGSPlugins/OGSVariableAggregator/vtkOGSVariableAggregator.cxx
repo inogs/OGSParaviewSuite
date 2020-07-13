@@ -110,8 +110,10 @@ int vtkOGSVariableAggregator::RequestInformation(vtkInformation* vtkNotUsed(requ
 	#endif
 
 	// Parse XML and TextBox
+	#ifdef USE_PUGI
 	this->ParseXML();
 	this->SetAggrVarsText();
+	#endif
 
 	return 1;
 }
@@ -241,6 +243,7 @@ int vtkOGSVariableAggregator::RequestData(vtkInformation *vtkNotUsed(request),
 
 //----------------------------------------------------------------------------
 void vtkOGSVariableAggregator::ParseXML() {
+	#ifdef USE_PUGI
 	// Define an XML doc
 	xml::xml_document doc;
 	// If reading has been done correctly
@@ -265,10 +268,15 @@ void vtkOGSVariableAggregator::ParseXML() {
 			this->AggrVar[varname] = buf.str();
 		}
 	}
+	#else
+	vtkErrorMacro("PugiXML not being used!!");
+	return;
+	#endif
 }
 
 //----------------------------------------------------------------------------
 void vtkOGSVariableAggregator::SetAggrVarsText() {
+	#ifdef USE_PUGI
 	// Define an XML doc
 	xml::xml_document doc;
 	// If reading has been done correctly
@@ -293,6 +301,10 @@ void vtkOGSVariableAggregator::SetAggrVarsText() {
 			this->AggrVar[varname] = buf.str();
 		}
 	}
+	#else
+	vtkErrorMacro("PugiXML not being used!!");
+	return;
+	#endif	
 }
 
 //----------------------------------------------------------------------------

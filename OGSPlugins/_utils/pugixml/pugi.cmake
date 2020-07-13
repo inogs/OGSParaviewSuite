@@ -10,6 +10,11 @@ set( PUGI_INC_FOLDER "${CMAKE_CURRENT_LIST_DIR}")
 set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -I${PUGI_INC_FOLDER}") 
 set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${PUGI_INC_FOLDER}")
 
+if (NOT APPLE)
+	set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DUSE_PUGI") 
+	set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_PUGI")
+endif()
+
 # Now define a set of variables containing various code
 # that might be linked when compiling
 
