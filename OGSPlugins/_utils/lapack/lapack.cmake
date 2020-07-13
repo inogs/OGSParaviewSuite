@@ -18,7 +18,13 @@ set( LAPACK_LIB_FOLDER "${CMAKE_CURRENT_LIST_DIR}/lib")
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -I${LAPACK_INC_FOLDER} -DUSE_LAPACK") 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${LAPACK_INC_FOLDER} -DUSE_LAPACK")
 
-set( LAPACK_LINK_FLAGS "-Wl,-whole-archive ${LAPACK_LIB_FOLDER}/liblapacke.a ${LAPACK_LIB_FOLDER}/liblapack.a -Wl,-no-whole-archive ${LAPACK_LIB_FOLDER}/libblas.a")
+if(NOT APPLE)
+	# Compiler flags for linux
+	set( LAPACK_LINK_FLAGS "-Wl,-whole-archive ${LAPACK_LIB_FOLDER}/liblapacke.a ${LAPACK_LIB_FOLDER}/liblapack.a -Wl,-no-whole-archive ${LAPACK_LIB_FOLDER}/libblas.a")
+else()
+	# Compiler flags for Apple Clang
+	set( LAPACK_LINK_FLAGS "-Wl,${LAPACK_LIB_FOLDER}/liblapacke.a ${LAPACK_LIB_FOLDER}/liblapack.a -Wl,${LAPACK_LIB_FOLDER}/libblas.a")
+endif()
 
 # Linking flags according to the compiler
 if(NOT "${COMPILER}" STREQUAL "INTEL")
