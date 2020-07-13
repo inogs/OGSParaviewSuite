@@ -39,8 +39,10 @@ vtkStandardNewMacro(vtkOGSVariableAggregator);
 #include "field.h"
 #include "vtkFields.h"
 
+#ifdef USE_PUGI
 #include "pugixml.h"
 namespace xml = pugi;
+#endif
 
 //----------------------------------------------------------------------------
 void addVar(vtkDataArraySelection *AggrVar, std::map<std::string, std::string> *Var2Aggr) {
