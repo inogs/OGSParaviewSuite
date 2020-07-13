@@ -541,6 +541,7 @@ int vtkOGSTimeAverage::FileIterationAlgorithm(vtkInformation *request,
 	// At this point, outData contains the partial sums of the different arrays
 	// Now we need to loop the arrays in outData and reduce them to proc 0
 	// This operation needs to be done only for prodId > 0
+	#ifdef PARAVIEW_USE_MPI
 	if (this->nProcs > 1) {
 		// Loop cell arrays
 		for (int varId=0; varId < outData->GetCellData()->GetNumberOfArrays(); ++varId) {
@@ -561,6 +562,7 @@ int vtkOGSTimeAverage::FileIterationAlgorithm(vtkInformation *request,
 			outData->GetCellData()->AddArray(vtkDArray);
 		}
 	}
+	#endif
 	this->UpdateProgress(0.9);
 
 	// Now proc 0 has all the information. We need to loop the mesh once more to finish
