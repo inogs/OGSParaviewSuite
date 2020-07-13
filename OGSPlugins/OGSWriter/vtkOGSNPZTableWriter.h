@@ -33,7 +33,7 @@ public:
   int Write() override; // This is necessary to get Write() wrapped for scripting languages.
 
 protected:
-  vtkOGSNPZTableWriter() override;
+  vtkOGSNPZTableWriter();
   ~vtkOGSNPZTableWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;

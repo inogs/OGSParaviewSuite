@@ -53,7 +53,7 @@ public:
   virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 protected:
-  vtkOGSFieldWriter() override;
+  vtkOGSFieldWriter();
   ~vtkOGSFieldWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;

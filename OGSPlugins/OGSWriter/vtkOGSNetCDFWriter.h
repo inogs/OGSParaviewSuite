@@ -66,7 +66,7 @@ public:
   virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 protected:
-  vtkOGSNetCDFWriter() override;
+  vtkOGSNetCDFWriter();
   ~vtkOGSNetCDFWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;
