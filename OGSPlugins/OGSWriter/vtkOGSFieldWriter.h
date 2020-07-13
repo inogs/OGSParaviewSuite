@@ -50,14 +50,14 @@ public:
   void SetStartEnd(const int val1, const int val2);
 
   int Write() override; // This is necessary to get Write() wrapped for scripting languages.
-  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 protected:
-  vtkOGSFieldWriter();
+  vtkOGSFieldWriter() override;
   ~vtkOGSFieldWriter() override;
 
   int FillInputPortInformation(int, vtkInformation*) override;
-  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* );
+  int RequestData(vtkInformation* , vtkInformationVector** , vtkInformationVector* ) override;
   void WriteData() override;
 
   char *FileName, *varname;
