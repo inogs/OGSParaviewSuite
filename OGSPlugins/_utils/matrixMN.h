@@ -26,6 +26,8 @@
      	  and also set a new value (val) at the i,j position
      	> print(syle) prints the matrix in a nice printf style
 
+     Caveats: eigen and schur will not work without LAPACK
+
 	Arnau Miro (UPC-ESEIAAT) (c) 2018
 */
 
