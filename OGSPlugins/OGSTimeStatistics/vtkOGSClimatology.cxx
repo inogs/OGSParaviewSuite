@@ -331,6 +331,7 @@ int vtkOGSClimatology::RequestData(vtkInformation *request,
 		}
 
 		// Broadcast instants and weights to all the processors if needed
+		#ifdef PARAVIEW_USE_MPI
 		if (this->nProcs > 1) {
 			// Array length
 			int arr_len = (int)(this->instants.size());
@@ -341,6 +342,7 @@ int vtkOGSClimatology::RequestData(vtkInformation *request,
 			this->Controller->Broadcast(this->instants.data(),arr_len,0);
 			this->Controller->Broadcast(this->weights.data(),arr_len,0);
 		}
+		#endif
 
 		// Initialize sum of weights for the average
 		this->sum_weights = 0.;
