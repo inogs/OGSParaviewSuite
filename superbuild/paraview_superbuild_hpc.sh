@@ -198,7 +198,6 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $INSTALL_PREFIX/lib/python2.7/site-packages/numpy/core
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include/numpy $INSTALL_PREFIX/include
 
 # Copy ffmpeg
 cp $BUILD_DIR/install/bin/ffmpeg $INSTALL_PREFIX/bin
