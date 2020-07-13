@@ -70,6 +70,7 @@ cp $VERSIONSDIR/versions_new.cmake versions.cmake
 cp $VERSIONSDIR/versions_superbuild_py27.cmake superbuild/versions.cmake
 # FIX: python
 cp superbuild/projects/zlib.cmake superbuild/projects/apple/zlib.cmake
+cp superbuild/projects/bzip2.cmake superbuild/projects/apple/bzip2.cmake
 cp superbuild/projects/patches/zlib* superbuild/projects/apple/patches
 cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/python.cmake
 cp $SUITEDIR/superbuild/projects_apple/python-ssl.patch superbuild/projects/apple/patches
