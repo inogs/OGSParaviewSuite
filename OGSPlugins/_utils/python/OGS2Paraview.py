@@ -25,7 +25,7 @@
 # (c) OGS, Arnau Miro (2018)
 
 import os, sys, datetime, argparse, json
-import sys,numpy as np, glob as gl
+import numpy as np, glob as gl
 
 import configparser as cp
 
