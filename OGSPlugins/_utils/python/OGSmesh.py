@@ -156,7 +156,7 @@ class OGSmesh(object):
 		Inputs:
 			> mask : the mask object
 		'''
-		return np.array([SubMask(sub, maskobject=mask).mask.ravel() for sub in OGS.mes.basin_list],dtype=c_uint8).T
+		return np.array([SubMask(sub, maskobject=mask).mask.ravel() for sub in OGS.med.basin_list],dtype=c_uint8).T
 
 	@staticmethod
 	def generateCoastsMask(mask):
