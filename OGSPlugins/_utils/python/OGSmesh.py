@@ -156,7 +156,7 @@ class OGSmesh(object):
 		Inputs:
 			> mask : the mask object
 		'''
-		return np.array([SubMask(sub, maskobject=mask).mask.ravel() for sub in OGS.P.basin_list[:-1]],dtype=c_uint8).T
+		return np.array([SubMask(sub, maskobject=mask).mask.ravel() for sub in OGS.med.basin_list],dtype=c_uint8).T
 
 	@staticmethod
 	def generateCoastsMask(mask):
@@ -181,7 +181,7 @@ class OGSmesh(object):
 		
 		# Extract mask for mediterranean sea
 		# We want all the places that belong to the MED and that are water from 0 to 200 m
-		s = SubMask(OGS.P.basin_list[-1], maskobject=mask)
+		s = SubMask(OGS.med, maskobject=mask)
 
 		# Define coasts mask
 		coasts_mask = np.zeros(dims,dtype=c_uint8)
