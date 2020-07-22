@@ -74,7 +74,7 @@ cp superbuild/projects/bzip2.cmake superbuild/projects/apple/bzip2.cmake
 cp superbuild/projects/patches/zlib* superbuild/projects/apple/patches
 cp superbuild/projects/patches/bzip2* superbuild/projects/apple/patches
 cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/python.cmake
-cp $SUITEDIR/superbuild/projects_apple/python-ssl.patch superbuild/projects/apple/patches
+cp $SUITEDIR/superbuild/projects_apple/qt* superbuild/projects/
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
 cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
@@ -160,18 +160,22 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $APP_
 cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $APP_DIR/Python/
 
 # Load environment
-export PATH=$PATH:$APP_DIR/bin
-export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$APP_DIR/Libraries:$APP_DIR/Libraries/paraview-5.6
-#export C_INCLUDE_PATH=$C_INCLUDE_PATH:$APP_DIR/include
-export PYTHONPATH=$PYTHONPATH:$APP_DIR/Python
+export PATH=$APP_DIR/bin:$PATH
+export DYLD_FALLBACK_LIBRARY_PATH=$APP_DIR/Libraries:$APP_DIR/Libraries/paraview-5.6:$DYLD_FALLBACK_LIBRARY_PATH
+export C_INCLUDE_PATH=$APP_DIR/Python/numpy/core/include/
+export PYTHONPATH=$APP_DIR/Python:$PYTHONPATH
 
 # Deploy GEOS library
 bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-cp -r $BUILD_DIR/install/lib/libgeos* $APP_DIR/Libraries/
+bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${APP_DIR}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+mv $APP_DIR/lib/* $APP_DIR/Libraries/
+#rm -rf $APP_DIR/lib
 
 # Deploy PROJ library
 bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-cp -r $BUILD_DIR/install/lib/libproj* $APP_DIR/Libraries/
+bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${APP_DIR}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+mv $APP_DIR/lib/* $APP_DIR/Libraries/
+#rm -rf $APP_DIR/lib
 
 # Install netCDF4, configparser, cython
 $BUILD_DIR/install/bin/pip install --upgrade pip
@@ -220,7 +224,7 @@ printf "OK\n"
 # Deploy OGSMesh and OGS2Paraview inside the installation
 printf "Deploying OGSMesh and OGS2Paraview... "
 mv $SUITEDIR/libOGS.dylib $APP_DIR/Libraries
-cp $SUITEDIR/superbuild/env-linux.sh $APP_DIR/env.sh
+cp $SUITEDIR/superbuild/env-osx.sh $APP_DIR/env.sh
 cp $PLUGINDIR/_utils/python/OGSmesh.py $APP_DIR/Python
 cp $PLUGINDIR/_utils/python/OGSlonlat2m.py $APP_DIR/bin
 cp $PLUGINDIR/_utils/python/OGS2Paraview.py $APP_DIR/bin
@@ -229,5 +233,5 @@ printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
-#rm -rf $BUILD_DIR $SUPERBUILD_DIR
+rm -rf $BUILD_DIR $SUPERBUILD_DIR
 tar cvzf "${INSTALL_PREFIX}/ParaView-${PV_VERS}.tar.gz" ${INSTALL_PREFIX}/ParaView-${PV_VERS}.app

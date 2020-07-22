@@ -20,8 +20,8 @@ else ()
   set(python_unicode_args "--disable-unicode")
 endif ()
 
-superbuild_apply_patch(python ssl
-    "SSL with macports")
+#superbuild_apply_patch(python ssl
+#    "SSL with macports")
 
 superbuild_add_project(python
   CAN_USE_SYSTEM

@@ -1,0 +1,12 @@
+diff -u -Nru5 matplotlib-2.2.3/setupext.py matplotlib-2.2.3.kiwisolver/setupext.py
+--- matplotlib-2.2.3/setupext.py	2020-07-01 13:30:07.757917554 +0200
++++ matplotlib-2.2.3.kiwisolver/setupext.py	2020-07-01 13:30:22.546080643 +0200
+@@ -1437,7 +1437,7 @@
+             "python-dateutil>=2.1",
+             "pytz",
+             "six>=1.10",
+-            "kiwisolver>=1.0.1",
++            "kiwisolver==1.1.0",
+         ]
+         if sys.version_info < (3,):
+             install_requires += ["backports.functools_lru_cache"]
