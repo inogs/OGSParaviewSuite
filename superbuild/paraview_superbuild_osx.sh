@@ -185,7 +185,7 @@ rm -rf $APP_DIR/lib
 
 # Install netCDF4, configparser, cython
 $BUILD_DIR/install/bin/pip install --upgrade pip
-$BUILD_DIR/install/bin/pip install kiwisolver requests netcdf4 configparser cython cartopy pyepsg
+$BUILD_DIR/install/bin/pip install kiwisolver requests netcdf4==1.5.3 configparser cython cartopy pyepsg
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver $APP_DIR/Python/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $APP_DIR/Python/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $APP_DIR/Python/
