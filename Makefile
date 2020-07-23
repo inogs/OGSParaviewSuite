@@ -10,7 +10,6 @@
 #
 # Arnau Miro - OGS (2020)
 
-# TODO: Deploy superbuild
 # TODO: Tests
 
 # Optimization, host and CPU type
@@ -251,7 +250,11 @@ geos: $(PVPL_PATH)/_utils/geos/
 
 # ParaView Plugins
 #
-plugins: plugindir prereq MapPlotterView OGSReader OGSWriter OGSAnnotateDateTime OGSSelectTools OGSUtils OGSVariableAggregator OGSDerivatives OGSVortexIdentification OGSVortexDetection OGSSpatialStatistics OGSTimeStatistics OGSPlotViews OGSDepthProfile OGSHovmoeller OGSSpaghetti OGSCompareVariables OGSDensity OGSMixingLayerDepth OGSRossbyRadius
+ALL_PLUGINS = $(notdir $(shell find $(PVPL_PATH)/* -maxdepth 0 -type d))
+DEV_PLUGINS = $(notdir $(shell find $(PVPL_PATH)/_* -maxdepth 0 -type d))
+PLUGINS     = $(filter-out $(DEV_PLUGINS),$(ALL_PLUGINS))
+
+plugins: plugindir prereq $(PLUGINS)
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView plugins have been "
 	@echo "   successfully installed."
@@ -267,166 +270,19 @@ plugindir:
 	@echo ""
 	@mkdir -p $(PV_PLG_PATH)
 
-# Map Plotter View plugin
-MapPlotterView: $(PVPL_PATH)/MapPlotterView
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Reader plugin
-OGSReader: $(PVPL_PATH)/OGSReader
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Writer plugin
-OGSWriter: $(PVPL_PATH)/OGSWriter
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Annotate Date Time plugin
-OGSAnnotateDateTime: $(PVPL_PATH)/OGSAnnotateDateTime
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Select Tools plugin
-OGSSelectTools: $(PVPL_PATH)/OGSSelectTools
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Utils plugin
-OGSUtils: $(PVPL_PATH)/OGSUtils
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Variable Aggregator plugin
-OGSVariableAggregator: $(PVPL_PATH)/OGSVariableAggregator
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Derivatives plugin
-OGSDerivatives: $(PVPL_PATH)/OGSDerivatives
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Vortex Identification plugin
-OGSVortexIdentification: $(PVPL_PATH)/OGSVortexIdentification
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Vortex Detection plugin
-OGSVortexDetection: $(PVPL_PATH)/OGSVortexDetection
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Spatial Statistics plugin
-OGSSpatialStatistics: $(PVPL_PATH)/OGSSpatialStatistics
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Time Statistics plugin
-OGSTimeStatistics: $(PVPL_PATH)/OGSTimeStatistics
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Plot Views plugin
-OGSPlotViews: $(PVPL_PATH)/OGSPlotViews
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Depth Profile plugin
-OGSDepthProfile: $(PVPL_PATH)/OGSDepthProfile
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Hovmoeller plugin
-OGSHovmoeller: $(PVPL_PATH)/OGSHovmoeller
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Spaghetti plugin
-OGSSpaghetti: $(PVPL_PATH)/OGSSpaghetti
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Compare Variables plugin
-OGSCompareVariables: $(PVPL_PATH)/OGSCompareVariables
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Density plugin
-OGSDensity: $(PVPL_PATH)/OGSDensity
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Mixing Layer Depth plugin
-OGSMixingLayerDepth: $(PVPL_PATH)/OGSMixingLayerDepth
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
-# OGS Rossby Radius plugin
-OGSRossbyRadius: $(PVPL_PATH)/OGSRossbyRadius
-	@echo "$< -> $(PV_PLG_PATH)"
-	-@(cd $< && mkdir -p build)
-	@(cd $</build && rm -rf * && cmake .. )
-	@(cd $</build && make )
-	-@(cd $</build && cp *.so $(PV_PLG_PATH) )
-	-@(cd $< && rm -rf build)
+# The following rule finds all plugins in the OGSPlugins folder and 
+# automatically links them to the Makefile.
+#
+# Plugins starting with "_" are considered under development and thus
+# are not considered for compilation in this rule.
+
+$(PLUGINS): $(addprefix $(PVPL_PATH)/,$(PLUGINS))
+	@echo "$(PVPL_PATH)/$@ -> $(PV_PLG_PATH)"
+	-@(cd $(PVPL_PATH)/$@ && mkdir -p build)
+	@(cd $(PVPL_PATH)/$@/build && rm -rf * && cmake .. )
+	@(cd $(PVPL_PATH)/$@/build && make )
+	-@(cd $(PVPL_PATH)/$@/build && cp *.so $(PV_PLG_PATH) )
+	-@(cd $(PVPL_PATH)/$@ && rm -rf build)
 
 # Superbuild compilations
 #
