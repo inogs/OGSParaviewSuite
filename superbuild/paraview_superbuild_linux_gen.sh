@@ -142,6 +142,11 @@ make -j $NPROCS install
 # FIX: matplotlib depends on backports and kiwisolver
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $INSTALL_PREFIX/lib/python2.7/site-packages/
+# FIX: includes
+cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $INSTALL_PREFIX/lib/python2.7/site-packages/numpy/core
+cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include/numpy $INSTALL_PREFIX/include
+cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
 
 # Load environment
 export PATH=$PATH:$INSTALL_PREFIX/bin
@@ -160,8 +165,6 @@ bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARE
 # Install netCDF4, configparser, cython
 $BUILD_DIR/install/bin/pip install --upgrade pip
 $BUILD_DIR/install/bin/pip install requests netcdf4 configparser cython cartopy pyepsg
-cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
-cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools $INSTALL_PREFIX/lib/python2.7/site-packages/
@@ -181,7 +184,6 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $INSTALL_PREFIX/lib
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $INSTALL_PREFIX/lib/python2.7/site-packages/
 cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $INSTALL_PREFIX/lib/python2.7/site-packages/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $INSTALL_PREFIX/lib/python2.7/site-packages/numpy/core
 
 # Copy ffmpeg
 cp $BUILD_DIR/install/bin/ffmpeg $INSTALL_PREFIX/bin
