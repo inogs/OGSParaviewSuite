@@ -247,6 +247,15 @@ proj: $(PVPL_PATH)/_utils/proj/
 	@bash $</install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "STATIC" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
 geos: $(PVPL_PATH)/_utils/geos/
 	@bash $</install_geos.sh "${GEOS_VERS}" "${PWD}/$<" "${CC}" "${CFLAGS}" "${CXX}" "${CXXFLAGS}"
+prereq-osx: /usr/local/bin/pkg-config /usr/local/bin/openssl
+	@echo ""
+	@echo "   Thanks for waiting! Prerequisites for MacOS X"
+	@echo "   have been successfully installed."
+	@echo ""
+/usr/local/bin/pkg-config: $(SPB_PATH)/fix_pkgconfig_osx.sh
+	@bash $<
+/usr/local/bin/openssl: $(SPB_PATH)/fix_openssl_osx.sh
+	@bash $<
 
 # ParaView Plugins
 #
@@ -302,7 +311,7 @@ superbuild-linux: $(SPB_PATH)/paraview_superbuild_linux_gen.sh prereq libOGS.so
 	@echo "   successfully compiled with the OGS plugins."
 	@echo ""
 
-superbuild-osx: $(SPB_PATH)/paraview_superbuild_osx.sh prereq libOGS.dylib
+superbuild-osx: $(SPB_PATH)/paraview_superbuild_osx.sh prereq-osx prereq libOGS.dylib
 	@echo ""
 	@echo "   OGS ParaView v${PARAVIEW_VERS} Superbuild"
 	@echo "   _________________________________________"
