@@ -77,7 +77,7 @@ cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/py
 cp $SUITEDIR/superbuild/projects_apple/qt* superbuild/projects/
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
-cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
+#cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
 cp $MAPPLOTLIBDIR/matplotlib-kiwisolver.patch superbuild/projects/patches
 # Return to main folder
 cd $SUITEDIR
