@@ -77,7 +77,7 @@ cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/py
 cp $SUITEDIR/superbuild/projects_apple/qt* superbuild/projects/
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
-#cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
+cp $SUITEDIR/superbuild/projects_apple/matplotlib.cmake superbuild/projects/apple/matplotlib.cmake
 cp $MAPPLOTLIBDIR/matplotlib-kiwisolver.patch superbuild/projects/patches
 # Return to main folder
 cd $SUITEDIR
@@ -166,10 +166,10 @@ cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include 
 #cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
 
 # Load environment
-export PATH=$APP_DIR/bin:$APP_DIR/MacOS:$PATH
-export DYLD_FALLBACK_LIBRARY_PATH=$APP_DIR/Libraries:$DYLD_FALLBACK_LIBRARY_PATH
-#export C_INCLUDE_PATH=$APP_DIR/Python/numpy/core/include/:$C_INCLUDE_PATH
-export PYTHONPATH=$APP_DIR/Python:$PYTHONPATH
+export PATH=$PATH:$APP_DIR/bin:$APP_DIR/MacOS
+export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$APP_DIR/Libraries
+#export C_INCLUDE_PATH=$C_INCLUDE_PATH:$APP_DIR/Python/numpy/core/include/
+export PYTHONPATH=$PYTHONPATH:$APP_DIR/Python
 
 # Deploy GEOS library
 bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
