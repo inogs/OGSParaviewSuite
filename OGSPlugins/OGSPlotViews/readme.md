@@ -1,4 +1,4 @@
-## OGS Plot View
+## OGS Plot Views
 
 The **OGS Plot Views** are a collection of python plot views that perform specific plots that are not currently programmed inside ParaView. They are based on a _vtkPythonView_ with specific Python scripts and controls based on the _vtkPythonProgrammableFilter_. These views are:
 
