@@ -1,6 +1,6 @@
-## OGS Spatial Stats
+## OGS Spatial Statistics
 
-The **OGS Spatial Stats** filter is able to generate the following nine statistics to any part (or the whole) Mediterranean sea:
+The **OGS Spatial Statistics** filter is able to generate the following nine statistics to any part (or the whole) Mediterranean sea:
 
 * Mean
 * Standard deviation (std)
