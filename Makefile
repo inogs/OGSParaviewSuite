@@ -134,17 +134,11 @@ firstime: launchers tools bit.sea plugins
 
 # OGS Launchers
 #
-launchers: img2video paraview-launch pvpython-egl pvserver-egl
+launchers: paraview-launch pvpython-egl pvserver-egl
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView launchers have been "
 	@echo "   successfully installed."
 	@echo ""
-
-img2video: $(BIN_PATH)/img2video
-	@echo "$< -> $(PV_BIN_PATH)/$@"
-	@rm -f $(PV_BIN_PATH)/$@
-	@cp $(PWD)/$< $(PV_BIN_PATH)/$@
-	@chmod +x $(PV_BIN_PATH)/$@
 
 paraview-launch: $(BIN_PATH)/paraview-launch
 	@echo "$< -> $(PV_BIN_PATH)/$@"
@@ -166,7 +160,7 @@ pvserver-egl: $(BIN_PATH)/pvserver-egl
 
 # OGS Tools
 #
-tools: OGS2Paraview OGSlonlat2m OGSmesh ParaViewBlender
+tools: OGS2Paraview OGSlonlat2m OGSmesh ParaViewBlender img2video
 	@echo ""
 	@echo "   Thanks for waiting! OGS ParaView tools have been "
 	@echo "   successfully installed."
@@ -180,6 +174,12 @@ libOGS.dylib: $(PVPL_PATH)/_utils/OGS.cpp
 
 libOGS_install: libOGS.so
 	@mv $< $(PV_LIB_PATH)
+
+img2video: $(BIN_PATH)/img2video
+	@echo "$< -> $(PV_BIN_PATH)/$@"
+	@rm -f $(PV_BIN_PATH)/$@
+	@cp $(PWD)/$< $(PV_BIN_PATH)/$@
+	@chmod +x $(PV_BIN_PATH)/$@
 
 OGS2Paraview: $(PVPL_PATH)/_utils/python/OGS2Paraview.py
 	@echo "$< -> $(PV_PYT_PATH)/$@.py"
