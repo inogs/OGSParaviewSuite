@@ -3,10 +3,9 @@
 # This makefile helps compile the OGS ParaView suite and 
 # deploy bit.sea into ParaView.
 #
-# To add a new plugin just copy paste the compiling rule 
-# and rename it according to your plugin folder. Don't 
-# forget to add the plugin into the plugins rule for the
-# general compilation.
+# To add a new plugin just create a new folder with the
+# code of the plugin. The makefile will automatically detect
+# it and add it to the compilation.
 #
 # Arnau Miro - OGS (2020)
 
