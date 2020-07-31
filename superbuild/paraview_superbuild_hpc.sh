@@ -229,10 +229,10 @@ cp $PLUGINDIR/_utils/python/default.ini $INSTALL_PREFIX/bin
 printf "OK\n"
 
 if [ "$MACHINE" = "GALILEO" ]; then
-   cp $SUITEDIR/superbuild/env-galileo.sh $INSTALL_PREFIX/env.sh
+   cp $SUITEDIR/superbuild/env/env-galileo.sh $INSTALL_PREFIX/env.sh
 fi
 if [ "$MACHINE" = "MARCONI" ]; then
-   cp $SUITEDIR/superbuild/env-marconi.sh $INSTALL_PREFIX/env.sh
+   cp $SUITEDIR/superbuild/env/env-marconi.sh $INSTALL_PREFIX/env.sh
 fi
 
 # Clean-up

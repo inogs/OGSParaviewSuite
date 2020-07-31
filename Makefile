@@ -10,8 +10,6 @@
 #
 # Arnau Miro - OGS (2020)
 
-# TODO: Tests
-
 # Optimization, host and CPU type
 #
 OPTL = 2
