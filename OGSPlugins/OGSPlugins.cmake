@@ -3,7 +3,7 @@
 ##############################################
 
 # Variables
-set( VECTORIZATION ON)
+set( VECTORIZATION OFF)
 set( OPENMP_PARALL ON)
 set( COMPILER      "GCC") # Either GCC or INTEL
 set( DEBUGGING     OFF)
