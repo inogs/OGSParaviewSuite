@@ -54,7 +54,9 @@ compiles only the OGS ParaView plugins.
 
 ### Superbuild compilation
 
-The [superbuild](https://gitlab.kitware.com/paraview/paraview-superbuild/) installation provides with an autonomous, standalone build of ParaView and its dependencies along with the OGS ParaView plugins. Superbuild can be built in Linux or in MacOS X. In both cases, it is necessary to install the dependencies of gfortran, CMake and openssl.
+The [superbuild](https://gitlab.kitware.com/paraview/paraview-superbuild/) installation provides with an autonomous, standalone build of ParaView and its dependencies along with the OGS ParaView plugins. Superbuild can be built in Linux or in MacOS X. In both cases, it is necessary to install the dependencies of gfortran, CMake and OpenSSL.
+
+Moreover, before launching any superbuild compilation, make sure that **VECTORIZATION** and **OPENMP** are deactivated inside the Makefile and the OGSPlugins.cmake file.
 
 #### Linux
 
