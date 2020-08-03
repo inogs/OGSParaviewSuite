@@ -18,6 +18,6 @@ include(${PROJ})  # PROJ detection
 #--------------------------------------------------
 add_paraview_plugin(OGSSelectTools "1.0"
   SERVER_MANAGER_XML     OGSSelectTools.xml
-  SERVER_MANAGER_SOURCES ${VTKOPS} vtkOGSSelectCoast.cxx vtkOGSSelectBasin.cxx vtkOGSSelectLand.cxx vtkOGSSelectPolygon.cxx vtkOGSSelectOkuboWeiss.cxx
+  SERVER_MANAGER_SOURCES ${VTKFIELDS} ${VTKOPS} vtkOGSSelectCoast.cxx vtkOGSSelectBasin.cxx vtkOGSSelectLand.cxx vtkOGSSelectPolygon.cxx vtkOGSSelectOkuboWeiss.cxx vtkOGSSelectTimePeriod.cxx
   REQUIRED_ON_SERVER
 )

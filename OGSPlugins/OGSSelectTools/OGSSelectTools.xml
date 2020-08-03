@@ -705,5 +705,84 @@
       <!-- End Threshold -->
     </SourceProxy>
     <!-- END SELECT POLYGON -->
+
+    <!-- START SELECT TIME PERIOD -->
+   <SourceProxy name="OGSSelectTimePeriod"
+                class="vtkOGSSelectTimePeriod" 
+                label="OGS Select Time Period">
+     <Documentation
+        long_help="This plugin selects a range of time from the whole timestep of the simulation."
+        short_help="Selects a range of time from the whole timestep of the simulation.">
+        Given a time requestor, this filter selects a range of time from the whole timestep of the simulation.
+     </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+     </InputProperty>
+
+     <!-- Time step information -->
+     <DoubleVectorProperty name="TimestepValues"
+                           repeatable="1"
+                           information_only="1">
+        <TimeStepsInformationHelper/>
+        <Documentation>
+          Available time step values.
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- BEGIN EXPOSED PROPERTIES -->
+
+     <!-- Start and end time -->
+     <StringVectorProperty name="TimeInfo"
+                           command="GetTimeValues"
+                           information_only="1">
+       <StringArrayHelper />
+     </StringVectorProperty>
+
+     <StringVectorProperty name="StartTime"
+                           command="SetStartTI"
+                           number_of_elements="1"
+                           label="Start Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the initial timestep for the TimeInterval.
+        </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty name="EndTime"
+                           command="SetEndTI"
+                           number_of_elements="1"
+                           label="End Time: ">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="TimeInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Documentation>
+          Set the final timestep for the TimeInterval.
+        </Documentation>
+     </StringVectorProperty>
+
+     <!-- END EXPOSED PROPERTIES -->
+
+     <Hints>
+         <ShowInMenu category="OGS" />
+         <RepresentationType view="RenderView" type="Surface" />
+     </Hints>
+   </SourceProxy>
+    <!-- END SELECT TIME PERIOD -->
+
  </ProxyGroup>
 </ServerManagerConfiguration>
