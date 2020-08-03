@@ -1,6 +1,6 @@
 ## OGS Annotate Date Time
 
-The **OGS Annotate Date Time** plugin is a simple tool to print in the GUI the current instant date and time.
+The **OGS Annotate Date Time** plugin is a simple tool to print in the GUI the current instant date and time. It is best to apply this plugin on the **OGS Reader** or any of the **OGS Time Statistics** filters.
 
 The **OGS Reader** uses the time structure to store the time stamp in the time array. By default, this plugin reads the data from the timestamp and converts it to a readable format using the _ctime_ library. At the user's request, the metadata array can be used instead to obtain a representation of the time. This solution is usually more accurate since it involves less conversions. The output is in the form the user has inputed using the [date time format](http://strftime.org/).
 
