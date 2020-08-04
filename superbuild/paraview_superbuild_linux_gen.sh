@@ -52,7 +52,7 @@ BITSEADIR="${SUITEDIR}/bit.sea"
 # Load modules - provide a basic building environment
 if [ $(command -v module) ]; then
    module purge
-   module load gcc openmpi cmake
+   module load gcc/8.2.0 openmpi/3.1.2 cmake/3.12.3
 fi
 
 # Obtain superbuild

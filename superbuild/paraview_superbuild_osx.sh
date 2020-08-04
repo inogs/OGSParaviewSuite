@@ -53,12 +53,6 @@ PLUGINDIR="${SUITEDIR}/OGSPlugins/"
 BINDIR="${SUITEDIR}/bin"
 BITSEADIR="${SUITEDIR}/bit.sea"
 
-# Load modules - provide a basic building environment
-if [ $(command -v module) ]; then
-   module purge
-   module load gcc openmpi cmake
-fi
-
 # Obtain superbuild
 git clone --recursive https://gitlab.kitware.com/paraview/paraview-superbuild.git $SUPERBUILD_DIR
 cd $SUPERBUILD_DIR
