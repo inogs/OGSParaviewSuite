@@ -21,6 +21,7 @@
 #include "vtkCellData.h"
 #include "vtkPointData.h"
 #include "vtkFieldData.h"
+#include "vtkDataSet.h"
 #include "vtkSmartPointer.h"
 
 #ifdef USE_OMP
@@ -99,6 +100,70 @@ namespace VTK
 
 		// Return V3v
 		return xyz;		
+	}
+
+	/* GETCONNECTEDPOINTS
+
+		Recovers all the points connected to a point in the mesh.
+	*/
+	std::vector<int> getConnectedPoints(vtkDataSet *mesh, const int pointId) {
+		
+		std::vector<int> connectedPoints;
+		vtkIdList *cellIdList = vtkIdList::New();
+
+		// Get all the cells that belong to the current point
+		mesh->GetPointCells(pointId,cellIdList);
+
+		// Loop all the cells that we just found
+		for (int cellId = 0; cellId < cellIdList->GetNumberOfIds(); ++cellId) {
+			vtkIdList *pointIdList = vtkIdList::New();
+			// Recover points in the cell
+			mesh->GetCellPoints(cellIdList->GetId(cellId),pointIdList);
+			// Append to connected
+			if (pointIdList->GetId(0) != pointId)
+				connectedPoints.push_back( pointIdList->GetId(0) );
+			else
+				connectedPoints.push_back( pointIdList->GetId(1) );
+			// Delete
+			pointIdList->Delete();
+		}
+
+		cellIdList->Delete(); 
+		return connectedPoints;
+	}
+
+	/* GETCONNECTEDCELLS
+
+		Recovers all the cells connected to a cell in the mesh.
+	*/
+	std::vector<int> getConnectedCells(vtkDataSet *mesh, const int cellId) {
+
+		std::vector<int> connectedCells;
+		vtkIdList *pointIdList = vtkIdList::New();
+		mesh->GetCellPoints(cellId,pointIdList);
+
+		for (int pointId = 0; pointId<pointIdList->GetNumberOfIds(); ++pointId) {
+			// Create a list with the points of the edge of the cell
+			vtkIdList *edgeIdList = vtkIdList::New();
+			// Add one edge
+			edgeIdList->InsertNextId(pointIdList->GetId(pointId));
+			// Add the other edge
+			if (pointId+1 == pointIdList->GetNumberOfIds())
+				edgeIdList->InsertNextId(pointIdList->GetId(0));
+			else
+				edgeIdList->InsertNextId(pointIdList->GetId(pointId+1));
+			// Get the neighbors of the cell
+			vtkIdList *cellIdList = vtkIdList::New();
+			mesh->GetCellNeighbors(cellId,edgeIdList,cellIdList);
+			// Load into the vector
+			for (int cId = 0; cId<cellIdList->GetNumberOfIds(); ++cId)
+				connectedCells.push_back( cellIdList->GetId(cId) );
+			// Delete
+			edgeIdList->Delete(); cellIdList->Delete();
+		}
+
+		pointIdList->Delete();
+		return connectedCells;
 	}
 
 }

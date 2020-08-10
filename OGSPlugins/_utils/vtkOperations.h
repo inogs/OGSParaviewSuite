@@ -18,6 +18,8 @@
 #ifndef VTKOPERATIONS_H
 #define VTKOPERATIONS_H
 
+#include <vector>
+
 #include "vtkDataSet.h"
 
 #include "V3.h"
@@ -39,7 +41,18 @@ namespace VTK
 
 	*/
 	v3::V3v getVTKCellCenters(vtkDataSet *mesh, double fact);
+  
+  /* GETCONNECTEDPOINTS
 
+    Recovers all the points connected to a point in the mesh.
+  */
+  std::vector<int> getConnectedPoints(vtkDataSet *mesh, const int pointId);
+
+  /* GETCONNECTEDCELLS
+
+    Recovers all the cells connected to a cell in the mesh.
+  */
+  std::vector<int> getConnectedCells(vtkDataSet *mesh, const int cellId);
 }
 
 #endif

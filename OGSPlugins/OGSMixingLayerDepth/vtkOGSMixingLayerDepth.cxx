@@ -219,71 +219,76 @@ int vtkOGSMixingLayerDepth::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Create a map to refer the data on the layers to the data on the mesh.
 	// Populate them by looping the mesh once.
-	std::map<int,std::vector<int>> mMeshPerLayer;
+	std::vector<int> mMeshSurface;
+	std::map<int,std::vector<int>> mMeshPerDepth;
 
-	// Set up the different layers
-	#pragma omp parallel
-	{
-	// Set up the different layers
-	for (int ii=OMP_THREAD_NUM; ii < array.get_n(); ii+=OMP_NUM_THREADS) {
-		// Set maps
-		int ind  = cId2zId[ii][0];
-		#pragma omp critical
-		{
-		mMeshPerLayer[ind].push_back(ii);
-		}	
-	}
+	// Set up a connectivity matrix that relates each point of the surface with
+	// the points that have same x, y coordinates but different z.
+	// Loop the mesh
+	for (int ii=0; ii < this->xyz.len(); ii+=1) {
+		// is the point on the coast? if so discard it
+		if (cmask[ii][0] == 0) continue;
+		v3::V3 p1 = this->xyz[ii];
+		double p1z = fabs(p1[2]); p1[2] = 0.; // So that we can do the norm later
+		// is the point on the surface? if not discard it
+		if (fabs(p1z - fabs(this->zcoords[0])) > 1e-3) continue;
+
+		// At this point we should have a valid point and we know
+		// how many depth levels there are. We will loop on the depth levels
+		// and find the cell that is right under the current one.
+		mMeshSurface.push_back(ii); // Points that are on the surface
+		mMeshPerDepth[ii].push_back(ii);
+		int cId = ii; 
+		for (int zId = 1; zId < this->zcoords.size(); zId += 1) {
+			// Find the cell neighbours
+			std::vector<int> neighbours = (this->iscelld) ? 
+				VTK::getConnectedCells(output,cId) : VTK::getConnectedPoints(output,cId);
+			// From all the neighbours find the one that has the
+			// same x, y and greater z
+			int nId = -1; double diff = 1e99;
+			for (int jj = 0; jj < neighbours.size(); ++jj) {
+				int ind = neighbours[jj];
+				v3::V3 p2 = this->xyz[ind];
+				double p2z = fabs(p2[2]); p2[2] = 0.;
+
+				if (cmask[ind][0] == 0) continue;
+				if (fabs(p2z - fabs(this->zcoords[zId])) > 1e-3) continue;
+
+				double d = (p1 - p2).norm2();
+				if (d < diff) { diff = d; nId = jj; }
+			}
+			if (nId < 0) break; // No more depths have been found
+			// Store connectivity
+			mMeshPerDepth[ii].push_back(neighbours[nId]); 
+			cId = neighbours[nId]; // Find next cell
+		}
 	}
 	this->UpdateProgress(0.5);
 
-	// For each depth layer, compute the mask and store MLD
-	// This algorithm requires to work on a rectilinear grid with
-	// the same number of points at each plane
-	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
-		// Discard all that is above the reference
-		if (zId <= zIdRef) {
-			for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
-				int ind    = mMeshPerLayer[zId][ii];
-				int ind0   = mMeshPerLayer[0][ii];
-
-				if (cmask[ind][0] == 0) continue;
-
-				mld[ind0][0]    = -zcoords[zIdRef]; // zcoords is negative!!
-				mldmask[ind][0] = 1;
-			}
-			continue;
-		}
-		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
-			// Indices
-			int ind    = mMeshPerLayer[zId][ii];
-			int ind0   = mMeshPerLayer[0][ii];
-			int ind1   = mMeshPerLayer[zId-1][ii];
-			int indref = mMeshPerLayer[zIdRef][ii];
-
-			double Val  = array[ind][0];
-			double Vref = array[indref][0];
-
-			if (cmask[ind][0] == 0) continue;
+	// Loop the points that are on the surface
+	for (int ii=0; ii < mMeshSurface.size(); ++ii) {
+		int ind   = mMeshSurface[ii];
+		int ziref = mMeshPerDepth[ind][zIdRef]; // Reference indices
+		// Loop the points that are on the water column
+		// Find argmin(fabs(array[z]-array[zref])) < darray
+		int idZmin = -1;
+		for (int jj = 0; jj<mMeshPerDepth[ind].size(); ++jj) {
+			int zind = mMeshPerDepth[ind][jj];
+			
+			double Val  = array[zind][0];
+			double Vref = array[ziref][0];
 
 			// Compute MLD
-			if (mldmask[ind1][0] && (double)(fabs(Val-Vref)) < dMLD) {
-				mld[ind0][0]    = -zcoords[zId]; // zcoords is negative!!
-				mldmask[ind][0] = 1;	
-			}
+			if ((double)(fabs(Val-Vref)) < dMLD) idZmin = jj;
 		}
-	}
-	this->UpdateProgress(0.65);
-	
-	// Expand MLD to all the layers
-	for (int zId = 1; zId < this->zcoords.size(); zId += 1) {
-		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
-			int ind0   = mMeshPerLayer[0][ii];
-			int ind    = mMeshPerLayer[zId][ii];
+		if (idZmin < 0) idZmin = zIdRef;
+		// Write MLD and MLD mask arrays
+		for (int jj = 0; jj<mMeshPerDepth[ind].size(); ++jj) {
+			int zind = mMeshPerDepth[ind][jj];
 
-			if (cmask[ind][0] == 0) continue;
-
-			mld[ind][0] = mld[ind0][0];
-		}
+			mld[zind][0] = -zcoords[idZmin]; // zcoords is negative!!
+			if (jj < idZmin) mldmask[zind][0] = 1;
+		}		
 	}
 	this->UpdateProgress(0.75);
 
