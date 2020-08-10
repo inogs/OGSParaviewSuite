@@ -248,16 +248,53 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 
 	// Create a map to refer the data on the layers to the data on the mesh.
 	// Populate them by looping the mesh once.
-	std::map<int,std::vector<int>> mMeshPerLayer;
+	std::vector<int> mMeshSurface;
+	std::map<int,std::vector<int>> mMeshPerDepth;
 
 	// Projection
 	PROJ::Projection p;
 
-	// Set up the different layers
-	#pragma omp parallel
-	{
-	// Set up the different layers
-	for (int ii=OMP_THREAD_NUM; ii < this->xyz.len(); ii+=OMP_NUM_THREADS) {
+	// Set up a connectivity matrix that relates each point of the surface with
+	// the points that have same x, y coordinates but different z.
+	// Loop the mesh
+	for (int ii=0; ii < this->xyz.len(); ii+=1) {
+		// is the point on the coast? if so discard it
+		if (cmask[ii][0] == 0) continue;
+		v3::V3 p1 = this->xyz[ii];
+		double p1z = fabs(p1[2]); p1[2] = 0.; // So that we can do the norm later
+		// is the point on the surface? if not discard it
+		if (fabs(p1z - fabs(this->zcoords[0])) > 1e-3) continue;
+
+		// At this point we should have a valid point and we know
+		// how many depth levels there are. We will loop on the depth levels
+		// and find the cell that is right under the current one.
+		mMeshSurface.push_back(ii); // Points that are on the surface
+		mMeshPerDepth[ii].push_back(ii);
+		int cId = ii; 
+		for (int zId = 1; zId < this->zcoords.size(); zId += 1) {
+			// Find the cell neighbours
+			std::vector<int> neighbours = (this->iscelld) ? 
+				VTK::getConnectedCells(output,cId) : VTK::getConnectedPoints(output,cId);
+			// From all the neighbours find the one that has the
+			// same x, y and greater z
+			int nId = -1; double diff = 1e99;
+			for (int jj = 0; jj < neighbours.size(); ++jj) {
+				int ind = neighbours[jj];
+				v3::V3 p2 = this->xyz[ind];
+				double p2z = fabs(p2[2]); p2[2] = 0.;
+
+				//if (cmask[ind][0] == 0) continue;
+				if (fabs(p2z - fabs(this->zcoords[zId])) > 1e-3) continue;
+
+				double d = (p1 - p2).norm2();
+				if (d < diff) { diff = d; nId = jj; }
+			}
+			if (nId < 0) break; // No more depths have been found
+			// Store connectivity
+			mMeshPerDepth[ii].push_back(neighbours[nId]); 
+			cId = neighbours[nId]; // Find next cell
+		}
+
 		// Obtain f_cor
 		if (this->useCtFcor) {
 			f_cor[ii][0] = this->f_cor_ct;
@@ -266,63 +303,101 @@ int vtkOGSRossbyRadius::RequestData(vtkInformation *vtkNotUsed(request),
 			p.transform_point(projName,"degrees",lon,lat);
 			f_cor[ii][0] = 2*this->Omega*sin(PROJ::deg2rad(lat));
 		}
-		// Set maps
-		int ind  = cId2zId[ii][0];
-		#pragma omp critical
-		{
-		mMeshPerLayer[ind].push_back(ii);
-		}	
-	}
 	}
 	this->UpdateProgress(0.5);
 
-	// For each depth layer, compute the mask and store MLD
-	// This algorithm requires to work on a rectilinear grid with
-	// the same number of points at each plane
-	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
-		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
-			// Indices
-			int ind0 = mMeshPerLayer[0][ii];
-			int ind  = mMeshPerLayer[zId][ii];
-			
-			if (cmask[ind][0] == 0) continue; // Mask skip
+	// Loop the points that are on the surface
+	for (int ii=0; ii < mMeshSurface.size(); ++ii) {
+		int ind = mMeshSurface[ii];
+
+		// First loop at the depth levels
+		// Compute Barotropic Rossby radius and density averages
+		for (int jj = 0; jj<mMeshPerDepth[ind].size(); ++jj) {
+			int zind = mMeshPerDepth[ind][jj];
+
+			if (cmask[zind][0] == 0) continue;
 
 			// Barotropic Rossby radius of deformation (external)
 			// LR = sqrt(g*D)/f_cor
-			r_ext[ind0][0] = sqrt(this->g*-zcoords[zId])/f_cor[ind][0]/1e3; // [km] zcoords is negative
-
+			r_ext[ind][0] = sqrt(this->g*-this->zcoords[jj])/f_cor[ind][0]/1e3; // [km] zcoords is negative
+			
 			// Density average over all the water column
-			rho1_aux[ind0][0] += rho[ind][0]*e3[ind][0]; 
-			d1_aux[ind0][0]   += e3[ind][0];
+			rho1_aux[ind][0] += rho[zind][0]*e3[zind][0]; 
+			d1_aux[ind][0]   += e3[zind][0];
 
 			// Density average over MLD
-			rho2_aux[ind0][0] += (FLDARRAY)(mldmask[ind][0])*rho[ind][0]*e3[ind][0]; 
-			d2_aux[ind0][0]   += (FLDARRAY)(mldmask[ind][0])*e3[ind][0];
+			rho2_aux[ind][0] += (FLDARRAY)(mldmask[zind][0])*rho[zind][0]*e3[zind][0]; 
+			d2_aux[ind][0]   += (FLDARRAY)(mldmask[zind][0])*e3[zind][0];			
 		}
-	}
-	this->UpdateProgress(0.65);
-	
-	// Finish up computations
-	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
-		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
-			int ind0 = mMeshPerLayer[0][ii];
-			int ind  = mMeshPerLayer[zId][ii];
 
-			if (cmask[ind][0] == 0) continue;
+		// Second loop at the depth levels
+		// Finish up computations
+		for (int jj = 0; jj<mMeshPerDepth[ind].size(); ++jj) {
+			int zind = mMeshPerDepth[ind][jj];
+
+			if (cmask[zind][0] == 0) continue;
 
 			// Barotropic Rossby radius of deformation (external)
 			// Expand to all the layers
-			r_ext[ind][0] = r_ext[ind0][0];
+			r_ext[zind][0] = r_ext[ind][0];
 
 			// Rossby radius of deformation (internal)
 			// LR = sqrt(g'*MLD)/f_cor, where g' = g*(rho2-rho1)/rho2
-			double rho2 = rho2_aux[ind0][0]/d2_aux[ind0][0]; // Avg over MLD
-			double rho1 = rho1_aux[ind0][0]/d1_aux[ind0][0]; // Avg over all water column
+			double rho2 = rho2_aux[ind][0]/d2_aux[ind][0]; // Avg over MLD
+			double rho1 = rho1_aux[ind][0]/d1_aux[ind][0]; // Avg over all water column
 			double gp   = this->g*fabs(rho2-rho1)/(rho1);
 
-			r_int[ind][0] = sqrt(gp*mld[ind][0])/f_cor[ind][0]/1e3; // km
+			r_int[zind][0] = sqrt(gp*mld[zind][0])/f_cor[ind][0]/1e3; // km
 		}
 	}
+
+//	// For each depth layer, compute the mask and store MLD
+//	// This algorithm requires to work on a rectilinear grid with
+//	// the same number of points at each plane
+//	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
+//		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
+//			// Indices
+//			int ind0 = mMeshPerLayer[0][ii];
+//			int ind  = mMeshPerLayer[zId][ii];
+//			
+//			if (cmask[ind][0] == 0) continue; // Mask skip
+//
+//			// Barotropic Rossby radius of deformation (external)
+//			// LR = sqrt(g*D)/f_cor
+//			r_ext[ind0][0] = sqrt(this->g*-zcoords[zId])/f_cor[ind][0]/1e3; // [km] zcoords is negative
+//
+//			// Density average over all the water column
+//			rho1_aux[ind0][0] += rho[ind][0]*e3[ind][0]; 
+//			d1_aux[ind0][0]   += e3[ind][0];
+//
+//			// Density average over MLD
+//			rho2_aux[ind0][0] += (FLDARRAY)(mldmask[ind][0])*rho[ind][0]*e3[ind][0]; 
+//			d2_aux[ind0][0]   += (FLDARRAY)(mldmask[ind][0])*e3[ind][0];
+//		}
+//	}
+//	this->UpdateProgress(0.65);
+//	
+//	// Finish up computations
+//	for (int zId = 0; zId < this->zcoords.size(); zId += 1) {
+//		for (int ii=0; ii<mMeshPerLayer[zId].size(); ++ii) {
+//			int ind0 = mMeshPerLayer[0][ii];
+//			int ind  = mMeshPerLayer[zId][ii];
+//
+//			if (cmask[ind][0] == 0) continue;
+//
+//			// Barotropic Rossby radius of deformation (external)
+//			// Expand to all the layers
+//			r_ext[ind][0] = r_ext[ind0][0];
+//
+//			// Rossby radius of deformation (internal)
+//			// LR = sqrt(g'*MLD)/f_cor, where g' = g*(rho2-rho1)/rho2
+//			double rho2 = rho2_aux[ind0][0]/d2_aux[ind0][0]; // Avg over MLD
+//			double rho1 = rho1_aux[ind0][0]/d1_aux[ind0][0]; // Avg over all water column
+//			double gp   = this->g*fabs(rho2-rho1)/(rho1);
+//
+//			r_int[ind][0] = sqrt(gp*mld[ind][0])/f_cor[ind][0]/1e3; // km
+//		}
+//	}
 	this->UpdateProgress(0.75);
 
 	// Output field

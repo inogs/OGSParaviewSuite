@@ -251,7 +251,6 @@ int vtkOGSMixingLayerDepth::RequestData(vtkInformation *vtkNotUsed(request),
 				v3::V3 p2 = this->xyz[ind];
 				double p2z = fabs(p2[2]); p2[2] = 0.;
 
-				if (cmask[ind][0] == 0) continue;
 				if (fabs(p2z - fabs(this->zcoords[zId])) > 1e-3) continue;
 
 				double d = (p1 - p2).norm2();
@@ -275,6 +274,8 @@ int vtkOGSMixingLayerDepth::RequestData(vtkInformation *vtkNotUsed(request),
 		for (int jj = 0; jj<mMeshPerDepth[ind].size(); ++jj) {
 			int zind = mMeshPerDepth[ind][jj];
 			
+			if (cmask[zind][0] == 0) continue;
+			
 			double Val  = array[zind][0];
 			double Vref = array[ziref][0];
 
@@ -285,6 +286,8 @@ int vtkOGSMixingLayerDepth::RequestData(vtkInformation *vtkNotUsed(request),
 		// Write MLD and MLD mask arrays
 		for (int jj = 0; jj<mMeshPerDepth[ind].size(); ++jj) {
 			int zind = mMeshPerDepth[ind][jj];
+			
+			if (cmask[zind][0] == 0) continue;
 
 			mld[zind][0] = -zcoords[idZmin]; // zcoords is negative!!
 			if (jj < idZmin) mldmask[zind][0] = 1;
