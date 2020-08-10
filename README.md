@@ -12,7 +12,7 @@ A list of the available plugins is as follows:
 5. [OGS Spatial Statistics](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSSpatialStatistics)
 6. [OGS Time Statistics](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSTimeStatistics)
 7. [OGS Derivatives](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSDerivatives)
-8. [OGS Vortex Indentification](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSVortexIdentification)
+8. [OGS Vortex Identification](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSVortexIdentification)
 9. [OGS Vortex Detection](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSVortexDetection)
 10. [OGS Depth Profile](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSDepthProfile)
 11. [OGS Hovmoeller](https://github.com/inogs/OGSParaviewSuite/tree/master/OGSPlugins/OGSHovmoeller)
