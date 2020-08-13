@@ -263,13 +263,13 @@
           <!-- OGS Proxies -->
           <Proxy group="extended_sources"
                  name="OGSPointSource" />
-          <!--<Proxy group="extended_sources"
-                 name="OGSDepthLineSource" />-->
+          <Proxy group="extended_sources"
+                 name="OGSDepthLineSource" />
           <!-- ParaView proxies kept for compatibility -->
           <Proxy group="extended_sources"
                  name="FixedPointSourceMod" />
-          <!--<Proxy group="extended_sources"
-                 name="HighResLineSource" />-->
+          <Proxy group="extended_sources"
+                 name="HighResLineSource" />
         </ProxyListDomain>
         <Documentation>
           This property specifies the dataset whose geometry will be used in determining positions to probe.
