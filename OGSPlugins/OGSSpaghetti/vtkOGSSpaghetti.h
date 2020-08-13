@@ -20,8 +20,10 @@
 #include "vtkDataSetAttributes.h"
 #include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 
-#include <vector>
 #include <string>
+#include <vector>
+#include "TimeInterval.h"
+#include "TimeList.h"
 
 #include "V3.h"
 #include "field.h"
@@ -54,8 +56,8 @@ public:
    virtual void SetCellLocatorPrototype(vtkAbstractCellLocator*);
    vtkGetObjectMacro(CellLocatorPrototype, vtkAbstractCellLocator);
 
-  void SetStartTime(const char *tstep);
-  void SetEndTime(const char *tstep);
+  void SetStartTI(const char *tstep);
+  void SetEndTI(const char *tstep);
 
   // Description:
   // Get the name of the variable field
@@ -63,10 +65,14 @@ public:
   vtkGetStringMacro(field);
   
   // Description:
-  // Averaging algorithm
-  vtkGetMacro(average, int);
-  vtkSetMacro(average, int);
-  vtkBooleanMacro(average, int);
+  // Selection of the algorithm
+  vtkGetMacro(use_average, int);
+  vtkSetMacro(use_average, int);
+  vtkBooleanMacro(use_average, int);
+
+  vtkGetMacro(use_files, int);
+  vtkSetMacro(use_files, int);
+  vtkBooleanMacro(use_files, int);
 
   // Description:
   // Folder to STATE_PROFILES
@@ -107,6 +113,7 @@ protected:
 
   int FillInputPortInformation(int , vtkInformation *) override;
   int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
+  int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
   void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
@@ -122,28 +129,29 @@ private:
   vtkOGSSpaghetti(const vtkOGSSpaghetti&) = delete;
   void operator=(const vtkOGSSpaghetti&) = delete;
 
+  int PipelineIterationAlgorithm(vtkInformation *, vtkDataSet *, vtkDataSet *, vtkTable *);
+  int FileIterationAlgorithm(vtkInformation *, vtkDataSet *, vtkDataSet *, vtkTable *);
+  int AveragesIterationAlgorithm(int, vtkInformation *, vtkDataSet *, vtkDataSet *, vtkTable *);
+
   vtkAbstractCellLocator* CellLocatorPrototype;
   
-  vtkDataSetAttributes::FieldList* CellList;
-  vtkDataSetAttributes::FieldList* PointList;
-
   int procId, nProcs;
-  int ii_start, ii_end, sId, average, per_coast;
+  int CurrentTimeIndex, sId, per_coast;
+
+  Time::TimeInterval TI;       // TimeInterval for the generic requestor
+  Time::TimeList TL;           // TimeList containing all the instants
+
+  std::vector<int> instants;   // Instant ID to loop
+  std::vector<double> weights; // Weights for the instants
 
   char *field, *FolderName, *bmask_field, *cmask_field;
-  bool isReqInfo;
+  bool TL_computed, use_files, use_average, isReqInfo;
 
   double epsi, dfact;
-
-  std::string tstep_st, tstep_ed;
 
   std::vector<double> zcoords;
   v3::V3v xyz;               // Stores cell/point coordinates
   field::Field<int> cId2zId; // Cell to depth level connectivity
-
-  int Spaghetti3DDataset(vtkDataSet *, vtkDataSet *, vtkTable *);
-  int SpaghettiAverage(int, vtkDataSet *, vtkDataSet *, vtkTable *);
-
 };
 
 #endif

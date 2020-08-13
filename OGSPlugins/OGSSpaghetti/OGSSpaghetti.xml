@@ -24,8 +24,9 @@
           <DataType value="vtkCompositeDataSet" />
         </DataTypeDomain>
         <InputArrayDomain name="input_array" />
-        <Documentation>This property specifies the dataset from which to obtain
-        probe values.</Documentation>
+        <Documentation>
+          This property specifies the dataset from which to obtain probe values.
+        </Documentation>
      </InputProperty>
 
      <!-- BEGIN EXPOSED PROPERTIES -->
@@ -38,7 +39,7 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="StartTime"
-                           command="SetStartTime"
+                           command="SetStartTI"
                            number_of_elements="1"
                            label="Start Time: ">
         <StringListDomain name="array_list">
@@ -52,7 +53,7 @@
      </StringVectorProperty>
 
      <StringVectorProperty name="EndTime"
-                           command="SetEndTime"
+                           command="SetEndTI"
                            number_of_elements="1"
                            label="End Time: ">
         <StringListDomain name="array_list">
@@ -89,9 +90,22 @@
         </Documentation>
      </StringVectorProperty>
 
-     <IntVectorProperty name="average"
-                        label="Average"
-                        command="Setaverage"
+     <!-- Algorithm selection -->
+     <IntVectorProperty name="use_files"
+                        label="Fast Algorithm"
+                        command="Setuse_files"
+                        number_of_elements="1"
+                        default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Read from files instead of iterating the pipeline. This
+          algorithm only works with rectilinear grids and cell data.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty name="use_average"
+                        label="Use Average"
+                        command="Setuse_average"
                         default_values="0"
                         number_of_elements="1">
        <Documentation>
@@ -112,7 +126,7 @@
         </Documentation>
         <Hints>
            <PropertyWidgetDecorator type="ShowWidgetDecorator">
-             <Property name="average" function="boolean" />
+             <Property name="use_average" function="boolean" />
            </PropertyWidgetDecorator>
            <FileChooser extensions="nc" file_description="NetCDF 4"/>
            <UseDirectoryName/> 
@@ -139,7 +153,7 @@
         </Documentation>
         <Hints>
            <PropertyWidgetDecorator type="ShowWidgetDecorator">
-             <Property name="average" function="boolean" />
+             <Property name="use_average" function="boolean" />
            </PropertyWidgetDecorator>
         </Hints>
      </IntVectorProperty>
@@ -155,7 +169,7 @@
         </Documentation>
         <Hints>
            <PropertyWidgetDecorator type="ShowWidgetDecorator">
-             <Property name="average" function="boolean" />
+             <Property name="use_average" function="boolean" />
            </PropertyWidgetDecorator>
         </Hints>
      </IntVectorProperty>
@@ -172,7 +186,7 @@
        </Documentation>
        <Hints>
           <PropertyWidgetDecorator type="ShowWidgetDecorator">
-            <Property name="average" function="boolean" />
+            <Property name="use_average" function="boolean" />
           </PropertyWidgetDecorator>
        </Hints>
      </DoubleVectorProperty>
@@ -191,6 +205,11 @@
             <Property name="Input" function="Input" />
           </RequiredProperties>
          </ArrayListDomain>
+         <Hints>
+            <PropertyWidgetDecorator type="ShowWidgetDecorator">
+              <Property name="use_average" function="boolean" />
+            </PropertyWidgetDecorator>
+         </Hints>
          <Documentation>
             Name of the basins mask field
          </Documentation>
@@ -210,6 +229,11 @@
             <Property name="Input" function="Input" />
           </RequiredProperties>
          </ArrayListDomain>
+         <Hints>
+            <PropertyWidgetDecorator type="ShowWidgetDecorator">
+              <Property name="use_average" function="boolean" />
+            </PropertyWidgetDecorator>
+         </Hints>
          <Documentation>
             Name of the coast mask field
          </Documentation>
@@ -217,7 +241,8 @@
 
      <PropertyGroup label="Variable to plot">
                  <Property name="field"/>
-                 <Property name="average"/>
+                 <Property name="use_files"/>
+                 <Property name="use_average"/>
                  <Property name="FolderName"/>
                  <Property name="sId"/>
                  <Property name="PerCoast"/>
@@ -238,16 +263,17 @@
           <!-- OGS Proxies -->
           <Proxy group="extended_sources"
                  name="OGSPointSource" />
-          <Proxy group="extended_sources"
-                 name="OGSDepthLineSource" />
+          <!--<Proxy group="extended_sources"
+                 name="OGSDepthLineSource" />-->
           <!-- ParaView proxies kept for compatibility -->
           <Proxy group="extended_sources"
                  name="FixedPointSourceMod" />
-          <Proxy group="extended_sources"
-                 name="HighResLineSource" />
+          <!--<Proxy group="extended_sources"
+                 name="HighResLineSource" />-->
         </ProxyListDomain>
-        <Documentation>This property specifies the dataset whose geometry will
-        be used in determining positions to probe.</Documentation>
+        <Documentation>
+          This property specifies the dataset whose geometry will be used in determining positions to probe.
+        </Documentation>
      </InputProperty>
 
      <!-- END EXPOSED PROPERTIES -->
