@@ -431,6 +431,13 @@ int vtkOGSTimeAverage::FileIterationAlgorithm(vtkInformation *request,
 		return 0;
 	}
 
+	// Read mesh. ProjID is not important since only the dimensions
+	// and the e1, e2 and e3 arrays are necessary.
+	if (ogsdata.readMesh(0) < 0) {
+		vtkErrorMacro("Problems reading the mesh!\nAborting.");
+		return 0;	
+	}
+	
 	/* ACCUMULATE PHASE
 
 		Instants and weights have already been broadcasted
