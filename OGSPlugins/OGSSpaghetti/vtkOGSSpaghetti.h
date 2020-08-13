@@ -116,11 +116,6 @@ protected:
   int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
   int RequestData(vtkInformation *, vtkInformationVector **,vtkInformationVector *) override;
 
-  void Initialize(vtkDataSet* input,vtkDataSet* source, vtkTable* output);
-  void Interpolate(vtkDataSet *input, vtkDataSet *source, vtkTable *output);
-
-  vtkStringArray *TimeValues;
-
   #ifdef PARAVIEW_USE_MPI
   vtkMultiProcessController* Controller;
   #endif

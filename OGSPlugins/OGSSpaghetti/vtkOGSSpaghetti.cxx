@@ -230,7 +230,6 @@ vtkOGSSpaghetti::vtkOGSSpaghetti() {
 	this->dfact            = 1000.;
 
 	this->CellLocatorPrototype = nullptr;
-	this->TimeValues = vtkStringArray::New();
 
 	#ifdef PARAVIEW_USE_MPI
 	this->Controller = nullptr;
@@ -247,13 +246,13 @@ vtkOGSSpaghetti::~vtkOGSSpaghetti() {
 	this->Setcmask_field(NULL);
 
 	this->vtkOGSSpaghetti::SetCellLocatorPrototype(nullptr);
-	this->TimeValues->Delete();
 
 	#ifdef PARAVIEW_USE_MPI
 	this->SetController(nullptr);
 	#endif
 }
 
+//----------------------------------------------------------------------------
 int vtkOGSSpaghetti::FillInputPortInformation(int vtkNotUsed(port), vtkInformation *info) {
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -287,6 +286,7 @@ int vtkOGSSpaghetti::RequestInformation(vtkInformation* vtkNotUsed(request),
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
 
+	this->isReqInfo = true;
 	return 1;
 }
 
