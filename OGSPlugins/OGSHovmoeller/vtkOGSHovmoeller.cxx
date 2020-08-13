@@ -142,30 +142,61 @@ void ComputeCellIds(std::vector<int> &cellIds, vtkDataSet *input, vtkDataSet *so
 }
 
 //----------------------------------------------------------------------------
+void BuildTimeList(Time::TimeList &TL, vtkInformation *Info) {
+
+	// Build a TimeList object using the pipeline temporal data.
+	// This TimeList will be later used for computing the averages
+	// given a TimeRequestor. The metadata array might not be available 
+	// from the beginning.
+
+	int ntsteps = Info->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	double *tsteps; tsteps = Info->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+
+	// Create a TimeObjectList where to store all the instants
+	Time::TimeObjectList TOL(ntsteps);
+
+	// Iterate the number of steps and set the values of the list
+	for (int ii = 0; ii < ntsteps; ++ii) {
+		// Convert to struct tm
+		time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(
+			std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<double>(tsteps[ii]))));
+		struct tm tm = *localtime(&time);
+
+		// Set up the TimeObjectList
+		TOL[ii] = Time::TimeObject(tm);
+	}
+
+	// Sort and print the list (for debugging purposes)
+	TOL.sort();
+//	printf("TOL: %s\n",TOL.as_string("%Y%m%d").c_str());
+
+	// Now create the TimeList from the TimeObjectList
+	TL = Time::TimeList(TOL);
+//	printf("Defined list of %d elements: %s ... %s\n",TL.len(),TL[0].as_string("%Y-%m-%d %H:%M:%S").c_str(),TL[-1].as_string("%Y-%m-%d %H:%M:%S").c_str());
+}
+
+//----------------------------------------------------------------------------
 vtkOGSHovmoeller::vtkOGSHovmoeller() {
 	this->SetNumberOfInputPorts(2);
 	this->SetNumberOfOutputPorts(1);
 
-	this->PointList   = nullptr;
-	this->CellList    = nullptr;
-	this->field       = nullptr;
-	this->field       = NULL;
-	this->FolderName  = NULL;
-	this->bmask_field = NULL;
-	this->cmask_field = NULL;
-	this->ii_start    = 0;
-	this->ii_end      = 0;
-	this->average     = 0;
-	this->sId         = 0;
-	this->per_coast   = 0;
-	this->procId      = 0;
-	this->nProcs      = 0;
-	this->isReqInfo   = false;
-	this->epsi        = 1.e-3;
-	this->dfact       = 1000.;
+	this->field            = NULL;
+	this->FolderName       = NULL;
+	this->bmask_field      = NULL;
+	this->cmask_field      = NULL;
+	this->sId              = 0;
+	this->per_coast        = 0;
+	this->procId           = 0;
+	this->nProcs           = 0;
+	this->CurrentTimeIndex = 0;
+	this->TL_computed      = false;
+	this->isReqInfo        = false;
+	this->use_average      = false;
+	this->use_files        = false;
+	this->epsi             = 1.e-3;
+	this->dfact            = 1000.;
 
 	this->CellLocatorPrototype = nullptr;
-	this->TimeValues = vtkStringArray::New();
 
 	#ifdef PARAVIEW_USE_MPI
 	this->Controller = nullptr;
@@ -175,22 +206,19 @@ vtkOGSHovmoeller::vtkOGSHovmoeller() {
 
 //----------------------------------------------------------------------------
 vtkOGSHovmoeller::~vtkOGSHovmoeller() {
-	delete this->PointList;
-	delete this->CellList;
-
 	this->Setfield(NULL);
 	this->SetFolderName(NULL);
 	this->Setbmask_field(NULL);
 	this->Setcmask_field(NULL);
 
 	this->vtkOGSHovmoeller::SetCellLocatorPrototype(nullptr);
-	this->TimeValues->Delete();
 
 	#ifdef PARAVIEW_USE_MPI
 	this->SetController(nullptr);
 	#endif
 }
 
+//----------------------------------------------------------------------------
 int vtkOGSHovmoeller::FillInputPortInformation(int vtkNotUsed(port), vtkInformation *info) {
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -213,31 +241,10 @@ int vtkOGSHovmoeller::RequestInformation(vtkInformation* vtkNotUsed(request),
 	}
 	#endif
 
-	// Populate the TimeValues array. For that we will use the data
-	// stored in the timesteps to be consistent and since the metadata
-	// array might not be available from the beginning.
-	int ntsteps = srcInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-	double *tsteps; tsteps = srcInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-
-	char buff[256];
-	this->TimeValues->Delete();
-	this->TimeValues = VTK::createVTKstrf("TimeValues",ntsteps,NULL);
-	
-	for (int ii = 0; ii < ntsteps; ++ii) {
-		// Convert to struct tm
-		time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(
-			std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<double>(tsteps[ii]))));
-		struct tm tm = *localtime(&time);
-
-		// Format and display
-		strftime(buff,256,"%Y%m%d-%H:%M:%S",&tm);
-		this->TimeValues->SetValue(ii,buff);
-	}
-
-	// Obtain the timestep index
-	for (int ii = 0; ii < this->TimeValues->GetNumberOfTuples(); ++ii) {
-		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_st) { this->ii_start = ii; }
-		if (std::string(this->TimeValues->GetValue(ii)) == this->tstep_ed) { this->ii_end = ii; }
+	// Compute the TimeList if it hasn't been computed
+	if (!this->TL_computed) {
+		BuildTimeList(this->TL,srcInfo);
+		this->TL_computed = true;
 	}
 
 	// The output data of this filter has no time associated with it. It is the
@@ -246,6 +253,27 @@ int vtkOGSHovmoeller::RequestInformation(vtkInformation* vtkNotUsed(request),
 	outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
 
 	this->isReqInfo = true;
+	return 1;
+}
+
+//------------------------------------------------------------------------------
+int vtkOGSHovmoeller::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
+	vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector)) {
+	
+	vtkInformation* inInfo = inputVector[1]->GetInformationObject(0);
+
+	// The RequestData method will tell the pipeline executive to iterate the
+	// upstream pipeline to get each time step in order.  The executive in turn
+	// will call this method to get the extent request for each iteration (in this
+	// case the time step).
+	double* inTimes = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+	
+	if (inTimes) {
+		int inst = (this->instants.size() == 0) ? this->CurrentTimeIndex : this->instants[this->CurrentTimeIndex];
+//		printf("Time: <%d> %s\n",inst,this->TL[inst].as_string("%Y-%m-%d %H:%M:%S").c_str());
+		inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), inTimes[inst]);
+	}
+	
 	return 1;
 }
 
@@ -258,8 +286,6 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	vtkInformation *srcInfo = inputVector[1]->GetInformationObject(0);
 	vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
-	int ntsteps = srcInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-
 	// input contains the interpolating line information (number of points, etc)
 	vtkDataSet *input = vtkDataSet::SafeDownCast(
 		inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -270,81 +296,231 @@ int vtkOGSHovmoeller::RequestData(vtkInformation *request,
 	vtkTable *output = vtkTable::SafeDownCast(
 		outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-	// Check if the source is a vtkRectilinearGrid
-	if ( !source->IsA("vtkRectilinearGrid") ) { vtkErrorMacro("Input must be a vtkRectilinearGrid. Aborting..."); return 0; }
+	if (this->CurrentTimeIndex == 0) {
+		// Check input field
+		if (std::string(this->field) == std::string("coast mask"))  { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+		if (std::string(this->field) == std::string("basins mask")) { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+		if (std::string(this->field) == std::string("land mask"))   { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+		if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+		if (std::string(this->field) == std::string("e2"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+		if (std::string(this->field) == std::string("e3"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
 
-	// Check input field
-	if (std::string(this->field) == std::string("coast mask"))  { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
-	if (std::string(this->field) == std::string("basins mask")) { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
-	if (std::string(this->field) == std::string("land mask"))   { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
-	if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
-	if (std::string(this->field) == std::string("e2"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
-	if (std::string(this->field) == std::string("e3"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
-	if (std::string(this->field) == std::string("e1"))          { vtkErrorMacro("Wrong input field! Aborting..."); return 0; }
+		// Master computes the instants to loop
+		if (this->procId == 0) {
+			// Compute the TimeList if it hasn't been computed
+			if (!this->TL_computed) {
+				BuildTimeList(this->TL,srcInfo);
+				this->TL_computed = true;
+			}
+//			printf("Defined list of %d elements: %s ... %s\n",this->TL.len(),
+//				this->TL[0].as_string("%Y-%m-%d %H:%M:%S").c_str(),
+//				this->TL[-1].as_string("%Y-%m-%d %H:%M:%S").c_str());
 
+			// At this point check that the TimeInterval length is not zero
+			// if so, crash and stop, there is no sense to compute an average.
+//			printf("Time interval is %s of length %ld\n",
+//				this->TI.as_string("%Y%m%d-%H:%M:%S").c_str(),this->TI.length());
+			if (this->TI.length() == 0) {
+				vtkErrorMacro("TimeInterval is <"<<this->TI.as_string("%Y%m%d-%H:%M:%S")<<">! Cannot continue...");
+				return 0;
+			}
+
+			// We can now create a GenericRequestor with this TimeInterval.
+			// We will use it to obtain all the instants and average weights.
+			Time::Requestor req(this->TI,"%Y%m%d-%H:%M:%S");
+			this->instants.clear(); this->weights.clear(); // make sure vectors are empty
+
+			if (this->TL.select(&req,this->instants,this->weights) == TIME_ERR) {
+				vtkErrorMacro("Error selecting instants with Requestor! Cannot continue...");
+				return 0;
+			}
+//			for (int ii=0; ii<instants.size();++ii)
+//				printf("ind: %d, weight: %f, %s\n",this->instants[ii],this->weights[ii],
+//					this->TL[instants[ii]].as_string("%Y-%m-%d %H:%M:%S").c_str());
+		}
+
+		// Broadcast instants and weights to all the processors if needed
+		#ifdef PARAVIEW_USE_MPI
+		if (this->nProcs > 1) {
+			// Array length
+			int arr_len = (int)(this->instants.size());
+			this->Controller->Broadcast(&arr_len,1,0);
+			// Allocate
+			if (this->procId > 0) { this->instants.resize(arr_len,0); this->weights.resize(arr_len,0.); }
+			// Broadcast array
+			this->Controller->Broadcast(this->instants.data(),arr_len,0);
+		}
+		#endif
+	}
+	
 	// Decide which algorithm to use
-	if (this->average)
-		return this->HovmoellerAverage(ntsteps,input,source,output);
-	else
-		return this->Hovmoeller3DDataset(input,source,output);
+	int retval = 0;
+	if (this->use_average) {
+		int ntsteps = srcInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+		retval = this->AveragesIterationAlgorithm(ntsteps,request,input,source,output);
+	} else {
+		if (this->use_files)
+			retval = this->FileIterationAlgorithm(request,input,source,output);
+		else
+			retval = this->PipelineIterationAlgorithm(request,input,source,output);
+	}
+
+	this->UpdateProgress(1.);
+	return retval;
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
+int vtkOGSHovmoeller::PipelineIterationAlgorithm(vtkInformation *request, 
+	vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
+
+	// Stop all threads except from the master to execute
+	#ifdef PARAVIEW_USE_MPI
+	if (this->procId > 0) return 1;
+	#endif
+
+	// Current time instant
+	int    itime  = this->instants[this->CurrentTimeIndex];
+//	double weight = this->weights[this->CurrentTimeIndex];
+//	printf("Time: <%d,%d> %s\n",this->CurrentTimeIndex,itime,this->TL[itime].as_string("%Y-%m-%d %H:%M:%S").c_str());
+	
+	// Compute the cell list corresponding to the 
+	// input interpolating point or line.
+	std::vector<int> cList;
+	ComputeCellIds(cList,input,source);
+	
+	this->UpdateProgress(.25);
+
+	// Recover input array values
+	VTKARRAY *vtkInArray;
+	vtkInArray = VTKARRAY::SafeDownCast( source->GetCellData()->GetArray(this->field) );
+	if (vtkInArray == NULL)
+		vtkInArray = VTKARRAY::SafeDownCast( source->GetPointData()->GetArray(this->field) );
+
+	if (vtkInArray == NULL) {
+		vtkErrorMacro("Cannot load variable <"<<this->field<<">!");
+		return 0;
+	}
+
+	field::Field<FLDARRAY> inArray;
+	inArray  = VTK::createFieldfromVTK<VTKARRAY,FLDARRAY>(vtkInArray);
+
+	// Create output array
+	// We store each instant as a column on the output
+	VTKARRAY *vtkColumn;
+	field::Field<FLDARRAY> outArray(cList.size(),1,0.);
+
+	// Write the coordinates as the first column of the table
+	if (this->CurrentTimeIndex == 0) {
+		vtkStringArray *vtkmetadata;
+		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
+		this->dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
+
+		for (int pId = 0; pId < cList.size(); ++pId) {
+			v3::V3 xyz; input->GetPoint(pId,&xyz[0]);
+			outArray[pId][0] = xyz[2]/this->dfact;
+		}
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>("depth",outArray);
+		output->AddColumn(vtkColumn); vtkColumn->Delete();
+	}
+
+	// Set the output value
+	for (int pId = 0; pId < cList.size(); ++pId) {
+		int cellId = cList[pId];
+		if (inArray.get_m() > 1) {
+			double mod = 0.;
+			for (int jj=0;jj<inArray.get_m();++jj)
+				mod += (cellId > 0) ? inArray[cellId][0]*inArray[cellId][0] : 0.;
+			outArray[pId][0] = std::sqrt(mod);
+		} else {
+			outArray[pId][0] = (cellId > 0) ? inArray[cellId][0] : 0.;
+		}
+	}
+	this->UpdateProgress(.5);
+
+	// Write column to the output table
+	vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->TL[itime].as_string("%Y%m%d-%H:%M:%S").c_str(),outArray);
+	output->AddColumn(vtkColumn); 
+	vtkColumn->Delete();
+
+	this->UpdateProgress(.75);
+
+	// Increment the time-step
+	this->CurrentTimeIndex++;
+
+	// Continue executing or finish
+	if (this->CurrentTimeIndex < this->instants.size()) {
+		// There is still more to do.
+		request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+	} else {
+		// We are done. Finish up.
+		request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+		this->CurrentTimeIndex = 0;
+	}
+
+	this->UpdateProgress(1.);
+	return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkOGSHovmoeller::FileIterationAlgorithm(vtkInformation *request, 
+	vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
+
+	// Check inputs
+	if (!source->IsA("vtkRectilinearGrid")) {
+		vtkErrorMacro("A rectilinear grid is needed for this method! Cannot continue...");
+		return 0;		
+	}
+
+	if (source->GetPointData()->GetNumberOfArrays() > 0) {
+		vtkErrorMacro("Data contains point arrays! Cannot continue...");
+		return 0;
+	}
+
 	/* INITIALIZATION PHASE
 
-		Master computes the cell list corresponding to the Hovmoller interpolating line.
+		Master computes the cell list corresponding to the spaghetti point.
 		Recover (and broadcast) the file name of the OGS master file.
 
 		Initialize arrays.
 
 	*/
+
 	std::string FileName, projName;
-	std::vector<int> cellList;
-	vtkStringArray *vtkmetadata;
+	int npoints;
+	std::vector<int> cList;
 
 	#ifdef PARAVIEW_USE_MPI
 
 	// Thread 0 has all the information in input and output, therefore is the
 	// only computing the array which will later be broadcasted to all ranks
 	if (this->procId == 0) {
-		// Recover metadata array
-		vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
-		// Recover projection Id
-		projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
+		npoints = source->GetNumberOfCells();
 		// Compute the cell list corresponding to the Hovmoeller interpolating line.
-		ComputeCellIds(cellList,input,source);
+		ComputeCellIds(cList,input,source);
 		// Recover the master file name from source
 		RecoverMasterFileName(FileName, source);
 	}
 
 	// Broadcast the information to all other threads if applicable
 	if (this->nProcs > 1) {
-		char buff[128] = "";
-		// Broadcast projection ID
-		sprintf(buff,"%s",projName.c_str());
-		this->Controller->Broadcast(buff,projName.length(),0);
-		projName = std::string(buff);
 		// Broadcast master file name
-		sprintf(buff,"%s",FileName.c_str());
+		char buff[128] = ""; sprintf(buff,"%s",FileName.c_str());
 		this->Controller->Broadcast(buff,FileName.length(),0);
 		FileName = std::string(buff);
 		// Broadcast cellList
-		int cellList_len = cellList.size();
-		this->Controller->Broadcast(&cellList_len,1,0);
-		if (this->procId > 0) cellList.resize(cellList_len,-1);
-		this->Controller->Broadcast(&cellList[0],cellList_len,0);
+		int cList_len = cList.size();
+		this->Controller->Broadcast(&cList_len,1,0);
+		if (this->procId > 0) cList.resize(cList_len,-1);
+		this->Controller->Broadcast(&cList[0],cList_len,0);
+		// Broadcast number of points
+		this->Controller->Broadcast(&npoints,1,0);
 	}
 
 	#else
 
-	// Recover metadata array
-	vtkmetadata = vtkStringArray::SafeDownCast(source->GetFieldData()->GetAbstractArray("Metadata"));
-	// Recover projection Id
-	projName = (vtkmetadata != NULL) ? vtkmetadata->GetValue(7) : std::string("Mercator");
-
 	// This is the normal non-parallel algorithm
-	ComputeCellIds(cellList,input,source);
+	npoints = source->GetNumberOfCells();
+	ComputeCellIds(cList,input,source);
 	RecoverMasterFileName(FileName, source);
 
 	#endif
@@ -356,14 +532,9 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		return 0;
 	}
 
-	// Obtain the projection index
-	int projId = 0;
-	for (int ii = 0; ii < ogsdata.n_projs(); ++ii) {
-		if (ogsdata.projection(ii) == projName) { projId = ii; break; }
-	}
-
-	// Read the mesh data (necessary to load the files)
-	if (ogsdata.readMesh(projId) < 0) {
+	// Read mesh. ProjID is not important since only the dimensions
+	// and the e1, e2 and e3 arrays are necessary.
+	if (ogsdata.readMesh(0) < 0) {
 		vtkErrorMacro("Problems reading the mesh!\nAborting.");
 		return 0;	
 	}
@@ -376,76 +547,81 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		defined. Store the data in a master field for posterior reduction.
 
 	*/
-	int time_interval[2] = {this->ii_start,this->ii_end};
-
-	// Parallel partition
+	// Parallel partition, define starting and ending ranges for each worker
+	int ii_start = 0, ii_end = this->instants.size();
+	
 	#ifdef PARAVIEW_USE_MPI
-
 	if (this->nProcs > 1) {
-		// Main thread (0) contains values for ii_start and ii_end
-		// They must be sent to the other processes
-		this->Controller->Broadcast(time_interval,2,0);
-
-		// Now everyone should have the range of start and end times
+		// Everyone should have the range of start and end times
 		// We must split equally among the threads. We must also control
 		// that the number of threads is less or equal than the intervals
 		// requested.
-		int range = time_interval[1] - time_interval[0];
+		int range = ii_end - ii_start;
 		if (this->nProcs < range) {
 			// We split normally among processes assuming no remainder
 			int rangePerProcess = std::floor(range/this->nProcs);
-			this->ii_start = time_interval[0] + this->procId*rangePerProcess;
-			this->ii_end   = this->ii_start + rangePerProcess;
+			ii_start = ii_start + this->procId*rangePerProcess;
+			ii_end   = ii_start + rangePerProcess;
 			// Handle the remainder
 			int remainder = range - rangePerProcess*this->nProcs;
 			if (remainder > this->procId){
-				this->ii_start += this->procId;
-				this->ii_end   += this->procId + 1;
+				ii_start += this->procId;
+				ii_end   += this->procId + 1;
 			} else {
-				this->ii_start += remainder;
-				this->ii_end   += remainder;
+				ii_start += remainder;
+				ii_end   += remainder;
 			}
 		} else {
 			// Each process will forcefully conduct one instant.
-			this->ii_start = (this->procId < time_interval[1]) ? this->procId     : time_interval[1];
-			this->ii_end   = (this->procId < time_interval[1]) ? this->procId + 1 : time_interval[1];
+			ii_start = (this->procId < ii_end) ? this->procId     : ii_end;
+			ii_end   = (this->procId < ii_end) ? this->procId + 1 : ii_end;
 		}
 	}
-
 	#endif
 
-	// Ensure the validity of the time range
-	if (time_interval[0] > time_interval[1]) {
-		if (this->procId == 0) 
-			vtkErrorMacro("End time is greater than initial time! Please select a valid time range.");
-		return 0;
-	}
-
 	// Loop the instants, prepare arrays and variables for the computation of the mean
-	field::Field<FLDARRAY> arrayTemp, hov_array(time_interval[1]-time_interval[0],cellList.size(),0.);
+	field::Field<FLDARRAY> arrayTemp, hov_array(this->instants.size(),cList.size(),0.);
 	
-	// For each timestep
-	for(int ii = this->ii_start; ii < this->ii_end; ++ii) {
-		// Load the variable selected by the user
+	for(int inst = ii_start; inst < ii_end; ++inst) {
+		int itime = this->instants[inst];
+
+		// Deal with the velocity
 		if (std::string(this->field) == std::string("Velocity")) {
-			vtkErrorMacro("Cannot perform the Hovmoeller plot of the Velocity for now..."); return 0;
+
+			field::Field<FLDARRAY> tmp(npoints,3,0.);
+
+			std::vector<std::string> vel_vars;
+			strsplit(ogsdata.var_vname(this->field),",",vel_vars);
+
+			if ( NetCDF::readNetCDF(ogsdata.var_path(this->field,itime).c_str(), vel_vars.data(), tmp) != NETCDF_OK ) {
+				vtkErrorMacro("Cannot read variable <"<<this->field<<"> in NetCDF! Aborting!"); 
+				return 0;
+			}
+
+			// Projecting the velocity field to the UVW grid
+			arrayTemp = field::UVW2T(tmp,ogsdata.e1(),ogsdata.e2(),ogsdata.e3(),ogsdata.nlon()-1,ogsdata.nlat()-1,ogsdata.nlev()-1);
+		} else {
+			arrayTemp.set_dim(npoints,1);
+			if ( NetCDF::readNetCDF(ogsdata.var_path(this->field,itime).c_str(),ogsdata.var_vname(this->field), arrayTemp) != NETCDF_OK ) {
+				vtkErrorMacro("Cannot read variable <"<<this->field<<" ("<<ogsdata.var_vname(this->field)<<")> in NetCDF! Aborting!"); 
+				return 0;
+			}
 		}
 
-		// Load the variable on a temporal field
-		arrayTemp.set_dim(ogsdata.ncells(),1);
-
-		if ( NetCDF::readNetCDF(ogsdata.var_path(this->field,ii).c_str(), 
-			ogsdata.var_vname(this->field), arrayTemp) != NETCDF_OK ) {
-			vtkErrorMacro("Cannot read variable <"<<this->field<<"> in NetCDF! Aborting!"); return 0;
-		}
-		// Fill the Hovmoeller array using the precomputed cell list
-		for (int pId = 0; pId < hov_array.get_m(); ++pId) {
-			int cellId = cellList[pId];
-			hov_array[ii-time_interval[0]][pId] = (cellId > 0) ? arrayTemp[cellId][0] : 0.;
+		for (int pId = 0; pId < cList.size(); ++pId) {
+			int cellId = cList[pId];
+			if (arrayTemp.get_m() > 1) {
+				double mod = 0.;
+				for (int jj=0;jj<arrayTemp.get_m();++jj)
+					mod += (cellId > 0) ? arrayTemp[cellId][0]*arrayTemp[cellId][0] : 0.;
+				hov_array[inst][pId] = std::sqrt(mod);
+			} else {
+				hov_array[inst][pId] = (cellId > 0) ? arrayTemp[cellId][0] : 0.;
+			}
 		}
 
 		arrayTemp.clear();
-		this->UpdateProgress(0.1+0.7/(this->ii_end-this->ii_start)*(ii - this->ii_start));
+		this->UpdateProgress(0.1+0.7/(ii_end-ii_start)*(inst - ii_start));
 	}
 
 	/* REDUCTION PHASE
@@ -459,7 +635,7 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 	// Only reduce if we have more than 1 process
 	if (this->nProcs > 1) {
 
-		field::Field<FLDARRAY> hov_array_tmp(time_interval[1]-time_interval[0],cellList.size(),0.);
+		field::Field<FLDARRAY> hov_array_tmp(this->instants.size(),cList.size(),0.);
 
 		// Reduce the hov_array
 		this->Controller->Reduce(hov_array.data(),hov_array_tmp.data(),hov_array.get_sz(),
@@ -472,7 +648,6 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 
 	this->UpdateProgress(0.9);
 
-
 	/* FINALIZE
 
 		Finalization, the master process stores the arrays
@@ -482,22 +657,16 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 	// Build output table
 	if (this->procId == 0) {
 		// Recover metadata array
-/*		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
-			source->GetFieldData()->GetAbstractArray("Metadata"));*/
+		vtkStringArray *vtkmetadata = vtkStringArray::SafeDownCast(
+			source->GetFieldData()->GetAbstractArray("Metadata"));
 		// Recover depth factor
-		double dfact = std::stod( vtkmetadata->GetValue(2) );
-		// Recover datevec
-		std::string datevec = vtkmetadata->GetValue(1);
-		std::vector<std::string> vdatevec;
-		strsplit(datevec,";",vdatevec);
-
+		this->dfact = (vtkmetadata != NULL) ? std::stod( vtkmetadata->GetValue(2) ) : 1000.;
 		// Auxiliar field for columns
-		int npoints = input->GetNumberOfPoints();
-		field::Field<FLDARRAY> column(npoints,1);
+		field::Field<FLDARRAY> column(cList.size(),1);
 		VTKARRAY *vtkColumn;
 
 		// Write the coordinates as the first column of the table
-		for (int pId = 0; pId < npoints; ++pId) {
+		for (int pId = 0; pId < cList.size(); ++pId) {
 			v3::V3 xyz; input->GetPoint(pId,&xyz[0]);
 			column[pId][0] = xyz[2]/dfact;
 		}
@@ -505,9 +674,10 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 		output->AddColumn(vtkColumn); vtkColumn->Delete();
 
 		// Write the time instants
-		for (int ii = time_interval[0]; ii < time_interval[1]; ++ii) {
-			column.set_val( hov_array[ii-time_interval[0]] );
-			vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
+		for (int ii = 0; ii < this->instants.size(); ++ii) {
+			int itime  = this->instants[ii]; 
+			column.set_val( hov_array[ii] );
+			vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->TL[itime].as_string("%Y%m%d-%H:%M:%S").c_str(),column);
 			output->AddColumn(vtkColumn); vtkColumn->Delete();
 		}
 	}
@@ -517,7 +687,8 @@ int vtkOGSHovmoeller::Hovmoeller3DDataset(vtkDataSet *input, vtkDataSet *source,
 }
 
 //----------------------------------------------------------------------------
-int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
+int vtkOGSHovmoeller::AveragesIterationAlgorithm(int ntsteps, vtkInformation *request, 
+	vtkDataSet *input, vtkDataSet *source, vtkTable *output) {
 
 	// There is no need to parallelize this algorithm
 	#ifdef PARAVIEW_USE_MPI
@@ -579,11 +750,6 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 	std::vector<int> cellList;
 	ComputeCellIds(cellList,input,source);
 
-	// Recover datevec
-	std::string datevec = vtkmetadata->GetValue(1);
-	std::vector<std::string> vdatevec;
-	strsplit(datevec,";",vdatevec);
-
 	this->UpdateProgress(.2);
 
 	// For each time instant, loop on the cell list and load the data into
@@ -601,7 +767,8 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 
 	this->UpdateProgress(.25);
 
-	for (int ii = ii_start; ii < ii_end; ii += 1) {
+	for (int ii = 0; ii < this->instants.size(); ii += 1) {
+		int itime = this->instants[ii];
 		for (int pId = 0; pId < cellList.size(); ++pId) {
 			// Retrieve the cell
 			int cellId = cellList[pId];
@@ -616,20 +783,20 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 			// In which coast are we?
 			int cId = this->per_coast ? cmask[cellId][0] - 1 : 2;
 			// Compute position on statArray
-			int pos = nbasins*ncoasts*this->zcoords.size()*nStat*ii + 
-			          ncoasts*this->zcoords.size()*nStat*bId        + 
-			          this->zcoords.size()*nStat*cId                + 
-			          nStat*zId                                     +
+			int pos = nbasins*ncoasts*this->zcoords.size()*nStat*itime + 
+			          ncoasts*this->zcoords.size()*nStat*bId           + 
+			          this->zcoords.size()*nStat*cId                   + 
+			          nStat*zId                                        +
 			          this->sId;
 
 			// Retrieve value from array
 			column[pId][0] = (bId > 0 || cId > 0) ? statArray[pos][0] : 0;
 		}
 
-		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(vdatevec[ii+1],column);
+		vtkColumn = VTK::createVTKfromField<VTKARRAY,FLDARRAY>(this->TL[itime].as_string("%Y%m%d-%H:%M:%S").c_str(),column);
 		output->AddColumn(vtkColumn); vtkColumn->Delete();
 
-		this->UpdateProgress(0.25+0.75/(this->ii_end-this->ii_start)*(ii - this->ii_start));
+		this->UpdateProgress(0.25+0.75/(this->instants.size()-0)*(ii - 0));
 	}
 
 	this->UpdateProgress(1.);
@@ -637,19 +804,37 @@ int vtkOGSHovmoeller::HovmoellerAverage(int ntsteps, vtkDataSet *input, vtkDataS
 }
 
 //----------------------------------------------------------------------------
-void vtkOGSHovmoeller::SetStartTime(const char *tstep) {
-	this->tstep_st = std::string(tstep);
+void vtkOGSHovmoeller::SetStartTI(const char *tstep) {
+
+	// Set the start point of the TimeInterval
+
+	Time::TimeObject TO(tstep,"%Y%m%d-%H:%M:%S");
+	this->TI.set_start_time(TO);
 	this->Modified();
 }
 
-void vtkOGSHovmoeller::SetEndTime(const char *tstep) {
-	this->tstep_ed = std::string(tstep);
+void vtkOGSHovmoeller::SetEndTI(const char *tstep) {
+
+	// Set the end point of the TimeInterval
+
+	Time::TimeObject TO(tstep,"%Y%m%d-%H:%M:%S");
+	this->TI.set_end_time(TO);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
 vtkStringArray *vtkOGSHovmoeller::GetTimeValues() {
-	return this->TimeValues;
+
+	// Recover time values as a string from the TimeList
+
+	vtkStringArray *TimeValues;
+	TimeValues = VTK::createVTKstrf("TimeValues",this->TL.len(),NULL);
+
+	// Loop the TimeList to recover the instants
+	for (int ii=0; ii<this->TL.len(); ++ii)
+		TimeValues->SetValue(ii,this->TL[ii].as_string("%Y%m%d-%H:%M:%S"));
+
+	return TimeValues;
 }
 
 //----------------------------------------------------------------------------
