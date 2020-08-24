@@ -63,13 +63,14 @@ vtkOGSSpatialStats::vtkOGSSpatialStats(){
 	this->StatDataArraySelection->AddArray("p95");
 	this->StatDataArraySelection->AddArray("max");
 
-	this->iscelld   = true;
-	this->isReqInfo = false;
-	this->epsi      = 1.e-3;
-	this->ndepths   = 0;
-	this->useVolume = 0;
-	this->nProcs    = 0;
-	this->procId    = 0;
+	this->iscelld       = true;
+	this->isReqInfo     = false;
+	this->changing_mesh = true;
+	this->epsi          = 1.e-3;
+	this->ndepths       = 0;
+	this->useVolume     = 0;
+	this->nProcs        = 0;
+	this->procId        = 0;
 
 	#ifdef PARAVIEW_USE_MPI
 		this->Controller = NULL;
@@ -143,7 +144,7 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 	// cId2zId arrays. Successive iterations should not execute.
 	// This section is included here since RequestInformation gives
 	// troubles when restarting.
-	if (this->xyz.isempty() || this->isReqInfo) {
+	if (this->changing_mesh || this->xyz.isempty() || this->isReqInfo) {
 
 		this->isReqInfo = false;
 		
@@ -219,12 +220,10 @@ int vtkOGSSpatialStats::RequestData(vtkInformation *vtkNotUsed(request),
 		// We should not average the coast or basins mask nor e1t or e2t
 		// Names have been harcoded here as there is no way to ensure that
 		// these arrays will exist or not.
-		if (arrName == std::string("coast mask"))  continue;
-		if (arrName == std::string("basins mask")) continue;
-		if (arrName == std::string("land mask"))   continue;
-		if (arrName == std::string("e1"))          continue;
-		if (arrName == std::string("e2"))          continue;
-		if (arrName == std::string("e3"))          continue;
+		if (arrName == std::string("e1"))              continue;
+		if (arrName == std::string("e2"))              continue;
+		if (arrName == std::string("e3"))              continue;
+		if (arrName.find("mask") != std::string::npos) continue; // a mask has been found
 
 		// Recover Array values
 		VTKARRAY *vtkArray;

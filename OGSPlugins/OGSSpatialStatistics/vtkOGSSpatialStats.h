@@ -44,6 +44,12 @@ public:
   vtkGetMacro(epsi, double);
 
   // Description:
+  // Flag for changing mesh
+  vtkGetMacro(changing_mesh, int);
+  vtkSetMacro(changing_mesh, int);
+  vtkBooleanMacro(changing_mesh, int);
+
+  // Description:
   // Decide to use the volume for statistics
   vtkGetMacro(useVolume, int);
   vtkSetMacro(useVolume, int);
@@ -104,7 +110,7 @@ private:
   v3::V3v xyz;               // Stores cell/point coordinates
   field::Field<int> cId2zId; // Cell to depth level connectivity
 
-  bool isReqInfo;            // Set true when request information
+  bool isReqInfo, changing_mesh; // Set true when request information
   int  useVolume;            // Use the volume as weight instead of the area
 };
 

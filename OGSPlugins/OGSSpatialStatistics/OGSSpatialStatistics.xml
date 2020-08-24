@@ -61,6 +61,20 @@
         </Documentation>
       </DoubleVectorProperty>
 
+     <!-- Changing Mesh -->
+     <IntVectorProperty name="ChangingMesh"
+                        label="Changing Mesh Flag"
+                        command="Setchanging_mesh"
+                        number_of_elements="1"
+                        default_values="1"
+                        panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Deactivate this option if the mesh is not changing in
+          time to speed-up the computations.
+        </Documentation>
+     </IntVectorProperty>
+
      <!-- Use Volume -->
      <IntVectorProperty name="UseVolume"
                         label="Use Volume"

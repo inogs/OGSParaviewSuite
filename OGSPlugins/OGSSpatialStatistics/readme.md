@@ -14,7 +14,7 @@ The **OGS Spatial Statistics** filter is able to generate the following nine sta
 
 Although this fitler can be used under any kind of data, cell data is strongly advised. 
 
-By default, the weighting used is the cell area (e1te2t) although the user can select to use the cell volume (e1te2te3t). In any case, it is necessary to load the mesh weights for this filter to work.
+By default, the weighting used is the cell area (e1te2t) although the user can select to use the cell volume (e1te2te3t). In any case, it is necessary to load the mesh weights for this filter to work. If the mesh does not change in time, the user can deactivate the _Changing Mesh Flag_ to speed up the computations. Deactivating this flag in a changing mesh can result in **Segmentation faults**.
 
 Moreover, as default, the code generated an average per depth level (that is scanned at the beginning). Alternatively, the user can decide to provide depth levels by inputting them in the selection box. Note that the levels go from 0 to the selected value and so on until the bottom is reached.
 
