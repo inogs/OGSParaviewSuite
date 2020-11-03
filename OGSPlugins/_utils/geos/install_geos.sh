@@ -18,18 +18,24 @@ GEOS_TAR="${GEOS_DIR}.tar.bz2"
 # Check if the Lapack libraries have been deployed
 # if not, compile
 if test -f "${INSTALL_PREFIX}/lib/libgeos.a"; then
-    echo "GEOS already deployed!"
-    echo "Skipping build..."
+	echo "GEOS already deployed!"
+	echo "Skipping build..."
 else
-    echo "GEOS not deployed!"
-    echo "Starting build..."
+	echo "GEOS not deployed!"
+	echo "Starting build..."
 
-    echo "Version ${VERS}"
-    echo "C compiler '${CCOMPILER}' with flags '${CFLAGS}'"
-    echo "CXX compiler '${CXXCOMPILER}' with flags '${CXXFLAGS}'"
-    echo "Install path ${INSTALL_PREFIX}"
+	echo "Version ${VERS}"
+	echo "C compiler '${CCOMPILER}' with flags '${CFLAGS}'"
+	echo "CXX compiler '${CXXCOMPILER}' with flags '${CXXFLAGS}'"
+	echo "Install path ${INSTALL_PREFIX}"
 
-	wget -O ${GEOS_TAR} "http://download.osgeo.org/geos/${GEOS_TAR}"
+	# Download, check if wget exists else use curl
+	if ! command -v wget &> /dev/null; then
+		curl "http://download.osgeo.org/geos/${GEOS_TAR}" --output ${GEOS_TAR}
+	else
+		wget -O ${GEOS_TAR} "http://download.osgeo.org/geos/${GEOS_TAR}"
+	fi
+
 	tar xf $GEOS_TAR && cd $GEOS_DIR
 	cd ../
 

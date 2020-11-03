@@ -21,22 +21,31 @@ PROJ_DATG="proj-datumgrid-${VERS_DATV}.zip"
 # Check if the Lapack libraries have been deployed
 # if not, compile
 if test -f "${INSTALL_PREFIX}/lib/libproj.a"; then
-    echo "PROJ already deployed!"
-    echo "Skipping build..."
+	echo "PROJ already deployed!"
+	echo "Skipping build..."
 else
-    echo "PROJ not deployed!"
-    echo "Starting build..."
+	echo "PROJ not deployed!"
+	echo "Starting build..."
 
-    echo "Version ${VERS}"
-    echo "C compiler '${CCOMPILER}' with flags '${CFLAGS}'"
-    echo "CXX compiler '${CXXCOMPILER}' with flags '${CXXFLAGS}'"
-    echo "Install path ${INSTALL_PREFIX}"
+	echo "Version ${VERS}"
+	echo "C compiler '${CCOMPILER}' with flags '${CFLAGS}'"
+	echo "CXX compiler '${CXXCOMPILER}' with flags '${CXXFLAGS}'"
+	echo "Install path ${INSTALL_PREFIX}"
 
-	wget -O ${PROJ_TAR} "https://download.osgeo.org/proj/${PROJ_TAR}"
-	tar xvf $PROJ_TAR && cd $PROJ_DIR
-	wget -O ${PROJ_DATG} "https://download.osgeo.org/proj/$PROJ_DATG"
-	unzip $PROJ_DATG -d data/
-	cd ../
+	# Download, check if wget exists else use curl
+	if ! command -v wget &> /dev/null; then
+		curl "https://download.osgeo.org/proj/${PROJ_TAR}" --output ${PROJ_TAR} 
+		tar xvf $PROJ_TAR && cd $PROJ_DIR
+		curl "https://download.osgeo.org/proj/${PROJ_DATG}" --output ${PROJ_DATG} 
+		unzip $PROJ_DATG -d data/
+		cd ../
+	else
+		wget -O ${PROJ_TAR} "https://download.osgeo.org/proj/${PROJ_TAR}" 
+		tar xvf $PROJ_TAR && cd $PROJ_DIR
+		wget -O ${PROJ_DATG} "https://download.osgeo.org/proj/$PROJ_DATG" 
+		unzip $PROJ_DATG -d data/
+		cd ../
+	fi
 
 	mkdir build
 	cd build
