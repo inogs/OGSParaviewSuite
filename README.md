@@ -2,6 +2,17 @@
 
 The **OGS ParaView Suite** contains ParaView filters to work with data from [OGSTM-BFM](http://marine.copernicus.eu/services-portfolio/access-to-products/). The suite also links with *bit.sea* and other python libraries for pre- and post-processing of the data. Each filter has its own readme, containing a brief explanation of itself. The code can be obtained by either compiling the filters in a working development build of ParaView (as instructed later) or downloading the latest [Release](https://github.com/inogs/OGSParaviewSuite/releases).
 
+The project can be cloned from github by doing
+```bash
+git clone --recurse-submodules https://github.com/inogs/OGSParaviewSuite.git
+```
+or 
+```bash
+git clone https://github.com/inogs/OGSParaviewSuite.git
+cd OGSParaviewSuite
+git submodule update --init 
+```
+
 ## Plugin List
 
 A list of the available plugins is as follows:
