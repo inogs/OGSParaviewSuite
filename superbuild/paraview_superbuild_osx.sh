@@ -63,11 +63,11 @@ git submodule update
 cp $VERSIONSDIR/versions_new.cmake versions.cmake
 cp $VERSIONSDIR/versions_superbuild_py27.cmake superbuild/versions.cmake
 # FIX: python
-cp superbuild/projects/zlib.cmake superbuild/projects/apple/zlib.cmake
-cp superbuild/projects/bzip2.cmake superbuild/projects/apple/bzip2.cmake
-cp superbuild/projects/patches/zlib* superbuild/projects/apple/patches
-cp superbuild/projects/patches/bzip2* superbuild/projects/apple/patches
-cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/python.cmake
+#cp superbuild/projects/zlib.cmake superbuild/projects/apple/zlib.cmake
+#cp superbuild/projects/bzip2.cmake superbuild/projects/apple/bzip2.cmake
+#cp superbuild/projects/patches/zlib* superbuild/projects/apple/patches
+#cp superbuild/projects/patches/bzip2* superbuild/projects/apple/patches
+#cp $SUITEDIR/superbuild/projects_apple/python.cmake superbuild/projects/apple/python.cmake
 cp $SUITEDIR/superbuild/projects_apple/qt* superbuild/projects/
 # FIX: matplotlib
 cp $MAPPLOTLIBDIR/matplotlib.cmake superbuild/projects
@@ -102,10 +102,13 @@ cmake $SUPERBUILD_DIR \
    -DENABLE_ospray=ON \
    -DENABLE_python=ON \
    -Dpython_USE_UNICODE=UCS2 \
-   -DUSE_SYSTEM_python=OFF \
-   -DENABLE_numpy=ON \
-   -DENABLE_scipy=ON \
-   -DENABLE_matplotlib=ON \
+   -DUSE_SYSTEM_python=ON \
+   -DENABLE_numpy=OFF \
+   -DUSE_SYSTEM_numpy=ON \
+   -DENABLE_scipy=OFF \
+   -DUSE_SYSTEM_scipy=ON \
+   -DENABLE_matplotlib=OFF \
+   -DUSE_SYSTEM_matplotlib=ON \
    -DENABLE_vtkm=OFF \
    -DENABLE_netcdf=OFF \
    -DENABLE_vrpn=ON \
@@ -150,56 +153,56 @@ ln -s $BUILD_DIR/install/lib/python2.7/site-packages/matplotlib-*/matplotlib/ $B
 # Install
 make -j $NPROCS install
 # FIX: matplotlib depends on backports and kiwisolver
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $APP_DIR/Python/
-cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.*/backports $APP_DIR/Python/
+#cp $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver-*/kiwisolver.so $APP_DIR/Python/
 # FIX: includes
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $BUILD_DIR/install/include/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $BUILD_DIR/install/include/
 #cp -r $BUILD_DIR/install/include/python* $INSTALL_PREFIX/include
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $APP_DIR/Python/numpy/core
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include $APP_DIR/Python/numpy/core
 #cp -r $BUILD_DIR/install/lib/python2.7/site-packages/numpy-*/numpy/core/include/numpy $INSTALL_PREFIX/include
 #cp -r $BUILD_DIR/install/include/paraview-* $INSTALL_PREFIX/include
 
 # Load environment
-export PATH=$PATH:$APP_DIR/bin:$APP_DIR/MacOS
-export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$APP_DIR/Libraries
+#export PATH=$PATH:$APP_DIR/bin:$APP_DIR/MacOS
+#export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:$APP_DIR/Libraries
 #export C_INCLUDE_PATH=$C_INCLUDE_PATH:$APP_DIR/Python/numpy/core/include/
-export PYTHONPATH=$PYTHONPATH:$APP_DIR/Python
+#export PYTHONPATH=$PYTHONPATH:$APP_DIR/Python
 
-# Deploy GEOS library
-bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${APP_DIR}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-mv $APP_DIR/lib/* $APP_DIR/Libraries/
-rm -rf $APP_DIR/lib
-
-# Deploy PROJ library
-bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${APP_DIR}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
-mv $APP_DIR/lib/* $APP_DIR/Libraries/
-rm -rf $APP_DIR/lib
-
-# Install netCDF4, configparser, cython
-$BUILD_DIR/install/bin/pip install --upgrade pip
-$BUILD_DIR/install/bin/pip install kiwisolver requests netcdf4==1.5.3 configparser cython cartopy pyepsg
-#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools.pth $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $APP_DIR/Python/backports/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/Cython $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $APP_DIR/Libraries/
-cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $APP_DIR/Libraries/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/shape* $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/pyepsg.* $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/requests $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $APP_DIR/Python/
-cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $APP_DIR/Python/
+## Deploy GEOS library
+#bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+#bash $PLUGINDIR/_utils/geos/install_geos.sh "${GEOS_VERS}" "${APP_DIR}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+#mv $APP_DIR/lib/* $APP_DIR/Libraries/
+#rm -rf $APP_DIR/lib
+#
+## Deploy PROJ library
+#bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${BUILD_DIR}/install" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+#bash $PLUGINDIR/_utils/proj/install_proj.sh "${PROJ_VERS}" "${PROJ_DATV}" "SHARED" "${APP_DIR}" "${CCOMPILER}" "${CFLAGS}" "${CXXCOMPILER}" "${CXXFLAGS}"
+#mv $APP_DIR/lib/* $APP_DIR/Libraries/
+#rm -rf $APP_DIR/lib
+#
+## Install netCDF4, configparser, cython
+#$BUILD_DIR/install/bin/pip install --upgrade pip
+#$BUILD_DIR/install/bin/pip install kiwisolver requests netcdf4==1.5.3 configparser cython cartopy pyepsg
+##cp -r $BUILD_DIR/install/lib/python2.7/site-packages/kiwisolver $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cftime $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/netCDF4 $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/setuptools.pth $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/configparser.* $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/backports.functools_lru_cache-1.6.1-py2.7.egg/backports/* $APP_DIR/Python/backports/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cython.* $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/Cython $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/lib-dynload $APP_DIR/Libraries/
+#cp -r $BUILD_DIR/install/lib/python2.7/lib-tk $APP_DIR/Libraries/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/cartopy $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/shape* $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/pyepsg.* $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/requests $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/urllib3 $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/chardet $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/certifi $APP_DIR/Python/
+#cp -r $BUILD_DIR/install/lib/python2.7/site-packages/idna $APP_DIR/Python/
 
 # Copy ffmpeg
 cp $BUILD_DIR/install/bin/ffmpeg $APP_DIR/bin
@@ -230,5 +233,5 @@ printf "OK\n"
 
 # Clean-up
 cd $SUITEDIR
-rm -rf $BUILD_DIR $SUPERBUILD_DIR
-tar cvzf "${INSTALL_PREFIX}/ParaView-${PV_VERS}.tar.gz" ${INSTALL_PREFIX}/ParaView-${PV_VERS}.app
+#rm -rf $BUILD_DIR $SUPERBUILD_DIR
+#tar cvzf "${INSTALL_PREFIX}/ParaView-${PV_VERS}.tar.gz" ${INSTALL_PREFIX}/ParaView-${PV_VERS}.app
